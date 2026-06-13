@@ -27,7 +27,6 @@ export default function LoginPage() {
       const data = await res.json()
 
       if (data.needStart) {
-        setError("")
         setBotUrl(data.botUrl)
         setLoading(null)
         return
@@ -58,22 +57,13 @@ export default function LoginPage() {
       const data = await res.json()
 
       if (data.ok) {
-        // Login via NextAuth credentials
-        const result = await signIn("telegram", {
+        await signIn("telegram", {
           id: data.user.id,
           name: data.user.name,
           username: data.user.username,
-          auth_date: String(Math.floor(Date.now() / 1000)),
           hash: "custom_flow",
-          redirect: false,
+          callbackUrl: "/",
         })
-        if (result?.error) {
-          // Fallback: store in localStorage
-          localStorage.setItem("fw.auth", JSON.stringify(data.user))
-          window.location.href = "/"
-        } else {
-          window.location.href = result?.url || "/"
-        }
       } else {
         setError(data.error || "Kode salah")
       }
@@ -131,7 +121,7 @@ export default function LoginPage() {
           <div className="h-px flex-1 bg-border" />
         </div>
 
-        {/* Telegram Login — Custom Flow */}
+        {/* Telegram Login */}
         {step === "idle" && (
           <div className="space-y-3">
             <div className="flex gap-2">
@@ -152,7 +142,6 @@ export default function LoginPage() {
               </button>
             </div>
 
-            {/* Bot not started yet */}
             {botUrl && (
               <div className="space-y-2 rounded-xl border border-primary/30 bg-primary/5 p-4">
                 <p className="text-sm font-medium">Bot belum ditemukan!</p>
@@ -175,7 +164,6 @@ export default function LoginPage() {
           </div>
         )}
 
-        {/* Step 2: Enter code */}
         {step === "code" && (
           <div className="space-y-3">
             <p className="text-sm text-muted-foreground text-center">
@@ -205,7 +193,6 @@ export default function LoginPage() {
           </div>
         )}
 
-        {/* Info */}
         <p className="text-center text-xs text-muted-foreground">
           Data kamu aman & tersimpan lokal di perangkat 🔒
         </p>

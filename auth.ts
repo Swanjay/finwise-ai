@@ -1,21 +1,20 @@
-import NextAuth from "next-auth"
-import Google from "next-auth/providers/google"
-import Credentials from "next-auth/providers/credentials"
+import type { NextAuthOptions } from "next-auth"
+import GoogleProvider from "next-auth/providers/google"
+import CredentialsProvider from "next-auth/providers/credentials"
 
-export const { handlers, signIn, signOut, auth } = NextAuth({
+export const authOptions: NextAuthOptions = {
   providers: [
-    Google({
+    GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID!,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
     }),
-    Credentials({
+    CredentialsProvider({
       id: "telegram",
       name: "Telegram",
       credentials: {
         id: { type: "text" },
         name: { type: "text" },
         username: { type: "text" },
-        auth_date: { type: "text" },
         hash: { type: "text" },
       },
       async authorize(credentials) {
@@ -37,9 +36,13 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   pages: {
     signIn: "/login",
   },
+  secret: process.env.NEXTAUTH_SECRET || process.env.AUTH_SECRET,
   callbacks: {
-    authorized: async ({ auth }) => {
-      return !!auth
+    async session({ session, token }) {
+      if (token.sub) {
+        (session.user as Record<string, unknown>).id = token.sub
+      }
+      return session
     },
   },
-})
+}
