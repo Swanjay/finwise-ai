@@ -7,8 +7,9 @@ import {
   FileText, Lock, Lightbulb, Bell, TrendingUp, ArrowDownRight,
   ArrowUpRight, Search, Filter, X, Check, Trash2, ToggleLeft,
   ToggleRight, CalendarClock, Shield, Eye, EyeOff, Moon, Sun,
-  PiggyBank, ReceiptText, ShieldCheck, Upload,
+  PiggyBank, ReceiptText, ShieldCheck, Upload, LogOut,
 } from 'lucide-react'
+import { useSession, signOut } from 'next-auth/react'
 import { FinwiseProvider, useFinwise } from '@/components/finwise-store'
 import { DashboardView } from '@/components/finwise/dashboard-view'
 import { TransactionsView } from '@/components/finwise/transactions-view'
@@ -631,6 +632,45 @@ function OnboardingTips({ onDismiss }: { onDismiss: () => void }) {
   )
 }
 
+// ─── User Avatar ───
+function UserAvatar() {
+  const { data: session } = useSession()
+  const [showMenu, setShowMenu] = useState(false)
+  const user = session?.user
+  if (!user) return null
+
+  return (
+    <div className="relative">
+      <button onClick={() => setShowMenu(!showMenu)} className="flex size-8 items-center justify-center overflow-hidden rounded-full bg-primary/20 ring-2 ring-primary/30">
+        {user.image ? (
+          <img src={user.image} alt="" className="size-full object-cover" />
+        ) : (
+          <span className="text-xs font-bold text-primary">{(user.name || 'U')[0].toUpperCase()}</span>
+        )}
+      </button>
+      {showMenu && (
+        <>
+          <div className="fixed inset-0 z-50" onClick={() => setShowMenu(false)} />
+          <div className="absolute right-0 top-10 z-50 w-56 rounded-xl border border-border bg-card p-3 shadow-xl">
+            <div className="mb-3 flex items-center gap-2.5">
+              <div className="flex size-10 items-center justify-center overflow-hidden rounded-full bg-primary/20">
+                {user.image ? <img src={user.image} alt="" className="size-full object-cover" /> : <span className="text-sm font-bold text-primary">{(user.name || 'U')[0].toUpperCase()}</span>}
+              </div>
+              <div className="min-w-0">
+                <p className="truncate text-sm font-medium">{user.name}</p>
+                <p className="truncate text-xs text-muted-foreground">{user.email || 'Telegram'}</p>
+              </div>
+            </div>
+            <button onClick={() => signOut({ callbackUrl: '/login' })} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-destructive transition hover:bg-destructive/10">
+              <LogOut className="size-4" /> Keluar
+            </button>
+          </div>
+        </>
+      )}
+    </div>
+  )
+}
+
 // ─── Main App Shell ───
 function AppShell() {
   const { transactions, setupDone, isLocked, pin, tipsDismissed, dismissTips, allCategories } = useFinwise()
@@ -660,6 +700,7 @@ function AppShell() {
         <div className="flex items-center gap-2">
           <MonthNavigator monthKey={monthKey} onChange={setMonthKey} />
           <button onClick={() => setSheet('settings')} className="flex size-8 items-center justify-center rounded-full bg-secondary text-muted-foreground hover:text-foreground"><Settings className="size-4" /></button>
+          <UserAvatar />
         </div>
       </header>
       {/* Page title */}
