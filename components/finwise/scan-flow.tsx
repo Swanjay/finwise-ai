@@ -61,11 +61,18 @@ export function ScanFlow({ onDone }: { onDone: () => void }) {
       const res = await fetch('/api/scan-receipt', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
         body: JSON.stringify({ image }),
       })
 
       if (!res.ok) {
         const data = await res.json().catch(() => ({}))
+        if (res.status === 401) {
+          throw new Error('Silakan login dulu untuk scan struk.')
+        }
+        if (res.status === 429) {
+          throw new Error(data.error || 'Terlalu banyak scan. Tunggu sebentar.')
+        }
         throw new Error(data.error || 'Gagal membaca struk.')
       }
 

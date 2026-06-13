@@ -461,8 +461,9 @@ function BenchmarkSheet({ onClose }: { onClose: () => void }) {
 
 // ─── Settings Sheet ───
 function SettingsSheet({ onClose }: { onClose: () => void }) {
-  const { monthlyIncome, updateMonthlyIncome, budgets, setBudget, theme, toggleTheme } = useFinwise()
+  const { monthlyIncome, updateMonthlyIncome, budgets, setBudget, theme, toggleTheme, resetAll } = useFinwise()
   const [incStr, setIncStr] = useState(String(monthlyIncome))
+  const [showResetConfirm, setShowResetConfirm] = useState(false)
 
   return (
     <div className="flex flex-col gap-5 max-h-[60vh] overflow-y-auto">
@@ -499,6 +500,50 @@ function SettingsSheet({ onClose }: { onClose: () => void }) {
             )
           })}
         </div>
+      </div>
+
+      {/* Reset Data */}
+      <div className="border-t border-destructive/20 pt-4">
+        {!showResetConfirm ? (
+          <Button
+            variant="outline"
+            className="w-full text-destructive border-destructive/30 hover:bg-destructive/10"
+            onClick={() => setShowResetConfirm(true)}
+          >
+            🗑️ Bersihkan Semua Data
+          </Button>
+        ) : (
+          <div className="flex flex-col gap-2 rounded-xl border border-destructive/30 bg-destructive/5 p-4">
+            <p className="text-sm font-medium text-destructive">⚠️ Yakin mau hapus semua?</p>
+            <p className="text-xs text-muted-foreground">
+              Semua transaksi, anggaran, target, dan pengaturan akan dihapus permanen. Tidak bisa dibatalkan.
+            </p>
+            <div className="flex gap-2 mt-1">
+              <Button
+                variant="outline"
+                size="sm"
+                className="flex-1"
+                onClick={() => setShowResetConfirm(false)}
+              >
+                Batal
+              </Button>
+              <Button
+                variant="destructive"
+                size="sm"
+                className="flex-1"
+                onClick={() => {
+                  resetAll()
+                  setShowResetConfirm(false)
+                  onClose()
+                  // Reload to trigger setup flow
+                  window.location.reload()
+                }}
+              >
+                Ya, Hapus Semua
+              </Button>
+            </div>
+          </div>
+        )}
       </div>
 
       <Button variant="secondary" onClick={onClose}>Tutup</Button>

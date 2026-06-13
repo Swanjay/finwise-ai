@@ -103,6 +103,9 @@ interface FinwiseStore {
   tipsDismissed: boolean
   dismissTips: () => void
 
+  // Reset
+  resetAll: () => void
+
   // State
   loaded: boolean
 }
@@ -259,6 +262,30 @@ export function FinwiseProvider({ children }: { children: ReactNode }) {
     saveJSON(KEYS.tipsDismissed, true)
   }, [])
 
+  // Reset all data
+  const resetAll = useCallback(() => {
+    // Clear all localStorage keys
+    Object.values(KEYS).forEach(key => {
+      try { localStorage.removeItem(key) } catch { /* ignore */ }
+    })
+    // Clear guest cookie
+    document.cookie = "fw-guest=; path=/; max-age=0"
+
+    // Reset state to defaults
+    setTransactions([])
+    setCustomCategories({})
+    setBudgets({})
+    setMonthlyIncomeState(0)
+    setWallets(DEFAULT_WALLETS)
+    setGoals([])
+    setRecurring([])
+    setPinState(null)
+    setIsLocked(false)
+    setTheme('dark')
+    setSetupDone(false)
+    setTipsDismissed(false)
+  }, [])
+
   return (
     <Ctx.Provider
       value={{
@@ -273,6 +300,7 @@ export function FinwiseProvider({ children }: { children: ReactNode }) {
         theme, toggleTheme,
         setupDone, completeSetup,
         tipsDismissed, dismissTips,
+        resetAll,
         loaded,
       }}
     >
