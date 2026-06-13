@@ -12,6 +12,7 @@
     "@ai-sdk/react": "^3.0.206",
     "@base-ui/react": "^1.5.0",
     "@capacitor/android": "^8.4.0",
+    "@capacitor/camera": "^8.2.0",
     "@capacitor/cli": "^7.6.6",
     "@capacitor/core": "^8.4.0",
     "@supabase/supabase-js": "^2.108.1",

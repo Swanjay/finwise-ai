@@ -1,7 +1,7 @@
 'use client'
 
 import { useRef, useState } from 'react'
-import { Camera, Check, Loader2, Sparkles, X } from 'lucide-react'
+import { Camera, Check, Loader2, Sparkles, X, Image as ImageIcon } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -37,9 +37,53 @@ function fileToDataUrl(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader()
     reader.onload = () => resolve(reader.result as string)
+    const isLarge = file.size > 2 * 1024 * 1024 // 2MB
     reader.onerror = reject
-    reader.readAsDataURL(file)
+    if (isLarge) {
+      // Use canvas to compress
+      const img = new window.Image()
+      img.onload = () => {
+        const canvas = document.createElement('canvas')
+        const maxW = 1600
+        const scale = Math.min(1, maxW / img.width)
+        canvas.width = img.width * scale
+        canvas.height = img.height * scale
+        const ctx = canvas.getContext('2d')
+        if (!ctx) { reader.readAsDataURL(file); return }
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height)
+        resolve(canvas.toDataURL('image/jpeg', 0.8))
+      }
+      img.onerror = () => reader.readAsDataURL(file)
+      reader.onload = () => { img.src = reader.result as string }
+      reader.readAsDataURL(file)
+    } else {
+      reader.readAsDataURL(file)
+    }
   })
+}
+
+// Check if running inside Capacitor native
+function isNative(): boolean {
+  if (typeof window === 'undefined') return false
+  return !!(window as any).Capacitor?.isNativePlatform?.()
+}
+
+async function getCameraPhoto(): Promise<string | null> {
+  try {
+    const { Camera: CapCamera, CameraResultType, CameraSource } = await import('@capacitor/camera')
+    const photo = await CapCamera.getPhoto({
+      quality: 85,
+      allowEditing: false,
+      resultType: CameraResultType.DataUrl,
+      source: CameraSource.Prompt, // ask: camera or gallery
+      width: 1600,
+    })
+    return photo.dataUrl || null
+  } catch (err: any) {
+    // User cancelled or plugin unavailable
+    console.warn('Camera error:', err)
+    return null
+  }
 }
 
 export function ScanFlow({ onDone }: { onDone: () => void }) {
@@ -49,15 +93,11 @@ export function ScanFlow({ onDone }: { onDone: () => void }) {
   const [error, setError] = useState<string | null>(null)
   const fileRef = useRef<HTMLInputElement>(null)
 
-  async function startScan(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0]
-    if (!file) return
-
+  async function processImage(image: string) {
     setError(null)
     setStep('scanning')
 
     try {
-      const image = await fileToDataUrl(file)
       const res = await fetch('/api/scan-receipt', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -67,12 +107,8 @@ export function ScanFlow({ onDone }: { onDone: () => void }) {
 
       if (!res.ok) {
         const data = await res.json().catch(() => ({}))
-        if (res.status === 401) {
-          throw new Error('Silakan login dulu untuk scan struk.')
-        }
-        if (res.status === 429) {
-          throw new Error(data.error || 'Terlalu banyak scan. Tunggu sebentar.')
-        }
+        if (res.status === 401) throw new Error('Silakan login dulu untuk scan struk.')
+        if (res.status === 429) throw new Error(data.error || 'Terlalu banyak scan. Tunggu sebentar.')
         throw new Error(data.error || 'Gagal membaca struk.')
       }
 
@@ -93,10 +129,24 @@ export function ScanFlow({ onDone }: { onDone: () => void }) {
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Gagal membaca struk.')
       setStep('idle')
-    } finally {
-      // Allow re-selecting the same file
-      if (fileRef.current) fileRef.current.value = ''
     }
+  }
+
+  // Native Capacitor camera button
+  async function handleNativeCamera() {
+    setError(null)
+    const image = await getCameraPhoto()
+    if (!image) return // user cancelled
+    await processImage(image)
+  }
+
+  // Web file input handler
+  async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const image = await fileToDataUrl(file)
+    if (fileRef.current) fileRef.current.value = ''
+    await processImage(image)
   }
 
   function save() {
@@ -110,6 +160,8 @@ export function ScanFlow({ onDone }: { onDone: () => void }) {
     })
     onDone()
   }
+
+  const native = isNative()
 
   return (
     <div className="flex flex-col gap-5">
@@ -128,17 +180,33 @@ export function ScanFlow({ onDone }: { onDone: () => void }) {
               AI akan membaca nama toko, total, dan kategori secara otomatis.
             </p>
           </div>
-          <input
-            ref={fileRef}
-            type="file"
-            accept="image/*"
-            capture="environment"
-            className="hidden"
-            onChange={startScan}
-          />
-          <Button onClick={() => fileRef.current?.click()} className="h-12">
-            <Camera className="size-5" /> Ambil / Pilih Foto
-          </Button>
+
+          {native ? (
+            // Native: use Capacitor Camera plugin
+            <>
+              <Button onClick={handleNativeCamera} className="h-12">
+                <Camera className="size-5" /> Ambil Foto Struk
+              </Button>
+              <Button onClick={handleNativeCamera} variant="secondary" className="h-12">
+                <ImageIcon className="size-5" /> Pilih dari Galeri
+              </Button>
+            </>
+          ) : (
+            // Web: use file input
+            <>
+              <input
+                ref={fileRef}
+                type="file"
+                accept="image/*"
+                capture="environment"
+                className="hidden"
+                onChange={handleFileChange}
+              />
+              <Button onClick={() => fileRef.current?.click()} className="h-12">
+                <Camera className="size-5" /> Ambil / Pilih Foto
+              </Button>
+            </>
+          )}
         </>
       )}
 
