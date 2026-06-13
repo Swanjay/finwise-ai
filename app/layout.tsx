@@ -16,6 +16,9 @@ export const metadata: Metadata = {
   description:
     'Aplikasi keuangan pribadi berbasis AI. Catat pemasukan & pengeluaran, scan struk otomatis, atur anggaran, dan dapatkan saran hemat. Bahasa Indonesia, dark neon.',
   generator: 'v0.app',
+  icons: {
+    icon: '/favicon-32.png',
+  },
 }
 
 export const viewport: Viewport = {

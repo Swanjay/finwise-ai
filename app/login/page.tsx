@@ -103,7 +103,7 @@ export default function LoginPage() {
       <div className="w-full max-w-sm space-y-8">
         {/* Logo + Title */}
         <div className="space-y-3 text-center">
-          <img src="/logo.svg" alt="FinWise" className="mx-auto h-14 w-auto" />
+          <img src="/logo-login.png" alt="FinWise" className="mx-auto h-20 w-auto" />
           <h1 className="font-heading text-2xl font-bold">Masuk ke FinWise</h1>
           <p className="text-sm text-muted-foreground">
             Kelola keuanganmu dengan lebih pintar 💰
