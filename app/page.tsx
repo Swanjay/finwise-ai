@@ -654,9 +654,9 @@ function AppShell() {
     <div className="mx-auto flex min-h-screen w-full max-w-md flex-col">
       {/* Header */}
       <header className="flex items-center justify-between px-5 pb-2 pt-6">
-        <div>
-          <p className="flex items-center gap-1.5 text-xs text-muted-foreground"><Sparkles className="size-3.5 text-accent" /> FinWise AI</p>
-          <h1 className="font-heading text-2xl font-bold">
+        <div className="flex items-center gap-2.5">
+          <img src="/logo.svg" alt="FinWise" className="h-9 w-auto" />
+          <h1 className="font-heading text-lg font-bold">
             {tab === 'home' && 'Dashboard'}
             {tab === 'transactions' && 'Transaksi'}
             {tab === 'trends' && 'Tren Keuangan'}
@@ -672,6 +672,8 @@ function AppShell() {
       {/* Quick Actions Bar */}
       <div className="px-5 pb-3 flex gap-1.5 overflow-x-auto no-scrollbar">
         {[
+          { icon: Sparkles, label: 'AI Advisor', sheet: 'advisor' as Sheet },
+          { icon: Camera, label: 'Scan', sheet: 'scan' as Sheet },
           { icon: Target, label: 'Target', sheet: 'goals' as Sheet },
           { icon: Wallet, label: 'Dompet', sheet: 'wallets' as Sheet },
           { icon: Repeat, label: 'Berulang', sheet: 'recurring' as Sheet },
@@ -732,6 +734,7 @@ function AppShell() {
       <BottomSheet open={sheet === 'categories'} onClose={() => setSheet(null)} title="Kategori Custom"><CategoriesSheet onClose={() => setSheet(null)} /></BottomSheet>
       <BottomSheet open={sheet === 'pin'} onClose={() => setSheet(null)} title="Pengaman PIN"><PinSheet onClose={() => setSheet(null)} /></BottomSheet>
       <BottomSheet open={sheet === 'benchmark'} onClose={() => setSheet(null)} title="Benchmark"><BenchmarkSheet onClose={() => setSheet(null)} /></BottomSheet>
+      <BottomSheet open={sheet === 'advisor'} onClose={() => setSheet(null)} title="AI Advisor"><AdvisorChat /></BottomSheet>
     </div>
   )
 }

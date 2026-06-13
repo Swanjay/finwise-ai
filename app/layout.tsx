@@ -30,6 +30,7 @@ export default function RootLayout({
   return (
     <html
       lang="id"
+      suppressHydrationWarning
       className={`${inter.variable} ${sora.variable} ${geistMono.variable}`}
     >
       <body className="bg-background font-sans antialiased">

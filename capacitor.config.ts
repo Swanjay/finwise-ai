@@ -4,7 +4,11 @@ const config: CapacitorConfig = {
   appId: "com.finwise.ai",
   appName: "FinWise",
   webDir: "out",
-  server: { androidScheme: "https" },
+  server: {
+    androidScheme: "https",
+    url: "https://finwise-ai-teal.vercel.app",
+    cleartext: false,
+  },
 };
 
 export default config;
