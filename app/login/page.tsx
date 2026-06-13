@@ -17,14 +17,15 @@ export default function LoginPage() {
   async function handleGuestLogin() {
     setLoading("guest")
     setError("")
-    // Guest = no auth, just go to main page
-    // Store a flag in localStorage so the app knows user is guest
+    // Guest = no auth, set cookie for middleware + localStorage for client
     localStorage.setItem("fw.guest.v1", "true")
+    document.cookie = "fw-guest=true; path=/; max-age=2592000; SameSite=Lax" // 30 days
     router.push("/")
   }
 
   async function handleTelegramRequest() {
     if (!tgUsername.trim()) return setError("Masukkan username Telegram")
+    if (!/^[a-zA-Z0-9_]+$/.test(tgUsername.trim())) return setError("Username hanya huruf, angka, dan underscore")
     setLoading("telegram")
     setError("")
     setBotUrl("")
@@ -33,9 +34,15 @@ export default function LoginPage() {
       const res = await fetch("/api/telegram-login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "request", username: tgUsername }),
+        body: JSON.stringify({ action: "request", username: tgUsername.trim() }),
       })
       const data = await res.json()
+
+      if (res.status === 429) {
+        setError(data.error || "Terlalu banyak percobaan")
+        setLoading(null)
+        return
+      }
 
       if (data.needStart) {
         setBotUrl(data.botUrl)
@@ -63,16 +70,23 @@ export default function LoginPage() {
       const res = await fetch("/api/telegram-login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "verify", username: tgUsername, code: tgCode }),
+        body: JSON.stringify({ action: "verify", username: tgUsername.trim(), code: tgCode }),
       })
       const data = await res.json()
 
-      if (data.ok) {
+      if (res.status === 429) {
+        setError(data.error || "Terlalu banyak percobaan")
+        setLoading(null)
+        return
+      }
+
+      if (data.ok && data.user?.sig) {
+        // Send HMAC-signed credentials to NextAuth
         await signIn("telegram", {
           id: data.user.id,
           name: data.user.name,
           username: data.user.username,
-          hash: "custom_flow",
+          sig: data.user.sig,
           callbackUrl: "/",
         })
       } else {
@@ -136,8 +150,9 @@ export default function LoginPage() {
                 type="text"
                 placeholder="Username Telegram (tanpa @)"
                 value={tgUsername}
-                onChange={(e) => { setTgUsername(e.target.value); setError("") }}
+                onChange={(e) => { setTgUsername(e.target.value.replace(/[^a-zA-Z0-9_]/g, '')); setError("") }}
                 onKeyDown={(e) => e.key === "Enter" && handleTelegramRequest()}
+                maxLength={50}
                 className="flex-1 rounded-xl border border-border bg-card px-4 py-3 text-sm outline-none focus:border-primary transition"
               />
               <button
@@ -158,7 +173,7 @@ export default function LoginPage() {
                 <a
                   href={botUrl}
                   target="_blank"
-                  rel="noopener"
+                  rel="noopener noreferrer"
                   className="flex w-full items-center justify-center gap-2 rounded-lg bg-[#229ED9] px-4 py-2.5 text-sm font-medium text-white transition active:scale-[0.98]"
                 >
                   <MessageCircle className="size-4" /> Buka @KiyAii_bot

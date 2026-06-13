@@ -1,5 +1,11 @@
 import type { NextAuthOptions } from "next-auth"
 import CredentialsProvider from "next-auth/providers/credentials"
+import crypto from "crypto"
+
+function createTelegramSignature(id: string, username: string): string {
+  const secret = process.env.NEXTAUTH_SECRET || 'fallback'
+  return crypto.createHmac('sha256', secret).update(`telegram:${id}:${username}`).digest('hex').slice(0, 16)
+}
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -10,20 +16,20 @@ export const authOptions: NextAuthOptions = {
         id: { type: "text" },
         name: { type: "text" },
         username: { type: "text" },
-        hash: { type: "text" },
+        sig: { type: "text" },
       },
       async authorize(credentials) {
-        if (!credentials?.id) return null
+        if (!credentials?.id || !credentials?.username || !credentials?.sig) return null
 
-        if (credentials.hash === "custom_flow") {
-          return {
-            id: credentials.id,
-            name: credentials.name || `@${credentials.username}`,
-            image: null,
-          }
+        // Verify HMAC signature — prevents client-side forgery
+        const expectedSig = createTelegramSignature(credentials.id, credentials.username)
+        if (credentials.sig !== expectedSig) return null
+
+        return {
+          id: credentials.id,
+          name: credentials.name || `@${credentials.username}`,
+          image: null,
         }
-
-        return null
       },
     }),
   ],
@@ -31,6 +37,21 @@ export const authOptions: NextAuthOptions = {
     signIn: "/login",
   },
   secret: process.env.NEXTAUTH_SECRET || process.env.AUTH_SECRET,
+  session: {
+    strategy: "jwt",
+    maxAge: 30 * 24 * 60 * 60, // 30 days
+  },
+  cookies: {
+    sessionToken: {
+      name: process.env.NODE_ENV === 'production' ? '__Secure-next-auth.session-token' : 'next-auth.session-token',
+      options: {
+        httpOnly: true,
+        sameSite: 'lax',
+        path: '/',
+        secure: process.env.NODE_ENV === 'production',
+      },
+    },
+  },
   callbacks: {
     async session({ session, token }) {
       if (token.sub) {
@@ -40,3 +61,6 @@ export const authOptions: NextAuthOptions = {
     },
   },
 }
+
+// Export for use in telegram-login route
+export { createTelegramSignature }

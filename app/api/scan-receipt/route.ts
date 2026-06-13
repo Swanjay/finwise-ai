@@ -1,5 +1,9 @@
 import { generateText, Output } from 'ai'
 import { z } from 'zod'
+import { getServerSession } from 'next-auth'
+import { authOptions } from '@/auth'
+import { checkRateLimit } from '@/lib/rate-limit'
+import { scanReceiptSchema } from '@/lib/validate'
 
 export const maxDuration = 30
 
@@ -25,13 +29,40 @@ const ReceiptSchema = z.object({
   date: z.string().describe('Tanggal transaksi format YYYY-MM-DD. Jika tidak terbaca, gunakan tanggal hari ini.'),
 })
 
+function getClientIp(req: Request): string {
+  return req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
+    req.headers.get('x-real-ip') ||
+    'unknown'
+}
+
 export async function POST(req: Request) {
   try {
-    const { image } = (await req.json()) as { image?: string }
-
-    if (!image || typeof image !== 'string') {
-      return Response.json({ error: 'Gambar tidak ditemukan.' }, { status: 400 })
+    // Auth check — allow guest or authenticated
+    const guestCookie = req.headers.get('cookie')?.includes('fw-guest=true')
+    const session = await getServerSession(authOptions)
+    if (!session && !guestCookie) {
+      return Response.json({ error: 'Unauthorized' }, { status: 401 })
     }
+
+    // Rate limit: 10 scans per minute per IP
+    const ip = getClientIp(req)
+    const rl = checkRateLimit(`scan:${ip}`, { windowMs: 60_000, max: 10 })
+    if (!rl.allowed) {
+      return Response.json(
+        { error: 'Terlalu banyak scan. Tunggu sebentar.' },
+        { status: 429, headers: { 'Retry-After': String(rl.retryAfter) } }
+      )
+    }
+
+    const body = await req.json()
+
+    // Validate input
+    const parsed = scanReceiptSchema.safeParse(body)
+    if (!parsed.success) {
+      return Response.json({ error: 'Gambar tidak valid.' }, { status: 400 })
+    }
+
+    const { image } = parsed.data
 
     const today = new Date().toISOString().slice(0, 10)
 

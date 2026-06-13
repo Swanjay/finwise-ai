@@ -2,6 +2,7 @@
 
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/auth'
+import { transactionSchema } from './validate'
 
 function getSupabase() {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
@@ -73,6 +74,10 @@ export async function addTransaction(tx: {
   date: string
   wallet?: string
 }) {
+  // Validate input
+  const parsed = transactionSchema.safeParse(tx)
+  if (!parsed.success) return false
+
   const userId = await getSupabaseUserId()
   const supabase = getSupabase()
   if (!userId || !supabase) return false

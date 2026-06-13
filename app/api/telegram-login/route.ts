@@ -1,40 +1,67 @@
 import { NextResponse } from "next/server"
 import crypto from "crypto"
+import { checkRateLimit } from "@/lib/rate-limit"
+import { createTelegramSignature } from "@/auth"
+import { telegramLoginSchema } from "@/lib/validate"
 
 // In-memory code store (resets on cold start, fine for demo)
-const codes = new Map<string, { code: string; expires: number; user?: Record<string, string> }>()
+const codes = new Map<string, { code: string; expires: number; attempts: number; user?: Record<string, string> }>()
 
-function generateCode() {
-  return Math.random().toString().slice(2, 8) // 6 digit
+function generateCode(): string {
+  // Cryptographically secure 6-digit code
+  return crypto.randomInt(100000, 999999).toString()
+}
+
+function getClientIp(req: Request): string {
+  return req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
+    req.headers.get('x-real-ip') ||
+    'unknown'
 }
 
 // POST /api/telegram-login
-// action: "request" → send code to user via bot
-// action: "verify" → verify code
 export async function POST(req: Request) {
   try {
-    const body = await req.json()
-    const { action, username, code } = body as { action: string; username?: string; code?: string }
+    const ip = getClientIp(req)
 
+    // Rate limit: 5 requests per minute per IP
+    const rl = checkRateLimit(`tg-login:${ip}`, { windowMs: 60_000, max: 5 })
+    if (!rl.allowed) {
+      return NextResponse.json(
+        { error: "Terlalu banyak percobaan. Coba lagi nanti." },
+        {
+          status: 429,
+          headers: {
+            'Retry-After': String(rl.retryAfter),
+            'X-RateLimit-Remaining': '0',
+          }
+        }
+      )
+    }
+
+    const body = await req.json()
+
+    // Validate input with Zod
+    const parsed = telegramLoginSchema.safeParse(body)
+    if (!parsed.success) {
+      return NextResponse.json({ error: "Input tidak valid" }, { status: 400 })
+    }
+
+    const { action } = parsed.data
     const botToken = process.env.TELEGRAM_BOT_TOKEN!
     const botUsername = process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME || "KiyAii_bot"
 
     if (action === "request") {
-      if (!username) {
-        return NextResponse.json({ error: "Username diperlukan" }, { status: 400 })
-      }
+      const { username } = parsed.data
 
       // Clean username
       const cleanUsername = username.replace("@", "").trim()
       const loginCode = generateCode()
       const expires = Date.now() + 5 * 60 * 1000 // 5 min
 
-      // Store code
-      codes.set(cleanUsername.toLowerCase(), { code: loginCode, expires })
+      // Store code with attempt counter
+      codes.set(cleanUsername.toLowerCase(), { code: loginCode, expires, attempts: 0 })
 
       // Try to send code via bot
-      // First, we need to find the chat ID - for now we'll use getUpdates
-      // The user needs to have started the bot
       const updatesRes = await fetch(`https://api.telegram.org/bot${botToken}/getUpdates?limit=100`)
       const updatesData = await updatesRes.json()
 
@@ -76,13 +103,14 @@ export async function POST(req: Request) {
         return NextResponse.json({ error: "Gagal mengirim kode" }, { status: 500 })
       }
 
-      return NextResponse.json({ ok: true, message: "Kode dikirim ke Telegram kamu" })
+      return NextResponse.json(
+        { ok: true, message: "Kode dikirim ke Telegram kamu" },
+        { headers: { 'X-RateLimit-Remaining': String(rl.remaining) } }
+      )
     }
 
     if (action === "verify") {
-      if (!username || !code) {
-        return NextResponse.json({ error: "Username dan kode diperlukan" }, { status: 400 })
-      }
+      const { username, code } = parsed.data
 
       const cleanUsername = username.replace("@", "").trim().toLowerCase()
       const stored = codes.get(cleanUsername)
@@ -90,6 +118,14 @@ export async function POST(req: Request) {
       if (!stored) {
         return NextResponse.json({ error: "Kode tidak ditemukan" }, { status: 400 })
       }
+
+      // Check attempts (max 5 tries per code)
+      if (stored.attempts >= 5) {
+        codes.delete(cleanUsername)
+        return NextResponse.json({ error: "Terlalu banyak percobaan. Minta kode baru." }, { status: 429 })
+      }
+
+      stored.attempts++
 
       if (Date.now() > stored.expires) {
         codes.delete(cleanUsername)
@@ -103,13 +139,17 @@ export async function POST(req: Request) {
       // Success! Delete code
       codes.delete(cleanUsername)
 
+      // Generate HMAC signature for the user
+      const userId = `tg_${cleanUsername}`
+      const sig = createTelegramSignature(userId, cleanUsername)
+
       return NextResponse.json({
         ok: true,
         user: {
-          id: `tg_${cleanUsername}`,
+          id: userId,
           name: `@${cleanUsername}`,
           username: cleanUsername,
-          provider: "telegram",
+          sig, // HMAC signature — client must send this to NextAuth
         },
       })
     }
