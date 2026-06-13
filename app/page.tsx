@@ -678,7 +678,7 @@ function OnboardingTips({ onDismiss }: { onDismiss: () => void }) {
 }
 
 // ─── User Avatar ───
-function UserAvatar() {
+function UserAvatar({ onScan }: { onScan?: () => void }) {
   const { data: session } = useSession()
   const [showMenu, setShowMenu] = useState(false)
   const user = session?.user
@@ -706,6 +706,11 @@ function UserAvatar() {
                 <p className="truncate text-xs text-muted-foreground">{user.email || 'Telegram'}</p>
               </div>
             </div>
+            {onScan && (
+              <button onClick={() => { setShowMenu(false); onScan() }} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-foreground transition hover:bg-secondary">
+                <Camera className="size-4 text-primary" /> Scan Struk
+              </button>
+            )}
             <button onClick={() => signOut({ callbackUrl: '/login' })} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-destructive transition hover:bg-destructive/10">
               <LogOut className="size-4" /> Keluar
             </button>
@@ -745,7 +750,7 @@ function AppShell() {
         <div className="flex items-center gap-2">
           <MonthNavigator monthKey={monthKey} onChange={setMonthKey} />
           <button onClick={() => setSheet('settings')} className="flex size-8 items-center justify-center rounded-full bg-secondary text-muted-foreground hover:text-foreground"><Settings className="size-4" /></button>
-          <UserAvatar />
+          <UserAvatar onScan={() => setSheet('scan')} />
         </div>
       </header>
       {/* Page title */}
