@@ -678,7 +678,7 @@ function OnboardingTips({ onDismiss }: { onDismiss: () => void }) {
 }
 
 // ─── User Avatar ───
-function UserAvatar({ onScan }: { onScan?: () => void }) {
+function UserAvatar() {
   const { data: session } = useSession()
   const [showMenu, setShowMenu] = useState(false)
   const user = session?.user
@@ -706,11 +706,6 @@ function UserAvatar({ onScan }: { onScan?: () => void }) {
                 <p className="truncate text-xs text-muted-foreground">{user.email || 'Telegram'}</p>
               </div>
             </div>
-            {onScan && (
-              <button onClick={() => { setShowMenu(false); onScan() }} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-foreground transition hover:bg-secondary">
-                <Camera className="size-4 text-primary" /> Scan Struk
-              </button>
-            )}
             <button onClick={() => signOut({ callbackUrl: '/login' })} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-destructive transition hover:bg-destructive/10">
               <LogOut className="size-4" /> Keluar
             </button>
@@ -750,7 +745,7 @@ function AppShell() {
         <div className="flex items-center gap-2">
           <MonthNavigator monthKey={monthKey} onChange={setMonthKey} />
           <button onClick={() => setSheet('settings')} className="flex size-8 items-center justify-center rounded-full bg-secondary text-muted-foreground hover:text-foreground"><Settings className="size-4" /></button>
-          <UserAvatar onScan={() => setSheet('scan')} />
+          <UserAvatar />
         </div>
       </header>
       {/* Page title */}
@@ -805,7 +800,7 @@ function AppShell() {
             </button>
           ))}
           <div className="flex justify-center">
-            <button onClick={() => setSheet('add')} className="-mt-6 flex size-14 items-center justify-center rounded-full bg-primary text-primary-foreground neon-glow transition active:scale-95"><Camera className="size-6" /></button>
+            <button onClick={() => setSheet('scan')} className="-mt-6 flex size-14 items-center justify-center rounded-full bg-primary text-primary-foreground neon-glow transition active:scale-95"><Camera className="size-6" /></button>
           </div>
           {navItems.slice(2).map((item) => (
             <button key={item.id} onClick={() => setTab(item.id)} className={cn('flex flex-col items-center gap-1 rounded-lg py-1.5 text-[11px] font-medium transition', tab === item.id ? 'text-primary' : 'text-muted-foreground hover:text-foreground')}>
