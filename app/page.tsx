@@ -656,18 +656,22 @@ function AppShell() {
       <header className="flex items-center justify-between px-5 pb-2 pt-6">
         <div className="flex items-center gap-2.5">
           <img src="/logo.svg" alt="FinWise" className="h-9 w-auto" />
-          <h1 className="font-heading text-lg font-bold">
-            {tab === 'home' && 'Dashboard'}
-            {tab === 'transactions' && 'Transaksi'}
-            {tab === 'trends' && 'Tren Keuangan'}
-            {tab === 'budget' && 'Anggaran'}
-          </h1>
         </div>
         <div className="flex items-center gap-2">
           <MonthNavigator monthKey={monthKey} onChange={setMonthKey} />
           <button onClick={() => setSheet('settings')} className="flex size-8 items-center justify-center rounded-full bg-secondary text-muted-foreground hover:text-foreground"><Settings className="size-4" /></button>
         </div>
       </header>
+      {/* Page title */}
+      <div className="px-5 pb-1">
+        <p className="text-xs text-muted-foreground">{getMonthLabel(monthKey)}</p>
+        <h1 className="font-heading text-xl font-bold">
+          {tab === 'home' && 'Dashboard'}
+          {tab === 'transactions' && 'Transaksi'}
+          {tab === 'trends' && 'Tren Keuangan'}
+          {tab === 'budget' && 'Anggaran'}
+        </h1>
+      </div>
 
       {/* Quick Actions Bar */}
       <div className="px-5 pb-3 flex gap-1.5 overflow-x-auto no-scrollbar">
