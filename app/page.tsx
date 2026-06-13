@@ -19,6 +19,7 @@ import { AddTransactionForm } from '@/components/finwise/add-transaction-form'
 import { ScanFlow } from '@/components/finwise/scan-flow'
 import { AdvisorChat } from '@/components/finwise/advisor-chat'
 import { SplashScreen } from '@/components/splash-screen'
+import FinWiseLogo from '@/components/finwise-logo'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -741,7 +742,7 @@ function AppShell() {
       {/* Header */}
       <header className="flex items-center justify-between px-5 pb-2 pt-6">
         <div className="flex items-center gap-2.5">
-          <img src="/logo-header.png" alt="FinWise" className="h-9 w-auto" />
+          <FinWiseLogo size={36} showText={false} />
         </div>
         <div className="flex items-center gap-2">
           <MonthNavigator monthKey={monthKey} onChange={setMonthKey} />

@@ -4,6 +4,7 @@ import { signIn } from "next-auth/react"
 import { useState } from "react"
 import { Loader2, MessageCircle, CheckCircle, UserCircle } from "lucide-react"
 import { useRouter } from "next/navigation"
+import FinWiseLogo from "@/components/finwise-logo"
 
 export default function LoginPage() {
   const [loading, setLoading] = useState<"guest" | "telegram" | null>(null)
@@ -102,12 +103,18 @@ export default function LoginPage() {
     <div className="flex min-h-dvh items-center justify-center bg-background p-6">
       <div className="w-full max-w-sm space-y-8">
         {/* Logo + Title */}
-        <div className="space-y-3 text-center">
-          <img src="/logo-login.png" alt="FinWise" className="mx-auto h-20 w-auto" />
-          <h1 className="font-heading text-2xl font-bold">Masuk ke FinWise</h1>
-          <p className="text-sm text-muted-foreground">
-            Kelola keuanganmu dengan lebih pintar 💰
-          </p>
+        <div className="space-y-4 text-center">
+          <div className="mx-auto w-fit">
+            <FinWiseLogo size={72} />
+          </div>
+          <div>
+            <h1 className="font-heading text-2xl font-bold tracking-tight">
+              Masuk ke <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">FinWise</span>
+            </h1>
+            <p className="mt-1.5 text-sm text-muted-foreground">
+              Kelola keuanganmu dengan lebih pintar 💰
+            </p>
+          </div>
         </div>
 
         {/* Error */}
