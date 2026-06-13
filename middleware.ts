@@ -10,13 +10,20 @@ export async function middleware(req: NextRequest) {
   const isPublic = publicPaths.some(p => pathname.startsWith(p))
   if (isPublic) return NextResponse.next()
 
-  // Check for guest flag cookie (set by client on guest login)
-  const isGuest = req.cookies.get('fw-guest')?.value === 'true'
+  // API routes get 401 JSON instead of redirect
+  if (pathname.startsWith('/api/')) {
+    const guestCookie = req.cookies.get('fw-guest')?.value === 'true'
+    const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET })
+    if (!guestCookie && !token) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+    return NextResponse.next()
+  }
 
-  // Check NextAuth session token
+  // Page routes — check guest cookie or auth
+  const isGuest = req.cookies.get('fw-guest')?.value === 'true'
   const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET })
 
-  // Allow if guest OR authenticated
   if (isGuest || token) {
     return NextResponse.next()
   }
