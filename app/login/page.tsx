@@ -1,65 +1,87 @@
 "use client"
 
 import { signIn } from "next-auth/react"
-import { useEffect, useRef, useState } from "react"
-import { Loader2 } from "lucide-react"
-
-declare global {
-  interface Window {
-    onTelegramAuth?: (user: Record<string, string>) => void
-  }
-}
+import { useState } from "react"
+import { Loader2, MessageCircle, CheckCircle } from "lucide-react"
 
 export default function LoginPage() {
   const [loading, setLoading] = useState<"google" | "telegram" | null>(null)
   const [error, setError] = useState("")
-  const tgRef = useRef<HTMLDivElement>(null)
+  const [step, setStep] = useState<"idle" | "code" | "done">("idle")
+  const [tgUsername, setTgUsername] = useState("")
+  const [tgCode, setTgCode] = useState("")
+  const [botUrl, setBotUrl] = useState("")
 
-  // Telegram Login Widget
-  useEffect(() => {
-    const botUsername = process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME || ""
-    if (!botUsername || !tgRef.current) return
+  async function handleTelegramRequest() {
+    if (!tgUsername.trim()) return setError("Masukkan username Telegram")
+    setLoading("telegram")
+    setError("")
+    setBotUrl("")
 
-    window.onTelegramAuth = async (user) => {
-      setLoading("telegram")
-      setError("")
-      try {
+    try {
+      const res = await fetch("/api/telegram-login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "request", username: tgUsername }),
+      })
+      const data = await res.json()
+
+      if (data.needStart) {
+        setError("")
+        setBotUrl(data.botUrl)
+        setLoading(null)
+        return
+      }
+
+      if (data.ok) {
+        setStep("code")
+      } else {
+        setError(data.error || "Gagal mengirim kode")
+      }
+    } catch {
+      setError("Koneksi gagal")
+    }
+    setLoading(null)
+  }
+
+  async function handleTelegramVerify() {
+    if (!tgCode.trim()) return setError("Masukkan kode")
+    setLoading("telegram")
+    setError("")
+
+    try {
+      const res = await fetch("/api/telegram-login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "verify", username: tgUsername, code: tgCode }),
+      })
+      const data = await res.json()
+
+      if (data.ok) {
+        // Login via NextAuth credentials
         const result = await signIn("telegram", {
-          id: user.id,
-          first_name: user.first_name || "",
-          last_name: user.last_name || "",
-          username: user.username || "",
-          photo_url: user.photo_url || "",
-          auth_date: user.auth_date,
-          hash: user.hash,
+          id: data.user.id,
+          name: data.user.name,
+          username: data.user.username,
+          auth_date: String(Math.floor(Date.now() / 1000)),
+          hash: "custom_flow",
           redirect: false,
-          callbackUrl: "/",
         })
         if (result?.error) {
-          setError("Login Telegram gagal")
-          setLoading(null)
+          // Fallback: store in localStorage
+          localStorage.setItem("fw.auth", JSON.stringify(data.user))
+          window.location.href = "/"
         } else {
           window.location.href = result?.url || "/"
         }
-      } catch {
-        setError("Koneksi gagal")
-        setLoading(null)
+      } else {
+        setError(data.error || "Kode salah")
       }
+    } catch {
+      setError("Koneksi gagal")
     }
-
-    const script = document.createElement("script")
-    script.src = "https://telegram.org/js/telegram-widget.js?22"
-    script.setAttribute("data-telegram-login", botUsername)
-    script.setAttribute("data-size", "large")
-    script.setAttribute("data-onauth", "onTelegramAuth(user)")
-    script.setAttribute("data-request-access", "write")
-    script.async = true
-    tgRef.current.appendChild(script)
-
-    return () => {
-      if (tgRef.current) tgRef.current.innerHTML = ""
-    }
-  }, [])
+    setLoading(null)
+  }
 
   return (
     <div className="flex min-h-dvh items-center justify-center bg-background p-6">
@@ -109,8 +131,79 @@ export default function LoginPage() {
           <div className="h-px flex-1 bg-border" />
         </div>
 
-        {/* Telegram Login */}
-        <div className="flex justify-center" id="telegram-login" ref={tgRef} />
+        {/* Telegram Login — Custom Flow */}
+        {step === "idle" && (
+          <div className="space-y-3">
+            <div className="flex gap-2">
+              <input
+                type="text"
+                placeholder="Username Telegram (tanpa @)"
+                value={tgUsername}
+                onChange={(e) => { setTgUsername(e.target.value); setError("") }}
+                onKeyDown={(e) => e.key === "Enter" && handleTelegramRequest()}
+                className="flex-1 rounded-xl border border-border bg-card px-4 py-3 text-sm outline-none focus:border-primary transition"
+              />
+              <button
+                onClick={handleTelegramRequest}
+                disabled={loading === "telegram"}
+                className="flex items-center justify-center rounded-xl bg-[#229ED9] px-4 py-3 text-white transition active:scale-[0.98] disabled:opacity-50"
+              >
+                {loading === "telegram" ? <Loader2 className="size-5 animate-spin" /> : <MessageCircle className="size-5" />}
+              </button>
+            </div>
+
+            {/* Bot not started yet */}
+            {botUrl && (
+              <div className="space-y-2 rounded-xl border border-primary/30 bg-primary/5 p-4">
+                <p className="text-sm font-medium">Bot belum ditemukan!</p>
+                <p className="text-xs text-muted-foreground">
+                  Kamu perlu /start dulu ke bot Telegram:
+                </p>
+                <a
+                  href={botUrl}
+                  target="_blank"
+                  rel="noopener"
+                  className="flex w-full items-center justify-center gap-2 rounded-lg bg-[#229ED9] px-4 py-2.5 text-sm font-medium text-white transition active:scale-[0.98]"
+                >
+                  <MessageCircle className="size-4" /> Buka @KiyAii_bot
+                </a>
+                <p className="text-xs text-muted-foreground">
+                  Setelah kirim /start, balik sini dan klik tombol biru lagi
+                </p>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Step 2: Enter code */}
+        {step === "code" && (
+          <div className="space-y-3">
+            <p className="text-sm text-muted-foreground text-center">
+              Kode dikirim ke Telegram kamu ✨
+            </p>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                placeholder="Masukkan 6 digit kode"
+                maxLength={6}
+                value={tgCode}
+                onChange={(e) => { setTgCode(e.target.value.replace(/\D/g, "")); setError("") }}
+                onKeyDown={(e) => e.key === "Enter" && handleTelegramVerify()}
+                className="flex-1 rounded-xl border border-border bg-card px-4 py-3 text-center text-lg tracking-[0.5em] font-mono outline-none focus:border-primary transition"
+              />
+              <button
+                onClick={handleTelegramVerify}
+                disabled={loading === "telegram"}
+                className="flex items-center justify-center rounded-xl bg-[#229ED9] px-4 py-3 text-white transition active:scale-[0.98] disabled:opacity-50"
+              >
+                {loading === "telegram" ? <Loader2 className="size-5 animate-spin" /> : <CheckCircle className="size-5" />}
+              </button>
+            </div>
+            <button onClick={() => { setStep("idle"); setTgCode(""); setError("") }} className="w-full text-center text-xs text-muted-foreground hover:text-foreground transition">
+              ← Ganti username
+            </button>
+          </div>
+        )}
 
         {/* Info */}
         <p className="text-center text-xs text-muted-foreground">

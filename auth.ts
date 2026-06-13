@@ -15,14 +15,22 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         id: { type: "text" },
         name: { type: "text" },
         username: { type: "text" },
-        photo_url: { type: "text" },
         auth_date: { type: "text" },
         hash: { type: "text" },
       },
       async authorize(credentials) {
-        if (!credentials?.id || !credentials?.hash) return null
+        if (!credentials?.id) return null
 
-        // Verify Telegram auth data server-side
+        // Custom flow: hash is "custom_flow", verified by /api/telegram-login
+        if (credentials.hash === "custom_flow") {
+          return {
+            id: credentials.id,
+            name: credentials.name || `@${credentials.username}`,
+            image: null,
+          }
+        }
+
+        // Standard Telegram Widget flow (fallback)
         const crypto = await import("crypto")
         const botToken = process.env.TELEGRAM_BOT_TOKEN!
         const secretKey = crypto.createHash("sha256").update(botToken).digest()
@@ -40,14 +48,13 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
         if (hmac !== hash) return null
 
-        // Check expiry (24h)
         const now = Math.floor(Date.now() / 1000)
         if (now - Number(credentials.auth_date) > 86400) return null
 
         return {
-          id: `tg_${credentials.id}`,
+          id: credentials.id,
           name: credentials.name || `Telegram User`,
-          image: credentials.photo_url || null,
+          image: null,
         }
       },
     }),
