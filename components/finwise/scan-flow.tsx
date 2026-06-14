@@ -75,13 +75,29 @@ async function getCameraPhoto(): Promise<string | null> {
       quality: 85,
       allowEditing: false,
       resultType: CameraResultType.DataUrl,
-      source: CameraSource.Prompt, // ask: camera or gallery
+      source: CameraSource.Camera,
       width: 1600,
     })
     return photo.dataUrl || null
   } catch (err: any) {
-    // User cancelled or plugin unavailable
     console.warn('Camera error:', err)
+    return null
+  }
+}
+
+async function getGalleryPhoto(): Promise<string | null> {
+  try {
+    const { Camera: CapCamera, CameraResultType, CameraSource } = await import('@capacitor/camera')
+    const photo = await CapCamera.getPhoto({
+      quality: 85,
+      allowEditing: false,
+      resultType: CameraResultType.DataUrl,
+      source: CameraSource.Photos,
+      width: 1600,
+    })
+    return photo.dataUrl || null
+  } catch (err: any) {
+    console.warn('Gallery error:', err)
     return null
   }
 }
@@ -133,10 +149,17 @@ export function ScanFlow({ onDone }: { onDone: () => void }) {
   }
 
   // Native Capacitor camera button
-  async function handleNativeCamera() {
+  async function handleCamera() {
     setError(null)
     const image = await getCameraPhoto()
-    if (!image) return // user cancelled
+    if (!image) return
+    await processImage(image)
+  }
+
+  async function handleGallery() {
+    setError(null)
+    const image = await getGalleryPhoto()
+    if (!image) return
     await processImage(image)
   }
 
@@ -184,10 +207,10 @@ export function ScanFlow({ onDone }: { onDone: () => void }) {
           {native ? (
             // Native: use Capacitor Camera plugin
             <>
-              <Button onClick={handleNativeCamera} className="h-12">
+              <Button onClick={handleCamera} className="h-12">
                 <Camera className="size-5" /> Ambil Foto Struk
               </Button>
-              <Button onClick={handleNativeCamera} variant="secondary" className="h-12">
+              <Button onClick={handleGallery} variant="secondary" className="h-12">
                 <ImageIcon className="size-5" /> Pilih dari Galeri
               </Button>
             </>
