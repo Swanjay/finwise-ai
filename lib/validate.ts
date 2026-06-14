@@ -32,5 +32,5 @@ export const scanReceiptSchema = z.object({
 
 export const advisorSchema = z.object({
   finance: z.string().max(5000).optional(),
-  question: z.string().min(1).max(2000),
+  question: z.string().max(2000).optional(),
 })

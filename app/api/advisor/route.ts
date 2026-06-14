@@ -1,4 +1,5 @@
 import { streamText, convertToModelMessages, type UIMessage } from 'ai'
+import { createOpenAI } from '@ai-sdk/openai'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/auth'
 import { checkRateLimit } from '@/lib/rate-limit'
@@ -6,12 +7,17 @@ import { advisorSchema } from '@/lib/validate'
 
 export const maxDuration = 30
 
+// Pollinations — free, no API key needed
+const pollinations = createOpenAI({
+  baseURL: 'https://text.pollinations.ai/openai',
+  apiKey: 'pollinations', // Pollinations doesn't need a real key
+})
+
 function sanitizeInput(text: string): string {
-  // Strip potential prompt injection patterns
   return text
     .replace(/\b(ignore|forget|disregard)\s+(previous|above|all)\s+(instructions?|prompts?|rules?)\b/gi, '[filtered]')
-    .replace(/```[\s\S]*?```/g, '[code block]') // strip code blocks in finance data
-    .slice(0, 5000) // hard limit
+    .replace(/```[\s\S]*?```/g, '[code block]')
+    .slice(0, 5000)
 }
 
 function getClientIp(req: Request): string {
@@ -49,7 +55,6 @@ export async function POST(req: Request) {
   const { finance, question } = parsed.data
   const messages: UIMessage[] = body.messages || []
 
-  // Sanitize finance data to prevent prompt injection
   const safeFinance = finance ? sanitizeInput(finance) : 'Data tidak tersedia.'
 
   const system = `Kamu adalah "FinWise AI Advisor", penasihat keuangan pribadi yang ramah, hangat, dan membumi. Selalu menjawab dalam Bahasa Indonesia yang santai tapi tetap profesional.
@@ -67,8 +72,9 @@ Pedoman menjawab:
 === DATA KEUANGAN PENGGUNA (bulan berjalan) ===
 ${safeFinance}`
 
+  // Use Pollinations (free, no API key)
   const result = streamText({
-    model: 'google/gemini-3-flash',
+    model: pollinations('openai-fast'),
     system,
     messages: await convertToModelMessages(messages),
   })
