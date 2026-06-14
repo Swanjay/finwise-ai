@@ -149,7 +149,7 @@ function extractDate(text: string): string {
 
 // Use OCR.space free API to extract text from image
 async function ocrSpace(imageDataUrl: string): Promise<string> {
-  const apiKey = 'K85586484388957' // Free OCR.space API key
+  const apiKey = process.env.OCR_SPACE_API_KEY || 'K85586484388957' // Free OCR.space API key
 
   // Use base64image parameter (simpler, more reliable)
   const formData = new URLSearchParams()
