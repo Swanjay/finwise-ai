@@ -80,7 +80,7 @@ ${safeFinance}`
     })
     return result.toUIMessageStreamResponse()
   } catch (err) {
-    console.error('[advisor] Pollinations failed:', err)
+    console.error('[advisor] Pollinations error:', JSON.stringify(err, null, 2))
   }
 
   // Fallback: Google Gemini
@@ -93,7 +93,7 @@ ${safeFinance}`
       })
       return result.toUIMessageStreamResponse()
     } catch (err) {
-      console.error('[advisor] Gemini failed:', err)
+      console.error('[advisor] Gemini error:', JSON.stringify(err, null, 2))
     }
   }
 
