@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>FinWise Logo - Pixel Art v2</title>
+  <title>FinWise Logo - Pixel Art v3</title>
   <script>p5.disableFriendlyErrors = true;</script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.11.3/p5.min.js"></script>
   <style>
@@ -13,150 +13,169 @@
 </head>
 <body>
 <script>
-const PX = 7;
-const COLORS = {
-  outline: '#8B2500',
-  walletTop: '#D46A1A',
-  walletMid: '#E8944A',
-  walletBot: '#FFF3D6',
-  billTeal: '#5ABFBF',
-  billStripe: '#FFFFFF',
-  billSeal: '#2B4A8B',
-  stitch: '#C9956A',
-  textFin: '#5ABFBF',
-  textWise: '#FFF8E8',
-  bg: '#FFFFFF',
-  snapBtn: '#FFF3D6',
+const PX = 6;
+const C = {
+  outline: '#E8604A',
+  walletTop: '#F58B61',
+  walletBot: '#FCE89C',
+  cash: '#96DEC5',
+  textFin: '#96DEC5',
+  textWise: '#FFFFFF',
+  stitch: '#E8A060',
+  snap: '#FFFFFF',
+  bg: '#FFFFFF'
 };
 
-// 5x7 pixel font
+// Pixel font - lowercase for "Finwise" style
 const FONT = {
-  'F': [[1,1,1,1,1],[1,0,0,0,0],[1,0,0,0,0],[1,1,1,1,0],[1,0,0,0,0],[1,0,0,0,0],[1,0,0,0,0]],
-  'I': [[1,1,1,1,1],[0,0,1,0,0],[0,0,1,0,0],[0,0,1,0,0],[0,0,1,0,0],[0,0,1,0,0],[1,1,1,1,1]],
-  'N': [[1,0,0,0,1],[1,1,0,0,1],[1,0,1,0,1],[1,0,0,1,1],[1,0,0,0,1],[1,0,0,0,1],[1,0,0,0,1]],
-  'W': [[1,0,0,0,1],[1,0,0,0,1],[1,0,0,0,1],[1,0,1,0,1],[1,0,1,0,1],[1,1,0,1,1],[1,0,0,0,1]],
-  'S': [[0,1,1,1,0],[1,0,0,0,1],[1,0,0,0,0],[0,1,1,1,0],[0,0,0,0,1],[1,0,0,0,1],[0,1,1,1,0]],
-  'E': [[1,1,1,1,1],[1,0,0,0,0],[1,0,0,0,0],[1,1,1,1,0],[1,0,0,0,0],[1,0,0,0,0],[1,1,1,1,1]],
+  'F': [
+    [1,1,1,1],
+    [1,0,0,0],
+    [1,1,1,0],
+    [1,0,0,0],
+    [1,0,0,0],
+  ],
+  'i': [
+    [1,0],
+    [0,0],
+    [1,0],
+    [1,0],
+    [1,0],
+  ],
+  'n': [
+    [1,1,1],
+    [1,0,1],
+    [1,0,1],
+    [1,0,1],
+    [1,0,1],
+  ],
+  'W': [
+    [1,0,0,0,0,1],
+    [1,0,0,0,0,1],
+    [1,0,1,0,1,0],
+    [1,1,0,1,0,1],
+    [1,0,0,0,0,1],
+  ],
+  's': [
+    [0,1,1,0],
+    [1,0,0,0],
+    [0,1,1,0],
+    [0,0,0,1],
+    [1,1,1,0],
+  ],
+  'e': [
+    [0,1,1,0],
+    [1,0,0,1],
+    [1,1,1,1],
+    [1,0,0,0],
+    [0,1,1,0],
+  ],
 };
 
 function setup() {
-  const W = 720, H = 300;
+  const W = 480, H = 120;
   createCanvas(W, H);
   pixelDensity(1);
-  background(COLORS.bg);
+  background(C.bg);
   noLoop();
   noStroke();
   
-  drawWallet(30, 50);
-  drawText(250, 70);
+  drawWallet(20, 15);
+  drawText(140, 30);
   
-  saveCanvas('finwise-logo-v2', 'png');
+  saveCanvas('finwise-logo-v3', 'png');
 }
 
 function drawWallet(ox, oy) {
-  // Wallet body: bifold, open at top
-  const gw = 18, gh = 14;
+  const gw = 16, gh = 13;
   
-  // === Outline ===
-  fill(COLORS.outline);
-  // Top outline
-  rect(ox - PX, oy - PX*2, gw*PX + PX*2, PX);
-  // Left outline
-  rect(ox - PX, oy - PX*2, PX, gh*PX + PX*3);
-  // Right outline  
-  rect(ox + gw*PX, oy - PX*2, PX, gh*PX + PX*3);
-  // Bottom outline
-  rect(ox - PX, oy + gh*PX + PX, gw*PX + PX*2, PX);
+  // Main outline
+  fill(C.outline);
+  rect(ox - PX, oy - PX, (gw + 2)*PX, (gh + 2)*PX, PX);
   
-  // Wallet body with gradient
+  // Wallet body gradient
   for (let y = 0; y < gh; y++) {
     let t = y / (gh - 1);
-    let r = lerp(212, 255, t);
-    let g = lerp(106, 243, t);
-    let b = lerp(26, 214, t);
+    let r = lerp(245, 252, t);
+    let g = lerp(139, 232, t);
+    let b = lerp(97, 156, t);
     fill(r, g, b);
     rect(ox, oy + y*PX, gw*PX, PX);
   }
   
-  // Inner fold line
-  fill(COLORS.outline);
-  rect(ox, oy + 3*PX, gw*PX, PX*0.5);
+  // Inner highlight (top edge)
+  fill(255, 255, 255, 80);
+  rect(ox + PX, oy, (gw - 2)*PX, PX*0.5);
+  rect(ox, oy + PX, PX*0.5, (gh - 2)*PX);
   
   // Stitching bottom
-  fill(COLORS.stitch);
+  fill(C.stitch);
   for (let x = 1; x < gw - 1; x += 2) {
-    rect(ox + x*PX + PX*0.3, oy + (gh-1.5)*PX, PX*0.5, PX*0.5);
-  }
-  // Stitching inner top
-  for (let x = 2; x < gw - 2; x += 2) {
-    rect(ox + x*PX + PX*0.3, oy + 1*PX, PX*0.5, PX*0.5);
+    rect(ox + x*PX + PX*0.3, oy + (gh - 1)*PX, PX*0.5, PX*0.5);
   }
   
   // Closure tab (right side)
   const tabX = ox + (gw - 3)*PX;
   const tabY = oy + (gh - 4)*PX;
-  fill(COLORS.outline);
-  rect(tabX - PX*0.5, tabY, 3.5*PX, 3*PX, PX*0.5);
-  fill(lerpColor(color(COLORS.walletTop), color(COLORS.walletBot), 0.5));
-  rect(tabX + PX*0.3, tabY + PX*0.5, 2.5*PX, 2*PX, PX*0.3);
-  fill(COLORS.snapBtn);
-  ellipse(tabX + 1.5*PX, tabY + 1.5*PX, PX*1.2);
+  fill(C.outline);
+  rect(tabX - PX*0.5, tabY, 3*PX, 3*PX, PX*0.5);
+  fill(lerpColor(color(C.walletTop), color(C.walletBot), 0.4));
+  rect(tabX + PX*0.3, tabY + PX*0.5, 2*PX, 2*PX, PX*0.3);
+  fill(C.snap);
+  ellipse(tabX + 1.3*PX, tabY + 1.5*PX, PX*1.2);
   
-  // === Dollar bills peeking at top ===
+  // Cash sticking out
   for (let i = 0; i < 3; i++) {
-    let bx = ox + (1 + i*2)*PX;
-    let by = oy - PX*1.5 - (i * PX * 1.5);
+    let bx = ox + (1 + i*1.8)*PX;
+    let by = oy - PX*1.5 - (i * PX * 1.2);
     
-    // Bill outline
-    fill(COLORS.outline);
-    rect(bx - PX*0.3, by - PX*0.3, 11*PX + PX*0.6, 3.5*PX + PX*0.6, PX*0.3);
+    // Cash outline
+    fill(C.outline);
+    rect(bx - PX*0.3, by - PX*0.3, 10*PX + PX*0.6, 3*PX + PX*0.6, PX*0.2);
     
-    // Bill body
-    fill(COLORS.billTeal);
-    rect(bx, by, 11*PX, 3.5*PX, PX*0.2);
+    // Cash body
+    fill(C.cash);
+    rect(bx, by, 10*PX, 3*PX, PX*0.15);
     
-    // Stripes
-    fill(COLORS.billStripe);
-    for (let s = 0; s < 2; s++) {
-      rect(bx + PX*0.5, by + (0.4 + s*1.3)*PX, 10*PX, PX*0.3, 1);
-    }
-    
-    // Seal
-    fill(COLORS.billSeal);
-    ellipse(bx + PX*1.5, by + 1.75*PX, PX*0.7);
+    // White edge highlight
+    fill(255, 255, 255, 100);
+    rect(bx, by, 10*PX, PX*0.4);
+    rect(bx, by, PX*0.4, 3*PX);
   }
 }
 
 function drawText(tx, ty) {
-  const letters = 'FINWISE';
-  const lw = 5, lh = 7;
+  const letters = 'Finwise';
   const gap = 1;
   let curX = tx;
   
   for (let i = 0; i < letters.length; i++) {
     const ch = letters[i];
     const glyph = FONT[ch];
-    if (!glyph) { curX += (lw + gap) * PX; continue; }
+    if (!glyph) { curX += (3 + gap) * PX; continue; }
     
-    const isFin = i < 3;
-    const fillCol = isFin ? color(COLORS.textFin) : color(COLORS.textWise);
+    const lh = glyph.length;
+    const lw = glyph[0].length;
+    const isFin = ch === 'F' || ch === 'i' || ch === 'n';
     
-    // Outline pixels
-    fill(COLORS.outline);
+    // Draw outline
+    fill(C.outline);
     for (let gy = 0; gy < lh; gy++) {
       for (let gx = 0; gx < lw; gx++) {
         if (glyph[gy][gx]) {
-          rect(curX + (gx - 0.35)*PX, ty + (gy - 0.35)*PX, PX*1.7, PX*1.7, PX*0.15);
+          rect(curX + (gx - 0.4)*PX, ty + (gy - 0.4)*PX, PX*1.8, PX*1.8, PX*0.15);
         }
       }
     }
     
-    // Fill pixels
-    fill(fillCol);
-    for (let gy = 0; gy < lh; gy++) {
-      for (let gx = 0; gx < lw; gx++) {
-        if (glyph[gy][gx]) {
-          rect(curX + gx*PX, ty + gy*PX, PX, PX);
+    // Draw fill for "Fin", leave "wise" hollow
+    if (isFin) {
+      fill(C.textFin);
+      for (let gy = 0; gy < lh; gy++) {
+        for (let gx = 0; gx < lw; gx++) {
+          if (glyph[gy][gx]) {
+            rect(curX + gx*PX, ty + gy*PX, PX, PX);
+          }
         }
       }
     }
@@ -166,7 +185,7 @@ function drawText(tx, ty) {
 }
 
 function keyPressed() {
-  if (key === 's' || key === 'S') saveCanvas('finwise-logo-v2', 'png');
+  if (key === 's' || key === 'S') saveCanvas('finwise-logo-v3', 'png');
 }
 </script>
 </body>
