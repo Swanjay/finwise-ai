@@ -33,6 +33,8 @@ const KEYS = {
   pin: 'fw.pin.v1',
   theme: 'fw.theme.v1',
   tipsDismissed: 'fw.tips.v1',
+  initialBalance: 'fw.initBal.v1',
+  hideBalance: 'fw.hideBal.v1',
 }
 
 function loadJSON<T>(key: string, fallback: T): T {
@@ -99,6 +101,14 @@ interface FinwiseStore {
   setupDone: boolean
   completeSetup: (income: number, budgets: Partial<Record<string, number>>) => void
 
+  // Initial Balance
+  initialBalance: number
+  updateInitialBalance: (amount: number) => void
+
+  // Hide Balance
+  hideBalance: boolean
+  toggleHideBalance: () => void
+
   // Tips
   tipsDismissed: boolean
   dismissTips: () => void
@@ -125,6 +135,8 @@ export function FinwiseProvider({ children }: { children: ReactNode }) {
   const [theme, setTheme] = useState<'dark' | 'light'>('dark')
   const [setupDone, setSetupDone] = useState(false)
   const [tipsDismissed, setTipsDismissed] = useState(false)
+  const [initialBalance, setInitialBalance] = useState(0)
+  const [hideBalance, setHideBalance] = useState(false)
   const [loaded, setLoaded] = useState(false)
 
   // Load all data
@@ -140,6 +152,8 @@ export function FinwiseProvider({ children }: { children: ReactNode }) {
     setTheme(loadJSON(KEYS.theme, 'dark'))
     setSetupDone(loadJSON(KEYS.setup, false))
     setTipsDismissed(loadJSON(KEYS.tipsDismissed, false))
+    setInitialBalance(loadJSON(KEYS.initialBalance, 0))
+    setHideBalance(loadJSON(KEYS.hideBalance, false))
     setIsLocked(loadJSON(KEYS.pin, null) ? true : false)
     setLoaded(true)
   }, [])
@@ -154,7 +168,19 @@ export function FinwiseProvider({ children }: { children: ReactNode }) {
   useEffect(() => { if (loaded) saveJSON(KEYS.recurring, recurring) }, [recurring, loaded])
   useEffect(() => { if (loaded) saveJSON(KEYS.pin, pin) }, [pin, loaded])
   useEffect(() => { if (loaded) saveJSON(KEYS.theme, theme) }, [theme, loaded])
+  useEffect(() => { if (loaded) saveJSON(KEYS.initialBalance, initialBalance) }, [initialBalance, loaded])
+  useEffect(() => { if (loaded) saveJSON(KEYS.hideBalance, hideBalance) }, [hideBalance, loaded])
   useEffect(() => { if (loaded) { document.documentElement.classList.toggle('dark', theme === 'dark'); document.documentElement.classList.toggle('light', theme === 'light') } }, [theme, loaded])
+
+  // Initial Balance
+  const updateInitialBalance = useCallback((amount: number) => {
+    setInitialBalance(amount)
+  }, [])
+
+  // Hide Balance
+  const toggleHideBalance = useCallback(() => {
+    setHideBalance(prev => !prev)
+  }, [])
 
   // Merge categories
   const allCategories: Record<string, Category> = { ...BUILTIN_CATEGORIES, ...customCategories }
@@ -300,6 +326,8 @@ export function FinwiseProvider({ children }: { children: ReactNode }) {
         theme, toggleTheme,
         setupDone, completeSetup,
         tipsDismissed, dismissTips,
+        initialBalance, updateInitialBalance,
+        hideBalance, toggleHideBalance,
         resetAll,
         loaded,
       }}
