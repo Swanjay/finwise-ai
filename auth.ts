@@ -3,7 +3,8 @@ import CredentialsProvider from "next-auth/providers/credentials"
 import crypto from "crypto"
 
 function createTelegramSignature(id: string, username: string): string {
-  const secret = process.env.NEXTAUTH_SECRET || 'fallback'
+  const secret = process.env.NEXTAUTH_SECRET
+  if (!secret) throw new Error('NEXTAUTH_SECRET not configured')
   return crypto.createHmac('sha256', secret).update(`telegram:${id}:${username}`).digest('hex').slice(0, 16)
 }
 
@@ -36,7 +37,7 @@ export const authOptions: NextAuthOptions = {
   pages: {
     signIn: "/login",
   },
-  secret: process.env.NEXTAUTH_SECRET || process.env.AUTH_SECRET,
+  secret: process.env.NEXTAUTH_SECRET,
   session: {
     strategy: "jwt",
     maxAge: 30 * 24 * 60 * 60, // 30 days
