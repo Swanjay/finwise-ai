@@ -1,6 +1,8 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { useChat } from '@ai-sdk/react'
+import { DefaultChatTransport } from 'ai'
 import { Send, Sparkles, TrendingDown, PiggyBank, BarChart3 } from 'lucide-react'
 import { useFinwise } from '@/components/finwise-store'
 import { buildFinanceSummary } from '@/lib/finwise'
@@ -12,120 +14,38 @@ const QUICK_ACTIONS = [
   { label: 'Rencana tabungan', icon: PiggyBank, prompt: 'Bantu aku buat rencana tabungan yang realistis dari sisa keuanganku.' },
 ]
 
-interface Message {
-  id: string
-  role: 'user' | 'assistant'
-  text: string
+function messageText(parts: { type: string; text?: string }[] | undefined) {
+  if (!parts) return ''
+  return parts
+    .filter((p) => p.type === 'text')
+    .map((p) => p.text ?? '')
+    .join('')
 }
 
 export function AdvisorChat() {
   const { transactions, budgets, allCategories } = useFinwise()
-  const finance = buildFinanceSummary(transactions, budgets, allCategories)
-  const [messages, setMessages] = useState<Message[]>([])
+  const finance = useMemo(
+    () => buildFinanceSummary(transactions, budgets, allCategories),
+    [transactions, budgets, allCategories],
+  )
   const [input, setInput] = useState('')
-  const [busy, setBusy] = useState(false)
   const scrollRef = useRef<HTMLDivElement>(null)
-  const abortRef = useRef<AbortController | null>(null)
+
+  const { messages, sendMessage, status, error } = useChat({
+    transport: new DefaultChatTransport({ api: '/api/advisor' }),
+  })
+
+  const busy = status === 'streaming' || status === 'submitted'
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight })
   }, [messages])
 
-  async function submit(text: string) {
+  function submit(text: string) {
     const value = text.trim()
     if (!value || busy) return
-
-    const userMsg: Message = { id: `u-${Date.now()}`, role: 'user', text: value }
-    const assistantMsg: Message = { id: `a-${Date.now()}`, role: 'assistant', text: '' }
-
-    setMessages((prev) => [...prev, userMsg, assistantMsg])
+    sendMessage({ text: value }, { body: { finance } })
     setInput('')
-    setBusy(true)
-
-    const controller = new AbortController()
-    abortRef.current = controller
-
-    try {
-      const res = await fetch('/api/advisor', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          messages: [
-            ...messages.map((m) => ({ role: m.role, content: m.text })),
-            { role: 'user', content: value },
-          ],
-          finance,
-        }),
-        signal: controller.signal,
-      })
-
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({ error: 'Gagal menghubungi AI' }))
-        setMessages((prev) => {
-          const updated = [...prev]
-          const last = updated[updated.length - 1]
-          if (last?.role === 'assistant') {
-            last.text = `⚠️ ${err.error || 'Terjadi kesalahan. Coba lagi nanti.'}`
-          }
-          return [...updated]
-        })
-        setBusy(false)
-        return
-      }
-
-      // Stream SSE
-      const reader = res.body?.getReader()
-      const decoder = new TextDecoder()
-      if (!reader) throw new Error('No stream')
-
-      let buffer = ''
-      let fullText = ''
-
-      while (true) {
-        const { done, value } = await reader.read()
-        if (done) break
-
-        buffer += decoder.decode(value, { stream: true })
-        const lines = buffer.split('\n')
-        buffer = lines.pop() || ''
-
-        for (const line of lines) {
-          if (!line.startsWith('data: ')) continue
-          const data = line.slice(6).trim()
-          if (data === '[DONE]') continue
-
-          try {
-            const parsed = JSON.parse(data)
-            if (parsed.type === 'text' && parsed.text) {
-              fullText += parsed.text
-              setMessages((prev) => {
-                const updated = [...prev]
-                const last = updated[updated.length - 1]
-                if (last?.role === 'assistant') {
-                  last.text = fullText
-                }
-                return [...updated]
-              })
-            }
-          } catch {
-            // Skip unparseable chunks
-          }
-        }
-      }
-    } catch (err: unknown) {
-      if (err instanceof Error && err.name === 'AbortError') return
-      setMessages((prev) => {
-        const updated = [...prev]
-        const last = updated[updated.length - 1]
-        if (last?.role === 'assistant') {
-          last.text = '⚠️ Koneksi gagal. Cek internet kamu dan coba lagi.'
-        }
-        return [...updated]
-      })
-    }
-
-    setBusy(false)
-    abortRef.current = null
   }
 
   return (
@@ -156,16 +76,21 @@ export function AdvisorChat() {
                     : 'mr-auto rounded-bl-md bg-secondary text-foreground',
                 )}
               >
-                <p className="whitespace-pre-wrap">{m.text}</p>
+                <p className="whitespace-pre-wrap">{messageText(m.parts)}</p>
               </div>
             ))}
-            {busy && messages[messages.length - 1]?.text === '' && (
+            {status === 'submitted' && (
               <div className="mr-auto rounded-2xl rounded-bl-md bg-secondary px-3.5 py-2.5">
                 <span className="flex gap-1">
                   <span className="size-1.5 animate-bounce rounded-full bg-muted-foreground [animation-delay:-0.3s]" />
                   <span className="size-1.5 animate-bounce rounded-full bg-muted-foreground [animation-delay:-0.15s]" />
                   <span className="size-1.5 animate-bounce rounded-full bg-muted-foreground" />
                 </span>
+              </div>
+            )}
+            {error && (
+              <div className="mr-auto max-w-[85%] rounded-2xl rounded-bl-md border border-destructive/30 bg-destructive/10 px-3.5 py-2.5 text-sm text-destructive">
+                ⚠️ {error.message || 'Terjadi kesalahan. Coba lagi.'}
               </div>
             )}
           </div>
@@ -204,8 +129,7 @@ export function AdvisorChat() {
           value={input}
           onChange={(e) => setInput(e.target.value)}
           placeholder="Tanya soal keuanganmu..."
-          disabled={busy}
-          className="h-11 flex-1 rounded-full border border-border bg-surface-2 px-4 text-sm outline-none transition focus:border-primary/60 disabled:opacity-50"
+          className="h-11 flex-1 rounded-full border border-border bg-surface-2 px-4 text-sm outline-none transition focus:border-primary/60"
         />
         <button
           type="submit"
