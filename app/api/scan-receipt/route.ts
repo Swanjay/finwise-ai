@@ -38,7 +38,6 @@ const CATEGORY_KEYWORDS: Record<CategoryId, string[]> = {
 
 // Extract amount from OCR text
 function extractAmount(text: string): number {
-  // Look for "TOTAL" or "Grand Total" or "Bayar" followed by amount
   const totalPatterns = [
     /(?:grand\s*total|total\s*belanja|total\s*pembayaran|total|bayar|payment|amount|subtotal)[:\s]*rp\.?\s*([\d.,]+)/gi,
     /(?:Rp|IDR)\s*([\d.,]+)/gi,
@@ -49,16 +48,14 @@ function extractAmount(text: string): number {
     const matches = [...text.matchAll(pattern)]
     for (const m of matches) {
       const num = parseInt(m[1].replace(/[.,]/g, ''))
-      if (num > 0 && num < 100_000_000) amounts.push(num) // Reasonable range
+      if (num > 0 && num < 100_000_000) amounts.push(num)
     }
   }
 
-  // Return the largest amount (usually the total)
   if (amounts.length > 0) {
     return Math.max(...amounts)
   }
 
-  // Fallback: find any number that looks like Rupiah
   const fallback = text.match(/(\d{1,3}(?:\.\d{3})+|\d{4,})/g)
   if (fallback) {
     const nums = fallback.map(f => parseInt(f.replace(/[.,]/g, ''))).filter(n => n > 1000 && n < 100_000_000)
@@ -70,11 +67,10 @@ function extractAmount(text: string): number {
 
 // Detect store name from OCR text
 function extractStore(text: string): string {
-  // Look for common store name patterns
   const storePatterns = [
     /(?:tok|store|merchant|outlet|branch)[:\s]+([A-Z][\w\s]+?)(?:\n|$)/i,
     /^(?:PT|CV|TB|UD|Toko|Rumah Makan|Restoran|Cafe)\s+([\w\s]+?)(?:\n|$)/im,
-    /^([A-Z][\w\s]*(?:Mart|Mart|Store|Shop|Mall|Plaza))/im,
+    /^([A-Z][\w\s]*(?:Mart|Store|Shop|Mall|Plaza))/im,
     /^([\w\s]*(?:Indomaret|Alfamart|Alfamidi|Circle K|Lawson|Hypermart|Carrefour|Transmart))/im,
   ]
 
@@ -86,7 +82,6 @@ function extractStore(text: string): string {
     }
   }
 
-  // Use first non-empty line as store name
   const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 2 && l.length < 50)
   if (lines.length > 0) return lines[0]
 
@@ -117,10 +112,9 @@ function detectCategory(text: string): CategoryId {
 function extractDate(text: string): string {
   const today = new Date().toISOString().slice(0, 10)
 
-  // Various Indonesian date formats
   const datePatterns = [
-    /(\d{4})[/-](\d{1,2})[/-](\d{1,2})/, // YYYY-MM-DD or YYYY/MM/DD
-    /(\d{1,2})[/-](\d{1,2})[/-](\d{4})/, // DD-MM-YYYY
+    /(\d{4})[/-](\d{1,2})[/-](\d{1,2})/,
+    /(\d{1,2})[/-](\d{1,2})[/-](\d{4})/,
     /(\d{1,2})\s*(Jan|Feb|Mar|Apr|Mei|Jun|Jul|Agu|Sep|Okt|Nov|Des)\w*\s*(\d{4})/i,
     /(\d{1,2})\s*(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\w*\s*(\d{4})/i,
   ]
@@ -136,15 +130,12 @@ function extractDate(text: string): string {
     if (match) {
       try {
         if (pattern === datePatterns[0]) {
-          // YYYY-MM-DD
           const [, y, m, d] = match
           return `${y}-${m.padStart(2, '0')}-${d.padStart(2, '0')}`
         } else if (pattern === datePatterns[1]) {
-          // DD-MM-YYYY
           const [, d, m, y] = match
           return `${y}-${m.padStart(2, '0')}-${d.padStart(2, '0')}`
         } else {
-          // DD Mon YYYY
           const [, d, mon, y] = match
           const m = months[mon.toLowerCase().slice(0, 3)] || '01'
           return `${y}-${m}-${d.padStart(2, '0')}`
@@ -157,30 +148,21 @@ function extractDate(text: string): string {
 }
 
 // Use OCR.space free API to extract text from image
-async function ocrSpace(imageBase64: string): Promise<string> {
+async function ocrSpace(imageDataUrl: string): Promise<string> {
   const apiKey = 'K85586484388957' // Free OCR.space API key
 
-  // Build multipart form data
-  const formData = new FormData()
-
-  // Convert data URL to blob
-  const base64Data = imageBase64.replace(/^data:image\/\w+;base64,/, '')
-  const binaryString = atob(base64Data)
-  const bytes = new Uint8Array(binaryString.length)
-  for (let i = 0; i < binaryString.length; i++) {
-    bytes[i] = binaryString.charCodeAt(i)
-  }
-  const blob = new Blob([bytes], { type: 'image/jpeg' })
-
-  formData.append('file', blob, 'receipt.jpg')
+  // Use base64image parameter (simpler, more reliable)
+  const formData = new URLSearchParams()
   formData.append('apikey', apiKey)
-  formData.append('language', 'ind') // Indonesian
+  formData.append('base64image', imageDataUrl)
+  formData.append('language', 'eng') // English for better receipt parsing
   formData.append('isOverlayRequired', 'false')
-  formData.append('OCREngine', '2') // Engine 2 is better for receipts
+  formData.append('OCREngine', '2')
 
   const res = await fetch('https://api.ocr.space/parse/image', {
     method: 'POST',
-    body: formData,
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: formData.toString(),
   })
 
   if (!res.ok) {
@@ -242,7 +224,6 @@ export async function POST(req: Request) {
     console.log('[scan-receipt] OCR text:', ocrText.slice(0, 200))
 
     // Step 2: Parse the OCR text
-    const today = new Date().toISOString().slice(0, 10)
     const result = {
       store: extractStore(ocrText),
       amount: extractAmount(ocrText),
