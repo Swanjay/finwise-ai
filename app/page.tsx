@@ -295,12 +295,14 @@ function WalletsSheet({ onClose }: { onClose: () => void }) {
   const [showForm, setShowForm] = useState(false)
   const [name, setName] = useState('')
   const [icon, setIcon] = useState('💵')
+  const [initBalance, setInitBalance] = useState('')
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!name) return
-    addWallet({ id: generateId(), name, icon, balance: 0, color: COLOR_PRESETS[wallets.length % COLOR_PRESETS.length] })
-    setName(''); setShowForm(false)
+    const balance = Number(initBalance.replace(/\D/g, '')) || 0
+    addWallet({ id: generateId(), name, icon, balance, color: COLOR_PRESETS[wallets.length % COLOR_PRESETS.length] })
+    setName(''); setInitBalance(''); setShowForm(false)
   }
 
   return (
@@ -309,6 +311,7 @@ function WalletsSheet({ onClose }: { onClose: () => void }) {
       {showForm && (
         <form onSubmit={handleSubmit} className="flex flex-col gap-2 p-3 rounded-xl border border-primary/30">
           <Input placeholder="Nama dompet (e.g. GoPay)" value={name} onChange={(e) => setName(e.target.value)} />
+          <Input inputMode="numeric" placeholder="Saldo awal (Rp)" value={initBalance} onChange={(e) => setInitBalance(e.target.value)} />
           <div className="flex gap-2">
             {['💵', '🏦', '📱', '💳', '🪙'].map((e) => (
               <button key={e} type="button" onClick={() => setIcon(e)} className={cn('text-2xl p-2 rounded-lg', icon === e ? 'bg-primary/20' : 'bg-secondary')}>{e}</button>
