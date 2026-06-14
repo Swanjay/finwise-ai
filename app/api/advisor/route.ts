@@ -40,7 +40,58 @@ Tugasmu: analisis pengeluaran, tips hemat, rencana tabungan.
 === DATA KEUANGAN ===
 ${finance}`
 
-function createStream(res: Response) {
+// Call native Gemini API (streaming)
+async function callGeminiNative(system: string, messages: UIMessage[]) {
+  const key = process.env.GOOGLE_GENERATIVE_AI_API_KEY
+  if (!key) throw new Error('No Gemini key')
+
+  // Build contents in Gemini format
+  const contents = []
+  for (const m of messages) {
+    const text = extractText(m)
+    if (!text) continue
+    contents.push({
+      role: m.role === 'assistant' ? 'model' : 'user',
+      parts: [{ text }],
+    })
+  }
+
+  const res = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:streamGenerateContent?alt=sse&key=${key}`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        systemInstruction: { parts: [{ text: system }] },
+        contents,
+        generationConfig: { temperature: 0.7, maxOutputTokens: 800 },
+      }),
+    }
+  )
+
+  if (!res.ok) {
+    const t = await res.text()
+    throw new Error(`Gemini ${res.status}: ${t.slice(0, 200)}`)
+  }
+
+  return res
+}
+
+// Call OpenAI-compatible API (streaming)
+async function callOpenAI(url: string, model: string, key: string, messages: { role: string; content: string }[]) {
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...(key !== 'pollinations' ? { Authorization: `Bearer ${key}` } : {}) },
+    body: JSON.stringify({ model, messages, stream: true, temperature: 0.7, max_tokens: 800 }),
+  })
+  if (!res.ok) {
+    const t = await res.text()
+    throw new Error(`${url} ${res.status}: ${t.slice(0, 200)}`)
+  }
+  return res
+}
+
+function createSSEStream(res: Response, parser: 'openai' | 'gemini') {
   const enc = new TextEncoder()
   const dec = new TextDecoder()
   const reader = res.body?.getReader()
@@ -55,18 +106,29 @@ function createStream(res: Response) {
           const { done, value } = await reader.read()
           if (done) break
           buf += dec.decode(value, { stream: true })
-          for (const line of buf.split('\n')) {
-            buf = buf.endsWith('\n') ? '' : buf
+          const lines = buf.split('\n')
+          buf = lines.pop() || ''
+          for (const line of lines) {
             if (!line.startsWith('data: ')) continue
             const d = line.slice(6).trim()
-            if (d === '[DONE]') continue
+            if (!d) continue
+
+            let text = ''
             try {
               const j = JSON.parse(d)
-              const c = j.choices?.[0]?.delta?.content
-              if (c) { full += c; ctrl.enqueue(enc.encode(`data: ${JSON.stringify({ type: 'text', text: c })}\n\n`)) }
+              if (parser === 'openai') {
+                text = j.choices?.[0]?.delta?.content || ''
+              } else {
+                // Gemini SSE: { candidates: [{ content: { parts: [{ text }] } }] }
+                text = j.candidates?.[0]?.content?.parts?.[0]?.text || ''
+              }
             } catch {}
+
+            if (text) {
+              full += text
+              ctrl.enqueue(enc.encode(`data: ${JSON.stringify({ type: 'text', text })}\n\n`))
+            }
           }
-          buf = buf.split('\n').pop() || ''
         }
       } catch (e) { console.error('[advisor] stream:', e) }
       ctrl.enqueue(enc.encode(`data: ${JSON.stringify({ type: 'finish' })}\n\n`))
@@ -74,19 +136,6 @@ function createStream(res: Response) {
       ctrl.close()
     }
   })
-}
-
-async function callOpenAICompatible(url: string, model: string, key: string, messages: { role: string; content: string }[]) {
-  const res = await fetch(url, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...(key !== 'pollinations' ? { Authorization: `Bearer ${key}` } : {}) },
-    body: JSON.stringify({ model, messages, stream: true, temperature: 0.7, max_tokens: 800 }),
-  })
-  if (!res.ok) {
-    const t = await res.text()
-    throw new Error(`${url} ${res.status}: ${t.slice(0, 200)}`)
-  }
-  return res
 }
 
 export async function POST(req: Request) {
@@ -107,33 +156,27 @@ export async function POST(req: Request) {
   const safeFinance = finance ? sanitizeInput(finance) : 'Data tidak tersedia.'
   const system = SYSTEM(safeFinance)
 
-  const apiMsgs = [
-    { role: 'system', content: system },
-    ...messages.map(m => ({ role: m.role, content: extractText(m) })),
-  ]
-
-  // Providers to try
-  const providers: { name: string; url: string; model: string; key: string }[] = [
-    { name: 'Pollinations', url: 'https://text.pollinations.ai/openai/chat/completions', model: 'openai-fast', key: 'pollinations' },
-  ]
-
-  const geminiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY
-  if (geminiKey) {
-    providers.push({ name: 'Gemini', url: 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions', model: 'gemini-2.0-flash', key: geminiKey })
+  // Try 1: Gemini native API
+  try {
+    const res = await callGeminiNative(system, messages)
+    const stream = createSSEStream(res, 'gemini')
+    if (stream) return new Response(stream, { headers: { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache' } })
+  } catch (err) {
+    console.error('[advisor] Gemini native:', err instanceof Error ? err.message : err)
   }
 
-  for (const p of providers) {
-    try {
-      const res = await callOpenAICompatible(p.url, p.model, p.key, apiMsgs)
-      const stream = createStream(res)
-      if (stream) return new Response(stream, { headers: { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache' } })
-    } catch (err) {
-      console.error(`[advisor] ${p.name}:`, err instanceof Error ? err.message : err)
-    }
+  // Try 2: Pollinations OpenAI-compatible
+  try {
+    const apiMsgs = [{ role: 'system', content: system }, ...messages.map(m => ({ role: m.role, content: extractText(m) }))]
+    const res = await callOpenAI('https://text.pollinations.ai/openai/chat/completions', 'openai-fast', 'pollinations', apiMsgs)
+    const stream = createSSEStream(res, 'openai')
+    if (stream) return new Response(stream, { headers: { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache' } })
+  } catch (err) {
+    console.error('[advisor] Pollinations:', err instanceof Error ? err.message : err)
   }
 
   return Response.json({
-    error: 'AI Advisor sedang tidak tersedia.',
-    hint: !geminiKey ? 'Tambah GOOGLE_GENERATIVE_AI_API_KEY di Vercel → Settings → Environment Variables' : undefined,
+    error: 'AI Advisor sedang sibuk. Coba beberapa saat lagi.',
+    hint: !process.env.GOOGLE_GENERATIVE_AI_API_KEY ? 'Tambah GOOGLE_GENERATIVE_AI_API_KEY di Vercel → Settings → Environment Variables' : undefined,
   }, { status: 503 })
 }
