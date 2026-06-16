@@ -3,6 +3,8 @@ import type { Metadata, Viewport } from 'next'
 import { Inter, Sora, Geist_Mono } from 'next/font/google'
 import './globals.css'
 import { Providers } from './providers'
+import { OfflineBanner } from '@/components/ui/offline-banner'
+import { ServiceWorkerRegistration } from '@/components/ui/sw-registration'
 
 const inter = Inter({ variable: '--font-sans', subsets: ['latin'] })
 const sora = Sora({ variable: '--font-heading', subsets: ['latin'] })
@@ -38,6 +40,8 @@ export default function RootLayout({
       className={`${inter.variable} ${sora.variable} ${geistMono.variable}`}
     >
       <body className="bg-background font-sans antialiased">
+        <OfflineBanner />
+        <ServiceWorkerRegistration />
         <Providers>
           {children}
         </Providers>

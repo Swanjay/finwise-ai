@@ -25,20 +25,27 @@ export function AddTransactionForm({ onDone }: { onDone: () => void }) {
   const [category, setCategory] = useState<CategoryId>('food')
   const [description, setDescription] = useState('')
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10))
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
-  const valid = Number(amount) > 0
+  const valid = Number(amount) > 0 && !isSubmitting
 
   function submit(e: React.FormEvent) {
     e.preventDefault()
-    if (!valid) return
-    addTransaction({
-      type,
-      category: type === 'income' ? 'income' : category,
-      amount: Number(amount),
-      description: description || (type === 'income' ? 'Pemasukan' : 'Pengeluaran'),
-      date,
-    })
-    onDone()
+    if (!valid || isSubmitting) return
+    
+    setIsSubmitting(true)
+    
+    // Simulate slight delay to prevent double-click
+    setTimeout(() => {
+      addTransaction({
+        type,
+        category: type === 'income' ? 'income' : category,
+        amount: Number(amount),
+        description: description || (type === 'income' ? 'Pemasukan' : 'Pengeluaran'),
+        date,
+      })
+      onDone()
+    }, 100)
   }
 
   return (
@@ -112,7 +119,15 @@ export function AddTransactionForm({ onDone }: { onDone: () => void }) {
       </div>
 
       <Button type="submit" disabled={!valid} className="h-12">
-        <Check className="size-5" /> Simpan Transaksi
+        {isSubmitting ? (
+          <>
+            <span className="animate-spin">⏳</span> Menyimpan...
+          </>
+        ) : (
+          <>
+            <Check className="size-5" /> Simpan Transaksi
+          </>
+        )}
       </Button>
     </form>
   )
