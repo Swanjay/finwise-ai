@@ -1,0 +1,74 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <!-- Main gradient (purple to cyan) -->
+    <linearGradient id="mainGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#a855f7"/>
+      <stop offset="100%" stop-color="#06b6d4"/>
+    </linearGradient>
+    
+    <!-- Glow effect -->
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="8" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    
+    <!-- Shadow for depth -->
+    <filter id="shadow">
+      <feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="#000" flood-opacity="0.3"/>
+    </filter>
+  </defs>
+  
+  <!-- Background (optional - remove for transparent) -->
+  <!-- <rect width="512" height="512" rx="64" fill="#16161f"/> -->
+  
+  <!-- Outer glow -->
+  <rect x="48" y="48" width="416" height="416" rx="80" fill="url(#mainGrad)" opacity="0.15" filter="url(#glow)"/>
+  
+  <!-- Main icon background -->
+  <rect x="64" y="64" width="384" height="384" rx="72" fill="url(#mainGrad)" filter="url(#shadow)"/>
+  
+  <!-- Wallet body -->
+  <g transform="translate(128, 140)">
+    <!-- Wallet back -->
+    <rect x="0" y="40" width="256" height="180" rx="20" fill="white" opacity="0.95"/>
+    
+    <!-- Wallet flap (open) -->
+    <path d="M 0 80 L 0 40 Q 0 20 20 20 L 236 20 Q 256 20 256 40 L 256 80 Q 200 100 128 100 Q 56 100 0 80 Z" 
+          fill="white" opacity="0.85"/>
+    
+    <!-- Card slot -->
+    <rect x="20" y="60" width="216" height="40" rx="10" fill="url(#mainGrad)" opacity="0.3"/>
+    
+    <!-- Money peeking out -->
+    <rect x="30" y="50" width="80" height="25" rx="5" fill="#10b981" opacity="0.9"/>
+    <text x="70" y="68" text-anchor="middle" fill="white" font-size="12" font-weight="bold">Rp</text>
+    
+    <!-- Coin slot -->
+    <circle cx="200" cy="160" r="30" fill="none" stroke="url(#mainGrad)" stroke-width="4" opacity="0.5"/>
+    <circle cx="200" cy="160" r="20" fill="url(#mainGrad)" opacity="0.2"/>
+  </g>
+  
+  <!-- Growth arrow -->
+  <g transform="translate(280, 100)">
+    <!-- Arrow stem -->
+    <path d="M 0 120 L 80 40" stroke="#10b981" stroke-width="12" stroke-linecap="round" fill="none"/>
+    
+    <!-- Arrow head -->
+    <polygon points="80,40 60,70 90,70" fill="#10b981"/>
+    
+    <!-- Sparkle dots -->
+    <circle cx="90" cy="30" r="4" fill="#fbbf24"/>
+    <circle cx="100" cy="50" r="3" fill="#fbbf24" opacity="0.7"/>
+    <circle cx="75" cy="25" r="2" fill="#fbbf24" opacity="0.5"/>
+  </g>
+  
+  <!-- Small chart bars (subtle background) -->
+  <g transform="translate(100, 320)" opacity="0.4">
+    <rect x="0" y="40" width="30" height="60" rx="4" fill="white"/>
+    <rect x="45" y="20" width="30" height="80" rx="4" fill="white"/>
+    <rect x="90" y="0" width="30" height="100" rx="4" fill="white"/>
+  </g>
+</svg>
