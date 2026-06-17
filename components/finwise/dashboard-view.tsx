@@ -10,6 +10,7 @@ import { useFinwise } from '@/components/finwise-store'
 import { SpendingDonut } from './spending-donut'
 import { BudgetProgress } from './budget-progress'
 import { TransactionRow } from './transaction-row'
+import { EmptyState } from './mascot'
 
 export function DashboardView({ transactions, month }: { transactions: Transaction[]; month: string }) {
   const { monthlyIncome, allCategories, initialBalance, updateInitialBalance, hideBalance, toggleHideBalance } = useFinwise()
@@ -109,7 +110,10 @@ export function DashboardView({ transactions, month }: { transactions: Transacti
         <CardHeader><CardTitle className="font-heading text-base">Transaksi Terakhir</CardTitle></CardHeader>
         <CardContent>
           {recent.length === 0 ? (
-            <p className="py-6 text-center text-sm text-muted-foreground">Belum ada transaksi — yuk catat yang pertama! 🚀</p>
+            <EmptyState 
+              title="Belum ada transaksi"
+              description="Yuk catat transaksi pertamamu! 🚀"
+            />
           ) : (
             <ul className="-mx-2 flex flex-col">{recent.map((tx) => <TransactionRow key={tx.id} tx={tx} />)}</ul>
           )}

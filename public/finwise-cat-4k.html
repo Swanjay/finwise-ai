@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>FinWise Cat 4K</title>
+<style>body{margin:0;background:#16161f;display:flex;align-items:center;justify-content:center;height:100vh}</style>
+</head><body><canvas id="c"></canvas><script>
+const canvas = document.getElementById('c');
+canvas.width = 512; canvas.height = 512;
+const ctx = canvas.getContext('2d');
+ctx.imageSmoothingEnabled = false;
+
+// Colors
+const TEAL = '#96DEC5';
+const TEAL_DARK = '#5AA88E';
+const ORANGE = '#F58B61';
+const ORANGE_LIGHT = '#FFB088';
+const YELLOW = '#FCE89C';
+const RED = '#E8604A';
+const DARK = '#16161f';
+const WHITE = '#FFFFFF';
+const BLACK = '#000000';
+const GRAY = '#666666';
+const LIGHT_GRAY = '#AAAAAA';
+const PINK = '#FF9999';
+const PINK_LIGHT = '#FFCCCC';
+
+// 32x32 detailed cat mascot
+const cat32 = [
+  '................................',
+  '................................',
+  '...0DD00..............0DD0......',
+  '...0DFFD0............0DFFD0.....',
+  '..0DFFFFD0..........0DFFFFD0....',
+  '..0DFFFFD0..........0DFFFFD0....',
+  '..0DFFFFD0..........0DFFFFD0....',
+  '...0DDDDD000000000000DDDDD0.....',
+  '...0DFFFFFFFFFFFFFFFFFFD0.......',
+  '...0DFFFFFFFFFFFFFFFFFFD0.......',
+  '...0DFFWFFWFFFFFFWFFWFFD0.......',
+  '...0DFFWFFWFFFFFFWFFWFFD0.......',
+  '...0DFFFFFFFFFFFFFFFFFFD0.......',
+  '...0DFFFFFFFFFFFFFFFFFFD0.......',
+  '...0DFFFFFPPPPPPFFFFFFD0........',
+  '...0DFFFFFFFFFFFPPFFFFD0........',
+  '...0DFFFFFFFFFFFFFFFFFFD0.......',
+  '...0DFFFFFFFFFFFFFFFFFFD0.......',
+  '....0DFFFFFFFFFFFFFFFFFFD0......',
+  '....0DFFFFFFFFFFFFFFFFFFD0......',
+  '.....00DFFFFFFFFFFFFFD00........',
+  '......0DFFFFFFFFFFFD0...........',
+  '....0TTTTTTTTTTTTTTTTTT0........',
+  '....0TYYYYYYYYYYYYYYYYT0........',
+  '....0TYTYTYTYTYTYTYTYT0........',
+  '....0TYYYYYYYYYYYYYYYYT0........',
+  '....0TYTYTYTYTYTYTYTYT0........',
+  '....0TYYYYYYYYYYYYYYYYT0........',
+  '....0TTTTTTTTTTTTTTTTTT0........',
+  '......0DD0..........0DD0........',
+  '......0DD0..........0DD0........',
+  '................................',
+];
+
+// Parse to numeric grid
+const colorMap = {'.': 0, '0': 1, 'D': 2, 'F': 3, 'W': 4, 'P': 5, 'T': 6, 'Y': 7};
+const grid = cat32.map(row => [...row].map(c => colorMap[c] || 0));
+
+// Colors array: 0=transparent, 1=black outline, 2=dark outline, 3=orange, 4=white, 5=pink, 6=teal, 7=yellow
+const colors = [null, BLACK, '#333333', ORANGE, WHITE, PINK, TEAL, YELLOW];
+
+// Additional detail colors for gradient
+const orangeLight = ORANGE_LIGHT;
+const tealDark = TEAL_DARK;
+
+function drawDetailed(size) {
+  const tempCanvas = document.createElement('canvas');
+  tempCanvas.width = size; tempCanvas.height = size;
+  const tempCtx = tempCanvas.getContext('2d');
+  tempCtx.imageSmoothingEnabled = false;
+  const pixelSize = size / 32;
+
+  for (let y = 0; y < 32; y++) {
+    for (let x = 0; x < 32; x++) {
+      const colorIndex = grid[y][x];
+      if (colorIndex === 0) continue;
+
+      let color = colors[colorIndex];
+
+      // Add gradient effect to orange (body)
+      if (colorIndex === 3) {
+        const bodyProgress = (y - 7) / 15; // top to bottom of body
+        if (bodyProgress < 0.3) {
+          color = orangeLight; // lighter at top
+        }
+      }
+
+      // Add gradient to teal (calculator)
+      if (colorIndex === 6) {
+        const calcProgress = (y - 22) / 6;
+        if (calcProgress > 0.5) {
+          color = tealDark; // darker at bottom
+        }
+      }
+
+      // Add shading to yellow (buttons)
+      if (colorIndex === 7) {
+        // Highlight on top-left pixels
+        if (x % 2 === 0 && y % 2 === 0) {
+          color = YELLOW;
+        } else {
+          color = '#E8D880';
+        }
+      }
+
+      tempCtx.fillStyle = color;
+      tempCtx.fillRect(x * pixelSize, y * pixelSize, pixelSize, pixelSize);
+    }
+  }
+
+  // Add shine to eyes
+  tempCtx.fillStyle = '#FFFFFF';
+  tempCtx.fillRect(10 * pixelSize, 10 * pixelSize, pixelSize * 0.5, pixelSize * 0.5);
+  tempCtx.fillRect(20 * pixelSize, 10 * pixelSize, pixelSize * 0.5, pixelSize * 0.5);
+
+  // Add blush to cheeks
+  tempCtx.fillStyle = 'rgba(255, 153, 153, 0.5)';
+  tempCtx.fillRect(8 * pixelSize, 13 * pixelSize, pixelSize * 2, pixelSize);
+  tempCtx.fillRect(22 * pixelSize, 13 * pixelSize, pixelSize * 2, pixelSize);
+
+  return tempCanvas;
+}
+
+// Generate 4K versions
+const sizes = [256, 512, 1024, 2048, 4096];
+const results = {};
+
+sizes.forEach(size => {
+  const c = drawDetailed(size);
+  results[size] = c.toDataURL('image/png');
+  console.log('Generated: ' + size + 'x' + size);
+});
+
+// Store for download
+window.results = results;
+window.getCanvas = drawDetailed;
+
+// Preview on main canvas
+const preview = drawDetailed(512);
+ctx.drawImage(preview, 0, 0);
+
+console.log('All sizes generated!');
+</script></body></html>
