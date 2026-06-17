@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useMemo, useEffect } from 'react'
+import Link from 'next/link'
 import {
   BarChart3, Camera, Home, ListChecks, Plus, Sparkles, Wallet,
   Settings, ChevronLeft, ChevronRight, Target, Repeat, Download,
@@ -19,6 +20,7 @@ import { AddTransactionForm } from '@/components/finwise/add-transaction-form'
 import { ScanFlow } from '@/components/finwise/scan-flow'
 import { AdvisorChat } from '@/components/finwise/advisor-chat'
 import { SplashScreen } from '@/components/splash-screen'
+import { LoadingScreen, AchievementsList } from '@/components/finwise/mascot'
 import FinWiseLogo from '@/components/finwise-logo'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -466,9 +468,19 @@ function BenchmarkSheet({ onClose }: { onClose: () => void }) {
 
 // ─── Settings Sheet ───
 function SettingsSheet({ onClose }: { onClose: () => void }) {
-  const { monthlyIncome, updateMonthlyIncome, budgets, setBudget, theme, toggleTheme, resetAll } = useFinwise()
+  const { monthlyIncome, updateMonthlyIncome, budgets, setBudget, theme, toggleTheme, resetAll, transactions } = useFinwise()
   const [incStr, setIncStr] = useState(String(monthlyIncome))
   const [showResetConfirm, setShowResetConfirm] = useState(false)
+
+  // Calculate achievements based on transactions
+  const achievements = [
+    { id: 'first-transaction', title: 'Transaksi Pertama', description: 'Catat transaksi pertamamu', icon: '🎉', unlocked: transactions.length >= 1 },
+    { id: 'ten-transactions', title: 'Aktif Mencatat', description: 'Catat 10 transaksi', icon: '📝', unlocked: transactions.length >= 10 },
+    { id: 'fifty-transactions', title: 'Master Keuangan', description: 'Catat 50 transaksi', icon: '🏆', unlocked: transactions.length >= 50 },
+    { id: 'first-budget', title: 'Budget Master', description: 'Atur anggaran pertama', icon: '💰', unlocked: Object.keys(budgets).length > 0 },
+    { id: 'scanner', title: 'Scanner Pro', description: 'Scan struk pertama', icon: '📸', unlocked: false },
+    { id: 'saver', title: 'Hemat Hebat', description: 'Surplus 3 bulan berturut', icon: '💎', unlocked: false },
+  ]
 
   return (
     <div className="flex flex-col gap-5 max-h-[60vh] overflow-y-auto">
@@ -550,6 +562,21 @@ function SettingsSheet({ onClose }: { onClose: () => void }) {
           </div>
         )}
       </div>
+
+      {/* Achievements */}
+      <div className="flex flex-col gap-2">
+        <Label className="flex items-center gap-2">
+          <span>🏆</span> Pencapaian
+        </Label>
+        <AchievementsList achievements={achievements} />
+      </div>
+
+      {/* About */}
+      <Link href="/about" className="w-full">
+        <Button variant="outline" className="w-full gap-2">
+          <span>🐱</span> Tentang FinWise
+        </Button>
+      </Link>
 
       <Button variant="secondary" onClick={onClose}>Tutup</Button>
     </div>
@@ -727,11 +754,19 @@ function AppShell() {
   const [tab, setTab] = useState<Tab>('home')
   const [sheet, setSheet] = useState<Sheet>(null)
   const [monthKey, setMonthKey] = useState(getMonthKey(new Date()))
+  const [isLoading, setIsLoading] = useState(true)
+
+  // Simulate loading on mount
+  useEffect(() => {
+    const timer = setTimeout(() => setIsLoading(false), 1500)
+    return () => clearTimeout(timer)
+  }, [])
 
   const monthTx = useMemo(() => filterByMonth(transactions, monthKey), [transactions, monthKey])
 
   if (!setupDone) return <OnboardingFlow />
   if (isLocked && pin) return <PinLock />
+  if (isLoading) return <LoadingScreen message="Menyiapkan dashboard..." />
 
   const navItems: { id: Tab; label: string; icon: typeof Home }[] = [
     { id: 'home', label: 'Home', icon: Home },
