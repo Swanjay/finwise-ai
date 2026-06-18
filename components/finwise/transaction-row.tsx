@@ -1,6 +1,6 @@
 'use client'
 
-import { Trash2 } from 'lucide-react'
+import { Trash2, MapPin } from 'lucide-react'
 import { formatIDR, type Transaction } from '@/lib/finwise'
 import { useFinwise } from '@/components/finwise-store'
 import { cn } from '@/lib/utils'
@@ -41,6 +41,12 @@ export function TransactionRow({
               #{tag}
             </span>
           ))}
+          {tx.location && (
+            <span className="inline-flex items-center gap-0.5 rounded-full bg-blue-50 px-1.5 py-0 text-[10px] text-blue-600">
+              <MapPin className="size-2.5" />
+              {tx.location.name.length > 15 ? tx.location.name.slice(0, 15) + '...' : tx.location.name}
+            </span>
+          )}
         </div>
       </div>
       <span

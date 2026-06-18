@@ -43,6 +43,7 @@ export interface Transaction {
   date: string // ISO
   walletId?: string
   tags?: string[]
+  location?: { name: string; lat?: number; lng?: number; address?: string }
 }
 
 export interface Wallet {

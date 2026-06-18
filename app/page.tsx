@@ -24,6 +24,7 @@ import { LoadingScreen, AchievementsList } from '@/components/finwise/mascot'
 import { SmartNotifications, RequestNotificationButton } from '@/components/finwise/smart-notifications'
 import { useGamification, BadgeGrid, BadgeUnlockToast } from '@/components/finwise/gamification'
 import { SmartBudgetSheet } from '@/components/finwise/smart-budget'
+import { SplitBillSheet } from '@/components/finwise/split-bill'
 import { haptic } from '@/lib/haptics'
 import FinWiseLogo from '@/components/finwise-logo'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -44,7 +45,7 @@ import {
 import { cn } from '@/lib/utils'
 
 type Tab = 'home' | 'transactions' | 'trends' | 'budget'
-type Sheet = 'add' | 'scan' | 'advisor' | 'settings' | 'goals' | 'wallets' | 'recurring' | 'export' | 'categories' | 'pin' | 'benchmark' | 'smart-budget' | null
+type Sheet = 'add' | 'scan' | 'advisor' | 'settings' | 'goals' | 'wallets' | 'recurring' | 'export' | 'categories' | 'pin' | 'benchmark' | 'smart-budget' | 'split-bill' | null
 
 // ─── Onboarding ───
 function OnboardingFlow() {
@@ -940,6 +941,7 @@ function AppShell() {
       <BottomSheet open={sheet === 'benchmark'} onClose={() => setSheet(null)} title="Benchmark"><BenchmarkSheet onClose={() => setSheet(null)} /></BottomSheet>
       <BottomSheet open={sheet === 'advisor'} onClose={() => setSheet(null)} title="AI Advisor"><AdvisorChat /></BottomSheet>
       <BottomSheet open={sheet === 'smart-budget'} onClose={() => setSheet(null)} title="🤖 Smart Budget"><SmartBudgetSheet onClose={() => setSheet(null)} /></BottomSheet>
+      <BottomSheet open={sheet === 'split-bill'} onClose={() => setSheet(null)} title="👥 Split Bill"><SplitBillSheet onClose={() => setSheet(null)} /></BottomSheet>
 
       {/* Badge unlock toast */}
       {newBadge && <BadgeUnlockToast badge={newBadge} onClose={clearNewBadge} />}

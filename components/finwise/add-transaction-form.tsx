@@ -10,12 +10,9 @@ import {
   TabsList,
   TabsTrigger,
 } from '@/components/ui/tabs'
-import {
-  EXPENSE_CATEGORIES,
-  type CategoryId,
-  type TxType,
-} from '@/lib/finwise'
+import { EXPENSE_CATEGORIES, type CategoryId, type TxType } from '@/lib/finwise'
 import { useFinwise } from '@/components/finwise-store'
+import { LocationPicker, type LocationData } from '@/components/finwise/location-picker'
 import { cn } from '@/lib/utils'
 
 export function AddTransactionForm({ onDone }: { onDone: () => void }) {
@@ -28,6 +25,7 @@ export function AddTransactionForm({ onDone }: { onDone: () => void }) {
   const [selectedTags, setSelectedTags] = useState<string[]>([])
   const [tagInput, setTagInput] = useState('')
   const [showTagSuggestions, setShowTagSuggestions] = useState(false)
+  const [location, setLocation] = useState<LocationData | null>(null)
   const tagInputRef = useRef<HTMLInputElement>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
@@ -74,6 +72,7 @@ export function AddTransactionForm({ onDone }: { onDone: () => void }) {
         description: description || (type === 'income' ? 'Pemasukan' : 'Pengeluaran'),
         date,
         tags: selectedTags.length > 0 ? selectedTags : undefined,
+        location: location || undefined,
       })
       onDone()
     }, 100)
@@ -212,6 +211,8 @@ export function AddTransactionForm({ onDone }: { onDone: () => void }) {
           )}
         </div>
       </div>
+
+      <LocationPicker value={location} onChange={setLocation} />
 
       <Button type="submit" disabled={!valid} className="h-12">
         {isSubmitting ? (
