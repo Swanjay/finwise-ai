@@ -1,13 +1,17 @@
 import { Analytics } from '@vercel/analytics/next'
 import type { Metadata, Viewport } from 'next'
-import { Inter, Sora, Geist_Mono } from 'next/font/google'
+import { Poppins, Geist_Mono } from 'next/font/google'
 import './globals.css'
 import { Providers } from './providers'
 import { OfflineBanner } from '@/components/ui/offline-banner'
 import { ServiceWorkerRegistration } from '@/components/ui/sw-registration'
 
-const inter = Inter({ variable: '--font-sans', subsets: ['latin'] })
-const sora = Sora({ variable: '--font-heading', subsets: ['latin'] })
+const poppins = Poppins({
+  variable: '--font-sans',
+  subsets: ['latin'],
+  weight: ['400', '500', '600', '700', '800'],
+})
+
 const geistMono = Geist_Mono({
   variable: '--font-geist-mono',
   subsets: ['latin'],
@@ -16,7 +20,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: 'FinWise — Catat Keuangan Lebih Pintar',
   description:
-    'Aplikasi keuangan pribadi berbasis AI. Catat pemasukan & pengeluaran, scan struk otomatis, atur anggaran, dan dapatkan saran hemat. Bahasa Indonesia, dark neon.',
+    'Aplikasi keuangan pribadi berbasis AI. Catat pemasukan & pengeluaran, scan struk otomatis, atur anggaran, dan dapatkan saran hemat. Bahasa Indonesia.',
   generator: 'v0.app',
   icons: {
     icon: '/favicon-32.png',
@@ -24,8 +28,8 @@ export const metadata: Metadata = {
 }
 
 export const viewport: Viewport = {
-  colorScheme: 'dark',
-  themeColor: '#16161f',
+  colorScheme: 'light',
+  themeColor: '#F5F3FF',
 }
 
 export default function RootLayout({
@@ -37,7 +41,7 @@ export default function RootLayout({
     <html
       lang="id"
       suppressHydrationWarning
-      className={`${inter.variable} ${sora.variable} ${geistMono.variable}`}
+      className={`${poppins.variable} ${geistMono.variable}`}
     >
       <body className="bg-background font-sans antialiased">
         <OfflineBanner />

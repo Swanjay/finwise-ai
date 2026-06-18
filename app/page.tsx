@@ -776,31 +776,36 @@ function AppShell() {
   ]
 
   return (
-    <div className="mx-auto flex min-h-screen w-full max-w-md flex-col">
-      {/* Header */}
-      <header className="flex items-center justify-between px-5 pb-2 pt-6">
+    <div className="mx-auto flex min-h-screen w-full max-w-md flex-col bg-background">
+      {/* Header — Clay Style */}
+      <header className="flex items-center justify-between px-5 pb-3 pt-6">
         <div className="flex items-center gap-2.5">
           <FinWiseLogo size={36} showText={false} />
+          <div>
+            <p className="text-xs text-muted-foreground font-medium">Selamat datang 👋</p>
+            <h2 className="font-heading text-base font-bold text-foreground leading-tight">
+              {tab === 'home' && 'Dashboard'}
+              {tab === 'transactions' && 'Transaksi'}
+              {tab === 'trends' && 'Tren Keuangan'}
+              {tab === 'budget' && 'Anggaran'}
+            </h2>
+          </div>
         </div>
         <div className="flex items-center gap-2">
           <MonthNavigator monthKey={monthKey} onChange={setMonthKey} />
-          <button onClick={() => setSheet('settings')} className="flex size-8 items-center justify-center rounded-full bg-secondary text-muted-foreground hover:text-foreground"><Settings className="size-4" /></button>
+          <button
+            onClick={() => setSheet('settings')}
+            className="flex size-9 items-center justify-center rounded-full bg-white text-muted-foreground shadow-md hover:text-primary transition"
+            style={{ boxShadow: '0 4px 12px rgba(138,110,207,0.15)' }}
+          >
+            <Settings className="size-4" />
+          </button>
           <UserAvatar />
         </div>
       </header>
-      {/* Page title */}
-      <div className="px-5 pb-1">
-        <p className="text-xs text-muted-foreground">{getMonthLabel(monthKey)}</p>
-        <h1 className="font-heading text-xl font-bold">
-          {tab === 'home' && 'Dashboard'}
-          {tab === 'transactions' && 'Transaksi'}
-          {tab === 'trends' && 'Tren Keuangan'}
-          {tab === 'budget' && 'Anggaran'}
-        </h1>
-      </div>
 
       {/* Quick Actions Bar */}
-      <div className="px-5 pb-3 flex gap-1.5 overflow-x-auto no-scrollbar">
+      <div className="px-5 pb-3 flex gap-2 overflow-x-auto no-scrollbar">
         {[
           { icon: Sparkles, label: 'AI Advisor', sheet: 'advisor' as Sheet },
           { icon: Camera, label: 'Scan', sheet: 'scan' as Sheet },
@@ -815,7 +820,12 @@ function AppShell() {
         ].map((a) => {
           const Icon = a.icon
           return (
-            <button key={a.label} onClick={() => setSheet(a.sheet)} className="flex shrink-0 items-center gap-1.5 rounded-full bg-secondary px-3 py-1.5 text-[11px] font-medium text-muted-foreground hover:text-foreground transition">
+            <button
+              key={a.label}
+              onClick={() => setSheet(a.sheet)}
+              className="flex shrink-0 items-center gap-1.5 rounded-full bg-white px-3 py-1.5 text-[11px] font-semibold text-primary hover:bg-[#D0BFF5] transition"
+              style={{ boxShadow: '0 3px 10px rgba(138,110,207,0.15)' }}
+            >
               <Icon className="size-3.5" />{a.label}
             </button>
           )
@@ -823,7 +833,7 @@ function AppShell() {
       </div>
 
       {/* Content */}
-      <main className="flex-1 px-5 pb-32">
+      <main className="flex-1 px-4 pb-32">
         {!tipsDismissed && tab === 'home' && <OnboardingTips onDismiss={dismissTips} />}
         {tab === 'home' && <DashboardView transactions={monthTx} month={getMonthLabel(monthKey)} />}
         {tab === 'transactions' && <TransactionsView />}
@@ -831,19 +841,42 @@ function AppShell() {
         {tab === 'budget' && <BudgetTab transactions={monthTx} />}
       </main>
 
-      {/* Bottom nav */}
-      <nav className="fixed inset-x-0 bottom-0 z-40 mx-auto max-w-md border-t border-border bg-card/95 backdrop-blur">
-        <div className="grid grid-cols-5 items-end px-2 py-2">
+      {/* Bottom nav — Clay Style */}
+      <nav className="fixed inset-x-0 bottom-4 z-40 mx-auto max-w-[360px] px-4">
+        <div className="clay-bottom-nav grid grid-cols-5 items-end px-3 py-3">
           {navItems.slice(0, 2).map((item) => (
-            <button key={item.id} onClick={() => setTab(item.id)} className={cn('flex flex-col items-center gap-1 rounded-lg py-1.5 text-[11px] font-medium transition', tab === item.id ? 'text-primary' : 'text-muted-foreground hover:text-foreground')}>
+            <button
+              key={item.id}
+              onClick={() => setTab(item.id)}
+              className={cn(
+                'flex flex-col items-center gap-1 rounded-2xl py-1.5 px-2 text-[10px] font-semibold transition',
+                tab === item.id
+                  ? 'bg-[#D0BFF5] text-primary'
+                  : 'text-muted-foreground hover:text-primary'
+              )}
+            >
               <item.icon className="size-5" />{item.label}
             </button>
           ))}
           <div className="flex justify-center">
-            <button onClick={() => setSheet('scan')} className="-mt-6 flex size-14 items-center justify-center rounded-full bg-primary text-primary-foreground neon-glow transition active:scale-95"><Camera className="size-6" /></button>
+            <button
+              onClick={() => setSheet('scan')}
+              className="clay-btn -mt-7 flex size-14 items-center justify-center"
+            >
+              <Camera className="size-6" />
+            </button>
           </div>
           {navItems.slice(2).map((item) => (
-            <button key={item.id} onClick={() => setTab(item.id)} className={cn('flex flex-col items-center gap-1 rounded-lg py-1.5 text-[11px] font-medium transition', tab === item.id ? 'text-primary' : 'text-muted-foreground hover:text-foreground')}>
+            <button
+              key={item.id}
+              onClick={() => setTab(item.id)}
+              className={cn(
+                'flex flex-col items-center gap-1 rounded-2xl py-1.5 px-2 text-[10px] font-semibold transition',
+                tab === item.id
+                  ? 'bg-[#D0BFF5] text-primary'
+                  : 'text-muted-foreground hover:text-primary'
+              )}
+            >
               <item.icon className="size-5" />{item.label}
             </button>
           ))}
@@ -851,7 +884,12 @@ function AppShell() {
       </nav>
 
       {/* FAB */}
-      <button onClick={() => setSheet('add')} className="fixed bottom-24 right-5 z-30 flex size-12 items-center justify-center rounded-full bg-secondary text-foreground shadow-lg transition active:scale-95 sm:hidden"><Plus className="size-5" /></button>
+      <button
+        onClick={() => setSheet('add')}
+        className="clay-btn fixed bottom-24 right-5 z-30 flex size-12 items-center justify-center sm:hidden"
+      >
+        <Plus className="size-5" />
+      </button>
 
       {/* Bottom Sheets */}
       <BottomSheet open={sheet === 'add'} onClose={() => setSheet(null)} title="Catat Transaksi"><AddTransactionForm onDone={() => setSheet(null)} /></BottomSheet>

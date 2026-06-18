@@ -47,20 +47,87 @@
   --color-warning: var(--warning);
   --color-warning-foreground: var(--warning-foreground);
 
+  /* Clay colors */
+  --color-clay-purple: #D0BFF5;
+  --color-clay-purple-deep: #8A6ECF;
+  --color-clay-pink: #FFDCDC;
+  --color-clay-yellow: #FFF8DC;
+  --color-clay-blue: #DCEEFF;
+  --color-clay-green: #C8E6C9;
+  --color-clay-bg: #F5F3FF;
+
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) * 1.4);
   --radius-2xl: calc(var(--radius) * 1.8);
-  --radius-3xl: calc(var(--radius) * 2.2);
-  --radius-4xl: calc(var(--radius) * 2.6);
+  --radius-3xl: calc(var(--radius) * 2.4);
+  --radius-4xl: calc(var(--radius) * 3);
 }
 
-/* FinWise — Dark Neon design system.
-   Single dark base with layered surfaces, one violet brand accent,
-   one cyan highlight, plus semantic status colors. */
-/* ── Dark (default) ── */
+/* FinWise — Claymorphism Light Design System */
 :root {
+  color-scheme: light;
+
+  /* Background: soft off-white/lavender tint */
+  --background: #F5F3FF;
+  --foreground: #2D2057;
+
+  /* Cards: white with soft shadow */
+  --card: #FFFFFF;
+  --card-foreground: #2D2057;
+  --surface-2: #EDE9FF;
+
+  --popover: #FFFFFF;
+  --popover-foreground: #2D2057;
+
+  /* Primary: medium purple */
+  --primary: #8A6ECF;
+  --primary-foreground: #FFFFFF;
+
+  /* Secondary: lavender */
+  --secondary: #D0BFF5;
+  --secondary-foreground: #2D2057;
+
+  /* Muted: very light lavender */
+  --muted: #EDE9FF;
+  --muted-foreground: #8A6ECF;
+
+  /* Accent: pink */
+  --accent: #F9A8D4;
+  --accent-foreground: #2D2057;
+
+  --success: #66BB6A;
+  --success-foreground: #FFFFFF;
+  --warning: #FFB74D;
+  --warning-foreground: #FFFFFF;
+  --destructive: #EF5350;
+
+  --border: rgba(138, 110, 207, 0.15);
+  --input: rgba(138, 110, 207, 0.1);
+  --ring: #8A6ECF;
+
+  /* Charts - pastel colors */
+  --chart-1: #B090E0;
+  --chart-2: #F9A8D4;
+  --chart-3: #86EFAC;
+  --chart-4: #FDE68A;
+  --chart-5: #7DD3FC;
+
+  --radius: 1.25rem;
+
+  --sidebar: #D0BFF5;
+  --sidebar-foreground: #2D2057;
+  --sidebar-primary: #8A6ECF;
+  --sidebar-primary-foreground: #FFFFFF;
+  --sidebar-accent: #EDE9FF;
+  --sidebar-accent-foreground: #2D2057;
+  --sidebar-border: rgba(138, 110, 207, 0.2);
+  --sidebar-ring: #8A6ECF;
+}
+
+/* Dark mode — keep as fallback but app uses light by default */
+.dark {
   color-scheme: dark;
   --background: oklch(0.16 0.02 285);
   --foreground: oklch(0.96 0.005 286);
@@ -69,7 +136,6 @@
   --surface-2: oklch(0.25 0.03 285);
   --popover: oklch(0.2 0.025 285);
   --popover-foreground: oklch(0.96 0.005 286);
-
   --primary: oklch(0.7 0.18 295);
   --primary-foreground: oklch(0.16 0.02 285);
   --secondary: oklch(0.27 0.03 285);
@@ -78,25 +144,20 @@
   --muted-foreground: oklch(0.72 0.02 286);
   --accent: oklch(0.78 0.14 200);
   --accent-foreground: oklch(0.16 0.02 285);
-
   --success: oklch(0.75 0.16 160);
   --success-foreground: oklch(0.16 0.02 285);
   --warning: oklch(0.8 0.15 75);
   --warning-foreground: oklch(0.16 0.02 285);
   --destructive: oklch(0.68 0.2 18);
-
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 14%);
   --ring: oklch(0.7 0.18 295);
-
   --chart-1: oklch(0.7 0.18 295);
   --chart-2: oklch(0.78 0.14 200);
   --chart-3: oklch(0.75 0.16 160);
   --chart-4: oklch(0.8 0.15 75);
   --chart-5: oklch(0.68 0.2 18);
-
   --radius: 1rem;
-
   --sidebar: oklch(0.2 0.025 285);
   --sidebar-foreground: oklch(0.96 0.005 286);
   --sidebar-primary: oklch(0.7 0.18 295);
@@ -107,70 +168,172 @@
   --sidebar-ring: oklch(0.7 0.18 295);
 }
 
-/* ── Light ── */
-.light {
-  color-scheme: light;
-  --background: oklch(0.98 0.005 285);
-  --foreground: oklch(0.16 0.02 285);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.16 0.02 285);
-  --surface-2: oklch(0.95 0.01 285);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.16 0.02 285);
-
-  --primary: oklch(0.55 0.2 295);
-  --primary-foreground: oklch(1 0 0);
-  --secondary: oklch(0.93 0.01 285);
-  --secondary-foreground: oklch(0.2 0.02 285);
-  --muted: oklch(0.93 0.01 285);
-  --muted-foreground: oklch(0.45 0.02 285);
-  --accent: oklch(0.6 0.15 200);
-  --accent-foreground: oklch(1 0 0);
-
-  --success: oklch(0.6 0.18 160);
-  --success-foreground: oklch(1 0 0);
-  --warning: oklch(0.65 0.18 75);
-  --warning-foreground: oklch(1 0 0);
-  --destructive: oklch(0.55 0.22 18);
-
-  --border: oklch(0 0 0 / 12%);
-  --input: oklch(0 0 0 / 10%);
-  --ring: oklch(0.55 0.2 295);
-
-  --chart-1: oklch(0.55 0.2 295);
-  --chart-2: oklch(0.6 0.15 200);
-  --chart-3: oklch(0.6 0.18 160);
-  --chart-4: oklch(0.65 0.18 75);
-  --chart-5: oklch(0.55 0.22 18);
-
-  --sidebar: oklch(0.96 0.005 285);
-  --sidebar-foreground: oklch(0.16 0.02 285);
-  --sidebar-primary: oklch(0.55 0.2 295);
-  --sidebar-primary-foreground: oklch(1 0 0);
-  --sidebar-accent: oklch(0.93 0.01 285);
-  --sidebar-accent-foreground: oklch(0.16 0.02 285);
-  --sidebar-border: oklch(0 0 0 / 12%);
-  --sidebar-ring: oklch(0.55 0.2 295);
-}
-
 @layer base {
   * {
     @apply border-border outline-ring/50;
   }
   body {
     @apply bg-background text-foreground;
+    font-family: 'Poppins', 'Inter', system-ui, sans-serif;
   }
   html {
     @apply font-sans;
   }
-  /* Tabular figures for money values */
   .tabular-nums {
     font-variant-numeric: tabular-nums;
   }
 }
 
-/* Subtle neon glow accent for primary action elements */
+/* ─── Clay Card ─── */
+.clay-card {
+  background: #FFFFFF;
+  border-radius: 24px;
+  box-shadow:
+    0 8px 32px rgba(138, 110, 207, 0.12),
+    0 2px 8px rgba(138, 110, 207, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
+}
+
+.clay-card-purple {
+  background: #D0BFF5;
+  border-radius: 24px;
+  box-shadow:
+    0 8px 32px rgba(138, 110, 207, 0.25),
+    0 2px 8px rgba(138, 110, 207, 0.15),
+    inset 0 1px 0 rgba(255, 255, 255, 0.6);
+}
+
+.clay-card-pink {
+  background: #FFDCDC;
+  border-radius: 24px;
+  box-shadow:
+    0 8px 32px rgba(249, 168, 212, 0.3),
+    0 2px 8px rgba(249, 168, 212, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.6);
+}
+
+.clay-card-yellow {
+  background: #FFF8DC;
+  border-radius: 24px;
+  box-shadow:
+    0 8px 32px rgba(253, 230, 138, 0.35),
+    0 2px 8px rgba(253, 230, 138, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.7);
+}
+
+.clay-card-blue {
+  background: #DCEEFF;
+  border-radius: 24px;
+  box-shadow:
+    0 8px 32px rgba(125, 211, 252, 0.3),
+    0 2px 8px rgba(125, 211, 252, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.7);
+}
+
+.clay-card-green {
+  background: #C8E6C9;
+  border-radius: 24px;
+  box-shadow:
+    0 8px 32px rgba(134, 239, 172, 0.3),
+    0 2px 8px rgba(134, 239, 172, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.7);
+}
+
+/* ─── Clay Button ─── */
+.clay-btn {
+  background: #8A6ECF;
+  color: white;
+  border-radius: 9999px;
+  box-shadow:
+    0 6px 20px rgba(138, 110, 207, 0.4),
+    0 2px 6px rgba(138, 110, 207, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.25);
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+
+.clay-btn:hover {
+  transform: translateY(-2px);
+  box-shadow:
+    0 10px 28px rgba(138, 110, 207, 0.5),
+    0 4px 10px rgba(138, 110, 207, 0.35);
+}
+
+.clay-btn:active {
+  transform: translateY(0px);
+  box-shadow:
+    0 4px 12px rgba(138, 110, 207, 0.3);
+}
+
+/* ─── Clay Sidebar ─── */
+.clay-sidebar {
+  background: #D0BFF5;
+  border-radius: 32px;
+  box-shadow:
+    8px 0 32px rgba(138, 110, 207, 0.15),
+    2px 0 8px rgba(138, 110, 207, 0.1);
+}
+
+/* ─── Nav Item ─── */
+.clay-nav-item {
+  border-radius: 16px;
+  transition: all 0.2s ease;
+  color: #6B4EBF;
+  font-weight: 500;
+}
+
+.clay-nav-item:hover {
+  background: rgba(255, 255, 255, 0.4);
+}
+
+.clay-nav-item.active {
+  background: #8A6ECF;
+  color: white;
+  box-shadow:
+    0 4px 16px rgba(138, 110, 207, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.25);
+}
+
+/* ─── Clay Input ─── */
+.clay-input {
+  background: #EDE9FF;
+  border-radius: 9999px;
+  border: none;
+  box-shadow:
+    inset 0 2px 8px rgba(138, 110, 207, 0.15),
+    inset 0 1px 3px rgba(138, 110, 207, 0.1);
+}
+
+/* ─── Neon glow (legacy compat) ─── */
 .neon-glow {
-  box-shadow: 0 0 0 1px oklch(0.7 0.18 295 / 30%),
-    0 8px 30px -8px oklch(0.7 0.18 295 / 45%);
+  box-shadow: 0 8px 32px rgba(138, 110, 207, 0.2), 0 2px 8px rgba(138, 110, 207, 0.1);
+}
+
+/* ─── Bottom nav pill ─── */
+.clay-bottom-nav {
+  background: #FFFFFF;
+  border-radius: 28px;
+  box-shadow:
+    0 -4px 24px rgba(138, 110, 207, 0.15),
+    0 8px 32px rgba(138, 110, 207, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
+}
+
+/* ─── Animations ─── */
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-8px); }
+}
+
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+@keyframes bounce-soft {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+
+.animate-bounce-soft {
+  animation: bounce-soft 2s ease-in-out infinite;
 }
