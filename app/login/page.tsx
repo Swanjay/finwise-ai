@@ -165,6 +165,7 @@ export default function LoginPage() {
               <button
                 onClick={handleTelegramRequest}
                 disabled={loading === "telegram"}
+                aria-label="Kirim kode verifikasi ke Telegram"
                 className="flex items-center justify-center rounded-xl bg-[#229ED9] px-4 py-3 text-white transition active:scale-[0.98] disabled:opacity-50"
               >
                 {loading === "telegram" ? <Loader2 className="size-5 animate-spin" /> : <MessageCircle className="size-5" />}

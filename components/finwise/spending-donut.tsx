@@ -10,11 +10,12 @@ interface Datum {
 
 export function SpendingDonut({
   data,
-  total,
+  total: totalProp,
 }: {
   data: Datum[]
-  total: number
+  total?: number
 }) {
+  const total = totalProp ?? data.reduce((s, d) => s + d.value, 0)
   if (data.length === 0) {
     return (
       <div className="flex h-48 items-center justify-center text-sm text-muted-foreground">
