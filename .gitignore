@@ -9,3 +9,4 @@ android/capacitor-cordova-android-plugins/build/
 .env.local
 .env
 .vercel
+audit-screenshots/
