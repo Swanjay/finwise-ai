@@ -23,6 +23,7 @@ import { SplashScreen } from '@/components/splash-screen'
 import { LoadingScreen, AchievementsList } from '@/components/finwise/mascot'
 import { SmartNotifications, RequestNotificationButton } from '@/components/finwise/smart-notifications'
 import { useGamification, BadgeGrid, BadgeUnlockToast } from '@/components/finwise/gamification'
+import { SmartBudgetSheet } from '@/components/finwise/smart-budget'
 import { haptic } from '@/lib/haptics'
 import FinWiseLogo from '@/components/finwise-logo'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -43,7 +44,7 @@ import {
 import { cn } from '@/lib/utils'
 
 type Tab = 'home' | 'transactions' | 'trends' | 'budget'
-type Sheet = 'add' | 'scan' | 'advisor' | 'settings' | 'goals' | 'wallets' | 'recurring' | 'export' | 'categories' | 'pin' | 'benchmark' | null
+type Sheet = 'add' | 'scan' | 'advisor' | 'settings' | 'goals' | 'wallets' | 'recurring' | 'export' | 'categories' | 'pin' | 'benchmark' | 'smart-budget' | null
 
 // ─── Onboarding ───
 function OnboardingFlow() {
@@ -445,7 +446,7 @@ function BenchmarkSheet({ onClose }: { onClose: () => void }) {
 }
 
 // ─── Settings Sheet ───
-function SettingsSheet({ onClose }: { onClose: () => void }) {
+function SettingsSheet({ onClose, onOpenSheet }: { onClose: () => void; onOpenSheet?: (sheet: Sheet) => void }) {
   const { monthlyIncome, updateMonthlyIncome, budgets, setBudget, theme, toggleTheme, accentColor, setAccentColor, resetAll, transactions } = useFinwise()
   const { stats } = useGamification()
   const [incStr, setIncStr] = useState(String(monthlyIncome))
@@ -591,6 +592,11 @@ function SettingsSheet({ onClose }: { onClose: () => void }) {
         </Label>
         <BadgeGrid badges={stats.badges} />
       </div>
+
+      {/* Smart Budget */}
+      <Button variant="outline" className="gap-2" onClick={() => { haptic.light(); onClose(); onOpenSheet?.('smart-budget') }}>
+        <span>🤖</span> Smart Budget
+      </Button>
 
       {/* Smart Notifications */}
       <div className="flex flex-col gap-2">
@@ -924,7 +930,7 @@ function AppShell() {
       {/* Bottom Sheets */}
       <BottomSheet open={sheet === 'add'} onClose={() => setSheet(null)} title="Catat Transaksi"><AddTransactionForm onDone={() => setSheet(null)} /></BottomSheet>
       <BottomSheet open={sheet === 'scan'} onClose={() => setSheet(null)} title="Scan Struk"><ScanFlow onDone={() => setSheet(null)} /></BottomSheet>
-      <BottomSheet open={sheet === 'settings'} onClose={() => setSheet(null)} title="Pengaturan"><SettingsSheet onClose={() => setSheet(null)} /></BottomSheet>
+      <BottomSheet open={sheet === 'settings'} onClose={() => setSheet(null)} title="Pengaturan"><SettingsSheet onClose={() => setSheet(null)} onOpenSheet={setSheet} /></BottomSheet>
       <BottomSheet open={sheet === 'goals'} onClose={() => setSheet(null)} title="Target Tabungan"><GoalsSheet onClose={() => setSheet(null)} /></BottomSheet>
       <BottomSheet open={sheet === 'wallets'} onClose={() => setSheet(null)} title="Dompet & Rekening"><WalletsSheet onClose={() => setSheet(null)} /></BottomSheet>
       <BottomSheet open={sheet === 'recurring'} onClose={() => setSheet(null)} title="Transaksi Berulang"><RecurringSheet onClose={() => setSheet(null)} /></BottomSheet>
@@ -933,6 +939,7 @@ function AppShell() {
       <BottomSheet open={sheet === 'pin'} onClose={() => setSheet(null)} title="Pengaman PIN"><PinSheet onClose={() => setSheet(null)} /></BottomSheet>
       <BottomSheet open={sheet === 'benchmark'} onClose={() => setSheet(null)} title="Benchmark"><BenchmarkSheet onClose={() => setSheet(null)} /></BottomSheet>
       <BottomSheet open={sheet === 'advisor'} onClose={() => setSheet(null)} title="AI Advisor"><AdvisorChat /></BottomSheet>
+      <BottomSheet open={sheet === 'smart-budget'} onClose={() => setSheet(null)} title="🤖 Smart Budget"><SmartBudgetSheet onClose={() => setSheet(null)} /></BottomSheet>
 
       {/* Badge unlock toast */}
       {newBadge && <BadgeUnlockToast badge={newBadge} onClose={clearNewBadge} />}
