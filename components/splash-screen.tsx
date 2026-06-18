@@ -20,7 +20,7 @@ export function SplashScreen() {
           initial={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.5 }}
-          className="fixed inset-0 z-[999] flex flex-col items-center justify-center bg-[#16161f]"
+          className="fixed inset-0 z-[999] flex flex-col items-center justify-center bg-[#F5F3FF]"
         >
           {/* Mascot */}
           <motion.div

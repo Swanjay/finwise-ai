@@ -8,7 +8,7 @@ import Link from 'next/link'
 
 export default function NotFound() {
   return (
-    <div className="min-h-screen bg-[#16161f] flex flex-col items-center justify-center px-6">
+    <div className="min-h-screen bg-[#F5F3FF] flex flex-col items-center justify-center px-6">
       {/* Confused Mascot */}
       <motion.div
         initial={{ scale: 0.8, opacity: 0, y: 20 }}

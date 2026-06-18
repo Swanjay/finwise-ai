@@ -127,7 +127,7 @@ export function LoadingScreen({ message = 'Memuat data...' }: { message?: string
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 z-[998] flex flex-col items-center justify-center bg-[#16161f]/80 backdrop-blur-sm"
+      className="fixed inset-0 z-[998] flex flex-col items-center justify-center bg-[#F5F3FF]/80 backdrop-blur-sm"
     >
       <FinWiseMascot 
         size={128} 
