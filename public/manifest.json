@@ -1,0 +1,43 @@
+{
+  "name": "FinWise — Catat Keuangan Lebih Pintar",
+  "short_name": "FinWise",
+  "description": "Aplikasi keuangan pribadi berbasis AI. Catat pemasukan & pengeluaran, scan struk otomatis, atur anggaran.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#F5F3FF",
+  "theme_color": "#8A6ECF",
+  "orientation": "portrait",
+  "categories": ["finance", "productivity"],
+  "lang": "id",
+  "icons": [
+    {
+      "src": "/mascot-cat-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/mascot-cat-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "screenshots": [],
+  "shortcuts": [
+    {
+      "name": "Tambah Transaksi",
+      "short_name": "Tambah",
+      "description": "Catat transaksi baru",
+      "url": "/?action=add",
+      "icons": [{ "src": "/favicon-32.png", "sizes": "32x32" }]
+    },
+    {
+      "name": "Scan Struk",
+      "short_name": "Scan",
+      "description": "Scan struk dengan kamera",
+      "url": "/?action=scan",
+      "icons": [{ "src": "/favicon-32.png", "sizes": "32x32" }]
+    }
+  ]
+}

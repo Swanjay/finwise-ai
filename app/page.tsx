@@ -21,6 +21,9 @@ import { ScanFlow } from '@/components/finwise/scan-flow'
 import { AdvisorChat } from '@/components/finwise/advisor-chat'
 import { SplashScreen } from '@/components/splash-screen'
 import { LoadingScreen, AchievementsList } from '@/components/finwise/mascot'
+import { SmartNotifications, RequestNotificationButton } from '@/components/finwise/smart-notifications'
+import { useGamification, BadgeGrid, BadgeUnlockToast } from '@/components/finwise/gamification'
+import { haptic } from '@/lib/haptics'
 import FinWiseLogo from '@/components/finwise-logo'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -157,36 +160,11 @@ function MonthNavigator({ monthKey, onChange }: { monthKey: string; onChange: (k
   )
 }
 
-// ─── Export Sheet ───
+// ─── Export Sheet (imported from component) ───
+import { ExportSheet as ExportSheetNew } from '@/components/finwise/export-sheet'
+
 function ExportSheet({ onClose, monthKey }: { onClose: () => void; monthKey: string }) {
-  const { transactions, allCategories } = useFinwise()
-  const filtered = filterByMonth(transactions, monthKey)
-
-  function exportCSV() {
-    const header = 'Tanggal,Tipe,Kategori,Deskripsi,Jumlah\n'
-    const rows = filtered.map((t) => `${t.date},${t.type},${allCategories[t.category]?.label ?? t.category},"${t.description}",${t.amount}`).join('\n')
-    const blob = new Blob([header + rows], { type: 'text/csv' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a'); a.href = url; a.download = `finwise-${monthKey}.csv`; a.click()
-    URL.revokeObjectURL(url)
-  }
-
-  function exportJSON() {
-    const data = { month: monthKey, transactions: filtered, exportedAt: new Date().toISOString() }
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a'); a.href = url; a.download = `finwise-backup-${monthKey}.json`; a.click()
-    URL.revokeObjectURL(url)
-  }
-
-  return (
-    <div className="flex flex-col gap-3">
-      <p className="text-sm text-muted-foreground">Export data {getMonthLabel(monthKey)}</p>
-      <Button onClick={exportCSV} className="gap-2"><Download className="size-4" /> Export CSV</Button>
-      <Button onClick={exportJSON} variant="outline" className="gap-2"><FileText className="size-4" /> Export JSON (Backup)</Button>
-      <Button variant="secondary" onClick={onClose}>Tutup</Button>
-    </div>
-  )
+  return <ExportSheetNew onClose={onClose} />
 }
 
 // ─── Backup/Restore Sheet ───
@@ -469,6 +447,7 @@ function BenchmarkSheet({ onClose }: { onClose: () => void }) {
 // ─── Settings Sheet ───
 function SettingsSheet({ onClose }: { onClose: () => void }) {
   const { monthlyIncome, updateMonthlyIncome, budgets, setBudget, theme, toggleTheme, accentColor, setAccentColor, resetAll, transactions } = useFinwise()
+  const { stats } = useGamification()
   const [incStr, setIncStr] = useState(String(monthlyIncome))
   const [showResetConfirm, setShowResetConfirm] = useState(false)
 
@@ -603,6 +582,22 @@ function SettingsSheet({ onClose }: { onClose: () => void }) {
           <span>🏆</span> Pencapaian
         </Label>
         <AchievementsList achievements={achievements} />
+      </div>
+
+      {/* Badges */}
+      <div className="flex flex-col gap-2">
+        <Label className="flex items-center gap-2">
+          <span>🎖️</span> Badge Collection
+        </Label>
+        <BadgeGrid badges={stats.badges} />
+      </div>
+
+      {/* Smart Notifications */}
+      <div className="flex flex-col gap-2">
+        <Label className="flex items-center gap-2">
+          <span>🔔</span> Notifikasi
+        </Label>
+        <RequestNotificationButton />
       </div>
 
       {/* About */}
@@ -785,6 +780,7 @@ function UserAvatar() {
 // ─── Main App Shell ───
 function AppShell() {
   const { transactions, setupDone, isLocked, pin, tipsDismissed, dismissTips, allCategories } = useFinwise()
+  const { stats, newBadge, clearNewBadge } = useGamification()
   const [tab, setTab] = useState<Tab>('home')
   const [sheet, setSheet] = useState<Sheet>(null)
   const [monthKey, setMonthKey] = useState(getMonthKey(new Date()))
@@ -881,7 +877,7 @@ function AppShell() {
           {navItems.slice(0, 2).map((item) => (
             <button
               key={item.id}
-              onClick={() => setTab(item.id)}
+              onClick={() => { haptic.light(); setTab(item.id) }}
               className={cn(
                 'flex flex-col items-center gap-1 rounded-2xl py-1.5 px-2 text-[10px] font-semibold transition',
                 tab === item.id
@@ -894,7 +890,7 @@ function AppShell() {
           ))}
           <div className="flex justify-center">
             <button
-              onClick={() => setSheet('scan')}
+              onClick={() => { haptic.medium(); setSheet('scan') }}
               className="clay-btn -mt-7 flex size-14 items-center justify-center"
             >
               <Camera className="size-6" />
@@ -903,7 +899,7 @@ function AppShell() {
           {navItems.slice(2).map((item) => (
             <button
               key={item.id}
-              onClick={() => setTab(item.id)}
+              onClick={() => { haptic.light(); setTab(item.id) }}
               className={cn(
                 'flex flex-col items-center gap-1 rounded-2xl py-1.5 px-2 text-[10px] font-semibold transition',
                 tab === item.id
@@ -937,6 +933,9 @@ function AppShell() {
       <BottomSheet open={sheet === 'pin'} onClose={() => setSheet(null)} title="Pengaman PIN"><PinSheet onClose={() => setSheet(null)} /></BottomSheet>
       <BottomSheet open={sheet === 'benchmark'} onClose={() => setSheet(null)} title="Benchmark"><BenchmarkSheet onClose={() => setSheet(null)} /></BottomSheet>
       <BottomSheet open={sheet === 'advisor'} onClose={() => setSheet(null)} title="AI Advisor"><AdvisorChat /></BottomSheet>
+
+      {/* Badge unlock toast */}
+      {newBadge && <BadgeUnlockToast badge={newBadge} onClose={clearNewBadge} />}
     </div>
   )
 }
@@ -945,6 +944,7 @@ export default function Page() {
   return (
     <FinwiseProvider>
       <SplashScreen />
+      <SmartNotifications />
       <AppShell />
     </FinwiseProvider>
   )

@@ -1,7 +1,7 @@
 'use client'
 
 import { useMemo, useState } from 'react'
-import { Search } from 'lucide-react'
+import { Search, Tag } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { TransactionRow } from './transaction-row'
@@ -12,23 +12,33 @@ import { cn } from '@/lib/utils'
 type Filter = 'all' | TxType
 
 export function TransactionsView() {
-  const { transactions, deleteTransaction } = useFinwise()
+  const { transactions, deleteTransaction, tags: savedTags } = useFinwise()
   const [filter, setFilter] = useState<Filter>('all')
   const [query, setQuery] = useState('')
+  const [selectedTag, setSelectedTag] = useState<string | null>(null)
+
+  // Get tags actually used in transactions
+  const usedTags = useMemo(() => {
+    const tagSet = new Set<string>()
+    transactions.forEach((t) => t.tags?.forEach((tag) => tagSet.add(tag)))
+    return Array.from(tagSet).sort()
+  }, [transactions])
 
   const filtered = useMemo(() => {
     return transactions.filter((t: Transaction) => {
       if (filter !== 'all' && t.type !== filter) return false
+      if (selectedTag && (!t.tags || !t.tags.includes(selectedTag))) return false
       if (query) {
         const q = query.toLowerCase()
         return (
           t.description.toLowerCase().includes(q) ||
-          CATEGORIES[t.category].label.toLowerCase().includes(q)
+          CATEGORIES[t.category].label.toLowerCase().includes(q) ||
+          (t.tags && t.tags.some((tag) => tag.includes(q)))
         )
       }
       return true
     })
-  }, [transactions, filter, query])
+  }, [transactions, filter, query, selectedTag])
 
   const filters: { id: Filter; label: string }[] = [
     { id: 'all', label: 'Semua' },
@@ -41,7 +51,7 @@ export function TransactionsView() {
       <div className="relative">
         <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
         <Input
-          placeholder="Cari transaksi…"
+          placeholder="Cari transaksi atau tag…"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           className="pl-9"
@@ -65,6 +75,37 @@ export function TransactionsView() {
           </button>
         ))}
       </div>
+
+      {/* Tag filter chips */}
+      {usedTags.length > 0 && (
+        <div className="flex gap-1.5 flex-wrap">
+          <Tag className="size-3.5 text-muted-foreground shrink-0 mt-0.5" />
+          {selectedTag && (
+            <button
+              type="button"
+              onClick={() => setSelectedTag(null)}
+              className="rounded-full bg-destructive/15 px-2.5 py-0.5 text-xs font-medium text-destructive hover:bg-destructive/25 transition"
+            >
+              ✕ Hapus filter
+            </button>
+          )}
+          {usedTags.map((tag) => (
+            <button
+              key={tag}
+              type="button"
+              onClick={() => setSelectedTag(selectedTag === tag ? null : tag)}
+              className={cn(
+                'rounded-full px-2.5 py-0.5 text-xs font-medium transition',
+                selectedTag === tag
+                  ? 'bg-primary text-primary-foreground'
+                  : 'bg-primary/10 text-primary hover:bg-primary/20',
+              )}
+            >
+              #{tag}
+            </button>
+          ))}
+        </div>
+      )}
 
       <Card>
         <CardContent className="p-2">

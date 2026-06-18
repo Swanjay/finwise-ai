@@ -45,8 +45,10 @@ export const metadata: Metadata = {
     description: 'Aplikasi keuangan pribadi berbasis AI.',
     images: ['/mascot-512.png'],
   },
+  manifest: '/manifest.json',
   icons: {
     icon: '/favicon-32.png',
+    apple: '/mascot-cat-192.png',
   },
   alternates: {
     canonical: 'https://finny.biz.id',

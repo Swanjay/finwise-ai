@@ -37,6 +37,7 @@ const KEYS = {
   tipsDismissed: 'fw.tips.v1',
   initialBalance: 'fw.initBal.v1',
   hideBalance: 'fw.hideBal.v1',
+  tags: 'fw.tags.v1',
 }
 
 function loadJSON<T>(key: string, fallback: T): T {
@@ -117,6 +118,11 @@ interface FinwiseStore {
   tipsDismissed: boolean
   dismissTips: () => void
 
+  // Tags
+  tags: string[]
+  addTag: (tag: string) => void
+  deleteTag: (tag: string) => void
+
   // Reset
   resetAll: () => void
 
@@ -142,6 +148,7 @@ export function FinwiseProvider({ children }: { children: ReactNode }) {
   const [tipsDismissed, setTipsDismissed] = useState(false)
   const [initialBalance, setInitialBalance] = useState(0)
   const [hideBalance, setHideBalance] = useState(false)
+  const [tags, setTags] = useState<string[]>([])
   const [loaded, setLoaded] = useState(false)
 
   // Load all data
@@ -160,6 +167,7 @@ export function FinwiseProvider({ children }: { children: ReactNode }) {
     setTipsDismissed(loadJSON(KEYS.tipsDismissed, false))
     setInitialBalance(loadJSON(KEYS.initialBalance, 0))
     setHideBalance(loadJSON(KEYS.hideBalance, false))
+    setTags(loadJSON(KEYS.tags, []))
     setIsLocked(loadJSON(KEYS.pin, null) ? true : false)
     setLoaded(true)
   }, [])
@@ -177,6 +185,7 @@ export function FinwiseProvider({ children }: { children: ReactNode }) {
   useEffect(() => { if (loaded) saveJSON(KEYS.accent, accentColor) }, [accentColor, loaded])
   useEffect(() => { if (loaded) saveJSON(KEYS.initialBalance, initialBalance) }, [initialBalance, loaded])
   useEffect(() => { if (loaded) saveJSON(KEYS.hideBalance, hideBalance) }, [hideBalance, loaded])
+  useEffect(() => { if (loaded) saveJSON(KEYS.tags, tags) }, [tags, loaded])
   useEffect(() => { if (loaded) { document.documentElement.classList.toggle('dark', theme === 'dark'); document.documentElement.classList.toggle('light', theme === 'light') } }, [theme, loaded])
 
   // Apply accent color CSS variables
@@ -344,6 +353,17 @@ export function FinwiseProvider({ children }: { children: ReactNode }) {
     saveJSON(KEYS.tipsDismissed, true)
   }, [])
 
+  // Tags
+  const addTag = useCallback((tag: string) => {
+    const clean = tag.trim().toLowerCase()
+    if (!clean) return
+    setTags((prev) => prev.includes(clean) ? prev : [...prev, clean])
+  }, [])
+
+  const deleteTag = useCallback((tag: string) => {
+    setTags((prev) => prev.filter((t) => t !== tag))
+  }, [])
+
   // Reset all data
   const resetAll = useCallback(() => {
     // Clear all localStorage keys
@@ -367,6 +387,7 @@ export function FinwiseProvider({ children }: { children: ReactNode }) {
     setAccentColorState('purple')
     setSetupDone(false)
     setTipsDismissed(false)
+    setTags([])
   }, [])
 
   return (
@@ -385,6 +406,7 @@ export function FinwiseProvider({ children }: { children: ReactNode }) {
         tipsDismissed, dismissTips,
         initialBalance, updateInitialBalance,
         hideBalance, toggleHideBalance,
+        tags, addTag, deleteTag,
         resetAll,
         loaded,
       }}

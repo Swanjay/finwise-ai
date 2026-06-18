@@ -32,9 +32,16 @@ export function TransactionRow({
       </span>
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-medium">{tx.description}</p>
-        <p className="text-xs text-muted-foreground">
-          {cat.label} · {date}
-        </p>
+        <div className="flex items-center gap-1.5 flex-wrap">
+          <span className="text-xs text-muted-foreground">
+            {cat.label} · {date}
+          </span>
+          {tx.tags && tx.tags.length > 0 && tx.tags.map((tag) => (
+            <span key={tag} className="inline-block rounded-full bg-primary/10 px-1.5 py-0 text-[10px] font-medium text-primary">
+              #{tag}
+            </span>
+          ))}
+        </div>
       </div>
       <span
         className={cn(

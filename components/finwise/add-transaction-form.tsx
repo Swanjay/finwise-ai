@@ -1,7 +1,7 @@
 'use client'
 
-import { useState } from 'react'
-import { Check } from 'lucide-react'
+import { useState, useRef } from 'react'
+import { Check, X, Tag } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -19,15 +19,46 @@ import { useFinwise } from '@/components/finwise-store'
 import { cn } from '@/lib/utils'
 
 export function AddTransactionForm({ onDone }: { onDone: () => void }) {
-  const { addTransaction } = useFinwise()
+  const { addTransaction, tags: savedTags, addTag: saveTag } = useFinwise()
   const [type, setType] = useState<TxType>('expense')
   const [amount, setAmount] = useState('')
   const [category, setCategory] = useState<CategoryId>('food')
   const [description, setDescription] = useState('')
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10))
+  const [selectedTags, setSelectedTags] = useState<string[]>([])
+  const [tagInput, setTagInput] = useState('')
+  const [showTagSuggestions, setShowTagSuggestions] = useState(false)
+  const tagInputRef = useRef<HTMLInputElement>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   const valid = Number(amount) > 0 && !isSubmitting
+
+  const tagSuggestions = savedTags.filter(
+    (t) => !selectedTags.includes(t) && t.includes(tagInput.toLowerCase().trim())
+  )
+
+  function addTagToTransaction(tag: string) {
+    const clean = tag.trim().toLowerCase()
+    if (!clean || selectedTags.includes(clean)) return
+    setSelectedTags((prev) => [...prev, clean])
+    saveTag(clean)
+    setTagInput('')
+    setShowTagSuggestions(false)
+  }
+
+  function removeTag(tag: string) {
+    setSelectedTags((prev) => prev.filter((t) => t !== tag))
+  }
+
+  function handleTagKeyDown(e: React.KeyboardEvent) {
+    if (e.key === 'Enter' && tagInput.trim()) {
+      e.preventDefault()
+      addTagToTransaction(tagInput)
+    }
+    if (e.key === 'Backspace' && !tagInput && selectedTags.length > 0) {
+      removeTag(selectedTags[selectedTags.length - 1])
+    }
+  }
 
   function submit(e: React.FormEvent) {
     e.preventDefault()
@@ -35,7 +66,6 @@ export function AddTransactionForm({ onDone }: { onDone: () => void }) {
     
     setIsSubmitting(true)
     
-    // Simulate slight delay to prevent double-click
     setTimeout(() => {
       addTransaction({
         type,
@@ -43,6 +73,7 @@ export function AddTransactionForm({ onDone }: { onDone: () => void }) {
         amount: Number(amount),
         description: description || (type === 'income' ? 'Pemasukan' : 'Pengeluaran'),
         date,
+        tags: selectedTags.length > 0 ? selectedTags : undefined,
       })
       onDone()
     }, 100)
@@ -116,6 +147,70 @@ export function AddTransactionForm({ onDone }: { onDone: () => void }) {
           value={date}
           onChange={(e) => setDate(e.target.value)}
         />
+      </div>
+
+      {/* Tags */}
+      <div className="flex flex-col gap-1.5">
+        <Label className="flex items-center gap-1.5">
+          <Tag className="size-3.5" /> Tags <span className="text-xs text-muted-foreground">(opsional)</span>
+        </Label>
+        <div className="relative">
+          <div className="flex flex-wrap gap-1.5 rounded-xl border border-border bg-background p-2 min-h-[42px] focus-within:border-primary transition-colors">
+            {selectedTags.map((tag) => (
+              <span
+                key={tag}
+                className="inline-flex items-center gap-1 rounded-full bg-primary/15 px-2.5 py-0.5 text-xs font-medium text-primary"
+              >
+                #{tag}
+                <button type="button" onClick={() => removeTag(tag)} className="hover:text-destructive">
+                  <X className="size-3" />
+                </button>
+              </span>
+            ))}
+            <input
+              ref={tagInputRef}
+              type="text"
+              placeholder={selectedTags.length === 0 ? 'Tambah tag...' : ''}
+              value={tagInput}
+              onChange={(e) => {
+                setTagInput(e.target.value)
+                setShowTagSuggestions(true)
+              }}
+              onFocus={() => setShowTagSuggestions(true)}
+              onBlur={() => setTimeout(() => setShowTagSuggestions(false), 200)}
+              onKeyDown={handleTagKeyDown}
+              className="flex-1 min-w-[60px] bg-transparent text-sm outline-none placeholder:text-muted-foreground"
+            />
+          </div>
+          
+          {/* Tag suggestions */}
+          {showTagSuggestions && (tagInput.trim() || tagSuggestions.length > 0) && (
+            <div className="absolute z-50 mt-1 w-full rounded-xl border border-border bg-popover p-1.5 shadow-lg">
+              {tagInput.trim() && !savedTags.includes(tagInput.trim().toLowerCase()) && (
+                <button
+                  type="button"
+                  onMouseDown={(e) => { e.preventDefault(); addTagToTransaction(tagInput) }}
+                  className="flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-sm hover:bg-secondary transition"
+                >
+                  <span className="text-primary font-medium">+</span> Buat tag &quot;{tagInput.trim()}&quot;
+                </button>
+              )}
+              {tagSuggestions.map((tag) => (
+                <button
+                  key={tag}
+                  type="button"
+                  onMouseDown={(e) => { e.preventDefault(); addTagToTransaction(tag) }}
+                  className="flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-sm hover:bg-secondary transition"
+                >
+                  <span className="text-muted-foreground">#</span> {tag}
+                </button>
+              ))}
+              {tagInput.trim() && tagSuggestions.length === 0 && savedTags.includes(tagInput.trim().toLowerCase()) && (
+                <p className="px-2.5 py-1.5 text-xs text-muted-foreground">Tag sudah dipilih</p>
+              )}
+            </div>
+          )}
+        </div>
       </div>
 
       <Button type="submit" disabled={!valid} className="h-12">

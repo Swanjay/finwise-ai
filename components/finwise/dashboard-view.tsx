@@ -10,11 +10,14 @@ import { SpendingDonut } from './spending-donut'
 import { BudgetProgress } from './budget-progress'
 import { TransactionRow } from './transaction-row'
 import { EmptyState } from './mascot'
+import { LevelBadge, useGamification } from './gamification'
 import Image from 'next/image'
 
 export function DashboardView({ transactions, month }: { transactions: Transaction[]; month: string }) {
-  const { monthlyIncome, allCategories, initialBalance, updateInitialBalance, hideBalance, toggleHideBalance } = useFinwise()
+  const { monthlyIncome, allCategories, budgets, initialBalance, updateInitialBalance, hideBalance, toggleHideBalance } = useFinwise()
+  const { stats } = useGamification()
   const { income, expense, surplus } = summarize(transactions)
+  const [editingBal, setEditingBal] = useState(false)
   const byCat = spendingByCategory(transactions, allCategories)
   const totalBalance = initialBalance + surplus
   const positive = totalBalance >= 0
@@ -37,6 +40,9 @@ export function DashboardView({ transactions, month }: { transactions: Transacti
 
   return (
     <div className="flex flex-col gap-4">
+
+      {/* ─── Level & XP Badge ─── */}
+      <LevelBadge stats={stats} />
 
       {/* ─── Welcome Banner ─── */}
       <div
