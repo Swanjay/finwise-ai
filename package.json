@@ -19,6 +19,7 @@
     "@capacitor/core": "^8.4.0",
     "@supabase/supabase-js": "^2.108.1",
     "@vercel/analytics": "1.6.1",
+    "@vercel/kv": "^3.0.0",
     "ai": "^6.0.204",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",

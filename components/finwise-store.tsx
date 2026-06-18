@@ -19,6 +19,7 @@ import {
   type Goal,
   type RecurringItem,
 } from '@/lib/finwise'
+import { logTransactionAudit, logBudgetAudit } from '@/lib/audit'
 
 // Storage keys
 const KEYS = {
@@ -230,10 +231,19 @@ export function FinwiseProvider({ children }: { children: ReactNode }) {
   const addTransaction = useCallback((tx: Omit<Transaction, 'id'>) => {
     const finalTx = { ...tx, id: generateId(), category: tx.category || autoCategory(tx.description) }
     setTransactions((prev) => [finalTx, ...prev])
+    // Log audit (async, non-blocking)
+    logTransactionAudit('guest', 'create', finalTx.id, undefined, finalTx as unknown as Record<string, unknown>)
   }, [])
 
   const deleteTransaction = useCallback((id: string) => {
-    setTransactions((prev) => prev.filter((t) => t.id !== id))
+    setTransactions((prev) => {
+      const tx = prev.find(t => t.id === id)
+      if (tx) {
+        // Log audit (async, non-blocking)
+        logTransactionAudit('guest', 'delete', id, tx as unknown as Record<string, unknown>, undefined)
+      }
+      return prev.filter((t) => t.id !== id)
+    })
   }, [])
 
   // Categories
@@ -251,7 +261,12 @@ export function FinwiseProvider({ children }: { children: ReactNode }) {
 
   // Budgets
   const setBudget = useCallback((id: string, amount: number) => {
-    setBudgets((prev) => ({ ...prev, [id]: amount }))
+    setBudgets((prev) => {
+      const oldAmount = prev[id] || 0
+      // Log audit (async, non-blocking)
+      logBudgetAudit('guest', oldAmount > 0 ? 'update' : 'create', id, { amount: oldAmount }, { amount })
+      return { ...prev, [id]: amount }
+    })
   }, [])
 
   // Income

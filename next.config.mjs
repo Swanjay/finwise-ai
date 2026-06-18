@@ -33,6 +33,10 @@ const nextConfig = {
             value: 'camera=(self), microphone=(), geolocation=(), payment=()',
           },
           {
+            key: 'Strict-Transport-Security',
+            value: 'max-age=63072000; includeSubDomains; preload',
+          },
+          {
             key: 'Content-Security-Policy',
             value: [
               "default-src 'self'",
@@ -40,7 +44,7 @@ const nextConfig = {
               "style-src 'self' 'unsafe-inline'",
               "img-src 'self' data: blob: https://*.googleusercontent.com https://*.vercel.app",
               "font-src 'self' data:",
-              "connect-src 'self' https://api.telegram.org https://finwise-ai-teal.vercel.app https://vitals.vercel-insights.com https://*.supabase.co wss://*.supabase.co",
+              "connect-src 'self' https://api.telegram.org https://finwise-ai-teal.vercel.app https://finny.biz.id https://vitals.vercel-insights.com https://*.supabase.co wss://*.supabase.co",
               "frame-ancestors 'none'",
               "base-uri 'self'",
               "form-action 'self'",
@@ -54,7 +58,7 @@ const nextConfig = {
         headers: [
           {
             key: 'Access-Control-Allow-Origin',
-            value: 'https://finwise-ai-teal.vercel.app',
+            value: 'https://finny.biz.id',
           },
           {
             key: 'Access-Control-Allow-Methods',

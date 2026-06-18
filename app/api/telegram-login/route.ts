@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 import crypto from "crypto"
-import { checkRateLimit } from "@/lib/rate-limit"
+import { rateLimitMiddleware, getClientIp } from "@/lib/rate-limit-kv"
 import { createTelegramSignature } from "@/auth"
 import { telegramLoginSchema } from "@/lib/validate"
 
@@ -12,31 +12,12 @@ function generateCode(): string {
   return crypto.randomInt(100000, 999999).toString()
 }
 
-function getClientIp(req: Request): string {
-  return req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
-    req.headers.get('x-real-ip') ||
-    'unknown'
-}
-
 // POST /api/telegram-login
 export async function POST(req: Request) {
   try {
-    const ip = getClientIp(req)
-
     // Rate limit: 5 requests per minute per IP
-    const rl = checkRateLimit(`tg-login:${ip}`, { windowMs: 60_000, max: 5 })
-    if (!rl.allowed) {
-      return NextResponse.json(
-        { error: "Terlalu banyak percobaan. Coba lagi nanti." },
-        {
-          status: 429,
-          headers: {
-            'Retry-After': String(rl.retryAfter),
-            'X-RateLimit-Remaining': '0',
-          }
-        }
-      )
-    }
+    const rateLimitResponse = await rateLimitMiddleware(req, { windowMs: 60_000, max: 5 })
+    if (rateLimitResponse) return rateLimitResponse
 
     const body = await req.json()
 
@@ -104,8 +85,7 @@ export async function POST(req: Request) {
       }
 
       return NextResponse.json(
-        { ok: true, message: "Kode dikirim ke Telegram kamu" },
-        { headers: { 'X-RateLimit-Remaining': String(rl.remaining) } }
+        { ok: true, message: "Kode dikirim ke Telegram kamu" }
       )
     }
 
