@@ -32,6 +32,7 @@ const KEYS = {
   recurring: 'fw.recurring.v1',
   pin: 'fw.pin.v1',
   theme: 'fw.theme.v1',
+  accent: 'fw.accent.v1',
   tipsDismissed: 'fw.tips.v1',
   initialBalance: 'fw.initBal.v1',
   hideBalance: 'fw.hideBal.v1',
@@ -96,6 +97,8 @@ interface FinwiseStore {
   // Theme
   theme: 'dark' | 'light'
   toggleTheme: () => void
+  accentColor: string
+  setAccentColor: (color: string) => void
 
   // Setup
   setupDone: boolean
@@ -132,7 +135,8 @@ export function FinwiseProvider({ children }: { children: ReactNode }) {
   const [recurring, setRecurring] = useState<RecurringItem[]>([])
   const [pin, setPinState] = useState<string | null>(null)
   const [isLocked, setIsLocked] = useState(true)
-  const [theme, setTheme] = useState<'dark' | 'light'>('dark')
+  const [theme, setTheme] = useState<'dark' | 'light'>('light')
+  const [accentColor, setAccentColorState] = useState('purple')
   const [setupDone, setSetupDone] = useState(false)
   const [tipsDismissed, setTipsDismissed] = useState(false)
   const [initialBalance, setInitialBalance] = useState(0)
@@ -149,7 +153,8 @@ export function FinwiseProvider({ children }: { children: ReactNode }) {
     setGoals(loadJSON(KEYS.goals, []))
     setRecurring(loadJSON(KEYS.recurring, []))
     setPinState(loadJSON(KEYS.pin, null))
-    setTheme(loadJSON(KEYS.theme, 'dark'))
+    setTheme(loadJSON(KEYS.theme, 'light'))
+    setAccentColorState(loadJSON(KEYS.accent, 'purple'))
     setSetupDone(loadJSON(KEYS.setup, false))
     setTipsDismissed(loadJSON(KEYS.tipsDismissed, false))
     setInitialBalance(loadJSON(KEYS.initialBalance, 0))
@@ -168,9 +173,33 @@ export function FinwiseProvider({ children }: { children: ReactNode }) {
   useEffect(() => { if (loaded) saveJSON(KEYS.recurring, recurring) }, [recurring, loaded])
   useEffect(() => { if (loaded) saveJSON(KEYS.pin, pin) }, [pin, loaded])
   useEffect(() => { if (loaded) saveJSON(KEYS.theme, theme) }, [theme, loaded])
+  useEffect(() => { if (loaded) saveJSON(KEYS.accent, accentColor) }, [accentColor, loaded])
   useEffect(() => { if (loaded) saveJSON(KEYS.initialBalance, initialBalance) }, [initialBalance, loaded])
   useEffect(() => { if (loaded) saveJSON(KEYS.hideBalance, hideBalance) }, [hideBalance, loaded])
   useEffect(() => { if (loaded) { document.documentElement.classList.toggle('dark', theme === 'dark'); document.documentElement.classList.toggle('light', theme === 'light') } }, [theme, loaded])
+
+  // Apply accent color CSS variables
+  const ACCENT_COLORS: Record<string, { primary: string; accent: string; ring: string }> = {
+    purple: { primary: '#8A6ECF', accent: '#F9A8D4', ring: '#8A6ECF' },
+    blue: { primary: '#5B9BD5', accent: '#93C5FD', ring: '#5B9BD5' },
+    green: { primary: '#4CAF50', accent: '#86EFAC', ring: '#4CAF50' },
+    pink: { primary: '#EC4899', accent: '#F9A8D4', ring: '#EC4899' },
+    orange: { primary: '#F97316', accent: '#FDBA74', ring: '#F97316' },
+    teal: { primary: '#14B8A6', accent: '#5EEAD4', ring: '#14B8A6' },
+  }
+
+  useEffect(() => {
+    if (!loaded) return
+    const colors = ACCENT_COLORS[accentColor] || ACCENT_COLORS.purple
+    const root = document.documentElement
+    root.style.setProperty('--primary', colors.primary)
+    root.style.setProperty('--accent', colors.accent)
+    root.style.setProperty('--ring', colors.ring)
+  }, [accentColor, loaded])
+
+  const setAccentColor = useCallback((color: string) => {
+    setAccentColorState(color)
+  }, [])
 
   // Initial Balance
   const updateInitialBalance = useCallback((amount: number) => {
@@ -307,7 +336,8 @@ export function FinwiseProvider({ children }: { children: ReactNode }) {
     setRecurring([])
     setPinState(null)
     setIsLocked(false)
-    setTheme('dark')
+    setTheme('light')
+    setAccentColorState('purple')
     setSetupDone(false)
     setTipsDismissed(false)
   }, [])
@@ -323,7 +353,7 @@ export function FinwiseProvider({ children }: { children: ReactNode }) {
         goals, addGoal, updateGoal, deleteGoal, addToGoal,
         recurring, addRecurring, toggleRecurring, deleteRecurring,
         pin, setPin, isLocked, unlock,
-        theme, toggleTheme,
+        theme, toggleTheme, accentColor, setAccentColor,
         setupDone, completeSetup,
         tipsDismissed, dismissTips,
         initialBalance, updateInitialBalance,
