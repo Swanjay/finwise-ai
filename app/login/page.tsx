@@ -1,6 +1,4 @@
 "use client"
-
-import { signIn } from "next-auth/react"
 import { useState } from "react"
 import { Loader2, MessageCircle, CheckCircle } from "lucide-react"
 import { useRouter } from "next/navigation"
@@ -14,7 +12,6 @@ export default function LoginPage() {
   const [tgCode, setTgCode] = useState("")
   const [botUrl, setBotUrl] = useState("")
   const [channelUrl, setChannelUrl] = useState("")
-  const router = useRouter()
 
   async function handleGoogleLogin() {
     setLoading("google")
@@ -92,17 +89,37 @@ export default function LoginPage() {
       }
 
       if (data.ok && data.user?.sig) {
-        // Use NextAuth signIn (form POST) - handles cookies correctly
+        // Use fetch with redirect:follow to handle cookies correctly
+        // (form POST via signIn fails through Cloudflare)
         try {
-          await signIn("telegram", {
-            id: data.user.id,
-            name: data.user.name,
-            username: data.user.username,
-            sig: data.user.sig,
-            callbackUrl: "/",
+          const csrfRes = await fetch("/api/auth/csrf")
+          const { csrfToken } = await csrfRes.json()
+
+          const callbackRes = await fetch("/api/auth/callback/telegram", {
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body: new URLSearchParams({
+              id: data.user.id,
+              name: data.user.name,
+              username: data.user.username,
+              sig: data.user.sig,
+              csrfToken,
+              callbackUrl: "/",
+            }),
+            credentials: "include",
+            redirect: "follow",
           })
+
+          // If we got any response, the cookie should be set
+          // Reload to pick up the session
+          if (callbackRes.status >= 200 && callbackRes.status < 500) {
+            window.location.href = "/"
+          } else {
+            setError("Login gagal. Coba lagi.")
+            setLoading(null)
+          }
         } catch (signInErr) {
-          setError("Login gagal. Coba lagi.")
+          setError("Koneksi ke server gagal. Coba lagi.")
           setLoading(null)
         }
       } else {
