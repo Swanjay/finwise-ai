@@ -614,6 +614,17 @@ function SettingsSheet({ onClose, onOpenSheet }: { onClose: () => void; onOpenSh
         </Button>
       </Link>
 
+      {/* Logout */}
+      <div className="border-t border-destructive/20 pt-4">
+        <Button
+          variant="outline"
+          className="w-full gap-2 text-destructive border-destructive/30 hover:bg-destructive/10"
+          onClick={() => { onClose(); signOut({ callbackUrl: '/login' }) }}
+        >
+          <LogOut className="size-4" /> Keluar
+        </Button>
+      </div>
+
       <Button variant="secondary" onClick={onClose}>Tutup</Button>
     </div>
   )
