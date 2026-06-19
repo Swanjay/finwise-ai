@@ -6,7 +6,7 @@ export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl
 
   // Public routes — no auth needed
-  const publicPaths = ['/login', '/api/auth', '/api/telegram-login', '/_next', '/logo.svg', '/favicon.ico', '/mascot-', '/finwise-cat-', '/logo-']
+  const publicPaths = ['/login', '/api/auth', '/api/telegram-login', '/_next', '/logo.svg', '/favicon.ico', '/mascot-', '/finwise-cat-', '/logo-', '/manifest.json', '/sw.js', '/workbox-']
   const isPublic = publicPaths.some(p => pathname.startsWith(p))
   if (isPublic) return NextResponse.next()
 
@@ -36,6 +36,6 @@ export async function middleware(req: NextRequest) {
 
 export const config = {
   matcher: [
-    '/((?!_next/static|_next/image|favicon.ico|logo.svg|mascot-|finwise-cat-|login|api/auth|api/telegram-login|.*\\.png$|.*\\.jpg$|.*\\.svg$|.*\\.ico$|.*\\.webp$).*)',
+    '/((?!_next/static|_next/image|favicon.ico|logo.svg|mascot-|finwise-cat-|login|api/auth|api/telegram-login|manifest\\.json|sw\\.js|workbox-|.*\\.png$|.*\\.jpg$|.*\\.svg$|.*\\.ico$|.*\\.webp$).*)',
   ],
 }
