@@ -89,36 +89,27 @@ export default function LoginPage() {
       }
 
       if (data.ok && data.user?.sig) {
-        // Use fetch with redirect:follow to handle cookies correctly
-        // (form POST via signIn fails through Cloudflare)
+        // Use custom auth endpoint (bypasses NextAuth form POST blocked by Cloudflare)
         try {
-          const csrfRes = await fetch("/api/auth/csrf")
-          const { csrfToken } = await csrfRes.json()
-
-          const callbackRes = await fetch("/api/auth/callback/telegram", {
+          const authRes = await fetch("/api/auth/telegram", {
             method: "POST",
-            headers: { "Content-Type": "application/x-www-form-urlencoded" },
-            body: new URLSearchParams({
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
               id: data.user.id,
               name: data.user.name,
               username: data.user.username,
               sig: data.user.sig,
-              csrfToken,
-              callbackUrl: "/",
             }),
-            credentials: "include",
-            redirect: "follow",
           })
 
-          // If we got any response, the cookie should be set
-          // Reload to pick up the session
-          if (callbackRes.status >= 200 && callbackRes.status < 500) {
+          if (authRes.ok) {
             window.location.href = "/"
           } else {
-            setError("Login gagal. Coba lagi.")
+            const errData = await authRes.json().catch(() => null)
+            setError(errData?.error || "Login gagal")
             setLoading(null)
           }
-        } catch (signInErr) {
+        } catch {
           setError("Koneksi ke server gagal. Coba lagi.")
           setLoading(null)
         }
