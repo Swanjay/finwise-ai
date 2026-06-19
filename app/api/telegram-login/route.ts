@@ -5,10 +5,11 @@ import { createTelegramSignature } from "@/auth"
 import { telegramLoginSchema } from "@/lib/validate"
 
 // Required Telegram channel to join before requesting OTP
-const REQUIRED_CHANNEL_ID = "-1004346668987" // @ainsyir
-const REQUIRED_CHANNEL_URL = "https://t.me/ainsyir"
+const REQUIRED_CHANNEL_ID = process.env.TELEGRAM_CHANNEL_ID || "-1004346668987" // @ainsyir
+const REQUIRED_CHANNEL_URL = process.env.TELEGRAM_CHANNEL_URL || "https://t.me/ainsyir"
 
-// In-memory code store (resets on cold start, fine for demo)
+// In-memory code store — WARNING: resets on Vercel cold start.
+// TODO: migrate to Supabase or Upstash Redis for production persistence.
 const codes = new Map<string, { code: string; expires: number; attempts: number; user?: Record<string, string> }>()
 
 function generateCode(): string {
@@ -22,8 +23,12 @@ export async function POST(req: Request) {
     // Rate limit: 5 requests per minute per IP
     const rateLimitResponse = await rateLimitMiddleware(req, { windowMs: 60_000, max: 5 })
     if (rateLimitResponse) return rateLimitResponse
-
-    const body = await req.json()
+    let body: unknown
+    try {
+      body = await req.json()
+    } catch {
+      return NextResponse.json({ error: "Request body tidak valid (bukan JSON)" }, { status: 400 })
+    }
 
     // Validate input with Zod
     const parsed = telegramLoginSchema.safeParse(body)

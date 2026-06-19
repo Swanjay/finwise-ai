@@ -75,7 +75,7 @@ function CategoryDonut({
             ))}
           </Pie>
           <Tooltip
-            formatter={(v: number) => formatIDR(v)}
+            formatter={(v) => formatIDR(Number(v))}
             contentStyle={{
               borderRadius: 16,
               border: 'none',
@@ -761,7 +761,7 @@ export function TrendsView() {
                   width={48}
                 />
                 <Tooltip
-                  formatter={(v: number) => formatIDR(v)}
+                  formatter={(v) => formatIDR(Number(v))}
                   contentStyle={{
                     borderRadius: 16,
                     border: 'none',

@@ -7,7 +7,7 @@ import Link from 'next/link'
 
 export default function AboutPage() {
   return (
-    <div className="min-h-screen bg-[#F5F3FF] flex flex-col">
+    <div className="min-h-screen bg-background flex flex-col">
       {/* Header */}
       <header className="flex items-center gap-4 px-5 py-4">
         <Link href="/">

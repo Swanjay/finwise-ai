@@ -359,10 +359,10 @@ async function callGeminiNative(system: string, messages: UIMessage[]) {
   }
 
   const res = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:streamGenerateContent?alt=sse&key=${key}`,
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:streamGenerateContent?alt=sse`,
     {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'x-goog-api-key': key },
       body: JSON.stringify({
         systemInstruction: { parts: [{ text: system }] },
         contents,
@@ -503,7 +503,7 @@ export async function POST(req: Request) {
   }
 
   // Fallback: Local rule-based advisor (always works, no API needed)
-  console.log('[advisor] Using local rule-based advisor')
+
   const financeData = parseFinanceData(safeFinance)
   const localAdvice = generateLocalAdvice(financeData, userText)
   const stream = createLocalStream(localAdvice)

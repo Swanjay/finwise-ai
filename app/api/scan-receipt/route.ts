@@ -221,7 +221,7 @@ export async function POST(req: Request) {
       return Response.json({ error: 'Gagal membaca struk. Pastikan gambar jelas dan ada teks.' }, { status: 422 })
     }
 
-    console.log('[scan-receipt] OCR text:', ocrText.slice(0, 200))
+
 
     // Step 2: Parse the OCR text
     const result = {
@@ -233,7 +233,7 @@ export async function POST(req: Request) {
 
     return Response.json(result)
   } catch (err) {
-    console.log('[scan-receipt] error:', err instanceof Error ? err.message : err)
+
     return Response.json({ error: 'Gagal membaca struk. Coba lagi.' }, { status: 500 })
   }
 }

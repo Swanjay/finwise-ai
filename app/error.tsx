@@ -14,7 +14,7 @@ export default function ErrorPage({
   reset: () => void
 }) {
   return (
-    <div className="min-h-screen bg-[#F5F3FF] flex flex-col items-center justify-center px-6">
+    <div className="min-h-screen bg-background flex flex-col items-center justify-center px-6">
       {/* Sad Mascot */}
       <motion.div
         initial={{ scale: 0.8, opacity: 0, y: 20 }}
@@ -22,7 +22,7 @@ export default function ErrorPage({
         transition={{ duration: 0.6, ease: "easeOut" }}
       >
         <FinWiseMascot 
-          size={180} 
+          size={256} 
           state="sad"
           animate
         />

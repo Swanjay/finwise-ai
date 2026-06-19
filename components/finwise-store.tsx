@@ -52,6 +52,14 @@ function saveJSON(key: string, value: unknown) {
   try { localStorage.setItem(key, JSON.stringify(value)) } catch { /* ignore */ }
 }
 
+async function hashPin(pin: string): Promise<string> {
+  const encoder = new TextEncoder()
+  const data = encoder.encode(pin)
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data)
+  const hashArray = Array.from(new Uint8Array(hashBuffer))
+  return hashArray.map((b) => b.toString(16).padStart(2, '0')).join('')
+}
+
 interface FinwiseStore {
   // Transactions
   transactions: Transaction[]
@@ -92,7 +100,7 @@ interface FinwiseStore {
 
   // PIN
   pin: string | null
-  setPin: (pin: string | null) => void
+  setPin: (pin: string | null) => Promise<void>
   isLocked: boolean
   unlock: () => void
 
@@ -327,8 +335,14 @@ export function FinwiseProvider({ children }: { children: ReactNode }) {
   }, [])
 
   // PIN
-  const setPin = useCallback((newPin: string | null) => {
-    setPinState(newPin)
+  const setPin = useCallback(async (newPin: string | null) => {
+    if (newPin === null) {
+      setPinState(null)
+      setIsLocked(false)
+      return
+    }
+    const hashed = await hashPin(newPin)
+    setPinState(hashed)
     if (!newPin) setIsLocked(false)
   }, [])
 

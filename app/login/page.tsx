@@ -2,7 +2,7 @@
 
 import { signIn } from "next-auth/react"
 import { useState } from "react"
-import { Loader2, MessageCircle, CheckCircle, Chrome } from "lucide-react"
+import { Loader2, MessageCircle, CheckCircle } from "lucide-react"
 import { useRouter } from "next/navigation"
 import FinWiseLogo from "@/components/finwise-logo"
 

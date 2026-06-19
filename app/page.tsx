@@ -124,9 +124,12 @@ function PinLock() {
 
   if (!pin) return null
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    if (input === pin) { unlock() }
+    const encoder = new TextEncoder()
+    const hashBuffer = await crypto.subtle.digest('SHA-256', encoder.encode(input))
+    const hashed = Array.from(new Uint8Array(hashBuffer)).map((b) => b.toString(16).padStart(2, '0')).join('')
+    if (hashed === pin) { unlock() }
     else { setError(true); setTimeout(() => setError(false), 1000) }
   }
 
@@ -137,7 +140,7 @@ function PinLock() {
       <form onSubmit={handleSubmit} className="w-full flex flex-col gap-3">
         <div className="relative">
           <Input type={showPin ? 'text' : 'password'} inputMode="numeric" maxLength={6} placeholder="PIN" value={input} onChange={(e) => setInput(e.target.value.replace(/\D/g, ''))} className={cn('h-12 text-center text-2xl tracking-[0.5em] tabular-nums', error && 'border-destructive animate-shake')} autoFocus />
-          <button type="button" onClick={() => setShowPin(!showPin)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">{showPin ? <EyeOff className="size-4" /> : <Eye className="size-4" />}</button>
+          <button type="button" onClick={() => setShowPin(!showPin)} aria-label={showPin ? "Sembunyikan PIN" : "Tampilkan PIN"} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">{showPin ? <EyeOff className="size-4" /> : <Eye className="size-4" />}</button>
         </div>
         {error && <p className="text-xs text-destructive text-center">PIN salah</p>}
         <Button type="submit" disabled={input.length < 4}>Buka</Button>
@@ -155,19 +158,16 @@ function MonthNavigator({ monthKey, onChange }: { monthKey: string; onChange: (k
   }
   return (
     <div className="flex items-center gap-2">
-      <button onClick={() => shift(-1)} className="flex size-7 items-center justify-center rounded-full bg-secondary text-muted-foreground hover:text-foreground"><ChevronLeft className="size-4" /></button>
+      <button onClick={() => shift(-1)} aria-label="Bulan sebelumnya" className="flex size-7 items-center justify-center rounded-full bg-secondary text-muted-foreground hover:text-foreground"><ChevronLeft className="size-4" /></button>
       <span className="min-w-[5rem] text-center text-sm font-medium">{getMonthLabel(monthKey)}</span>
-      <button onClick={() => shift(1)} className="flex size-7 items-center justify-center rounded-full bg-secondary text-muted-foreground hover:text-foreground"><ChevronRight className="size-4" /></button>
+      <button onClick={() => shift(1)} aria-label="Bulan berikutnya" className="flex size-7 items-center justify-center rounded-full bg-secondary text-muted-foreground hover:text-foreground"><ChevronRight className="size-4" /></button>
     </div>
   )
 }
 
 // ─── Export Sheet (imported from component) ───
 import { ExportSheet as ExportSheetNew } from '@/components/finwise/export-sheet'
-
-function ExportSheet({ onClose, monthKey }: { onClose: () => void; monthKey: string }) {
-  return <ExportSheetNew onClose={onClose} />
-}
+import { ErrorBoundary } from '@/components/error-boundary'
 
 // ─── Backup/Restore Sheet ───
 function BackupSheet({ onClose }: { onClose: () => void }) {
@@ -188,6 +188,32 @@ function BackupSheet({ onClose }: { onClose: () => void }) {
     reader.onload = (ev) => {
       try {
         const data = JSON.parse(ev.target?.result as string)
+        if (typeof data !== 'object' || data === null || Array.isArray(data)) {
+          alert('File backup tidak valid: struktur data tidak sesuai')
+          return
+        }
+        const validKeys = ['transactions', 'budgets', 'monthlyIncome', 'goals', 'wallets', 'recurring'] as const
+        const hasAtLeastOneKey = validKeys.some((k) => k in data)
+        if (!hasAtLeastOneKey) {
+          alert('File backup tidak valid: tidak ada data FinWise yang ditemukan')
+          return
+        }
+        if ('transactions' in data && !Array.isArray(data.transactions)) {
+          alert('File backup tidak valid: transactions harus berupa array')
+          return
+        }
+        if ('goals' in data && !Array.isArray(data.goals)) {
+          alert('File backup tidak valid: goals harus berupa array')
+          return
+        }
+        if ('wallets' in data && !Array.isArray(data.wallets)) {
+          alert('File backup tidak valid: wallets harus berupa array')
+          return
+        }
+        if ('recurring' in data && !Array.isArray(data.recurring)) {
+          alert('File backup tidak valid: recurring harus berupa array')
+          return
+        }
         if (data.transactions) localStorage.setItem('fw.tx.v2', JSON.stringify(data.transactions))
         if (data.budgets) localStorage.setItem('fw.budgets.v1', JSON.stringify(data.budgets))
         if (data.monthlyIncome) localStorage.setItem('fw.income.v1', JSON.stringify(data.monthlyIncome))
@@ -247,7 +273,7 @@ function GoalsSheet({ onClose }: { onClose: () => void }) {
             <CardContent className="p-4 flex flex-col gap-2">
               <div className="flex items-center justify-between">
                 <span className="font-medium text-sm">{g.icon} {g.name}</span>
-                <button onClick={() => deleteGoal(g.id)} className="text-muted-foreground hover:text-destructive"><Trash2 className="size-4" /></button>
+                <button onClick={() => deleteGoal(g.id)} aria-label={`Hapus target ${g.name}`} className="text-muted-foreground hover:text-destructive"><Trash2 className="size-4" /></button>
               </div>
               <div className="h-2 w-full rounded-full bg-secondary overflow-hidden"><div className="h-full rounded-full bg-primary transition-all" style={{ width: `${pct}%` }} /></div>
               <div className="flex justify-between text-xs text-muted-foreground">
@@ -311,7 +337,7 @@ function WalletsSheet({ onClose }: { onClose: () => void }) {
               <p className="text-xs text-muted-foreground tabular-nums">{formatIDR(w.balance)}</p>
             </div>
             <Input inputMode="numeric" placeholder="Saldo" className="w-28 h-7 text-xs text-right" defaultValue={w.balance || ''} onBlur={(e) => updateWallet(w.id, { balance: Number(e.target.value.replace(/\D/g, '')) || 0 })} />
-            <button onClick={() => deleteWallet(w.id)} className="text-muted-foreground hover:text-destructive"><Trash2 className="size-4" /></button>
+            <button onClick={() => deleteWallet(w.id)} aria-label={`Hapus dompet ${w.name}`} className="text-muted-foreground hover:text-destructive"><Trash2 className="size-4" /></button>
           </CardContent>
         </Card>
       ))}
@@ -349,7 +375,7 @@ function CategoriesSheet({ onClose }: { onClose: () => void }) {
           </Tabs>
           <div className="flex gap-1.5 flex-wrap">
             {COLOR_PRESETS.map((c) => (
-              <button key={c} type="button" onClick={() => setColor(c)} className={cn('size-6 rounded-full', color === c && 'ring-2 ring-primary ring-offset-2 ring-offset-background')} style={{ backgroundColor: c }} />
+              <button key={c} type="button" onClick={() => setColor(c)} aria-label={`Pilih warna ${c}`} className={cn('size-6 rounded-full', color === c && 'ring-2 ring-primary ring-offset-2 ring-offset-background')} style={{ backgroundColor: c }} />
             ))}
           </div>
           <div className="flex gap-2"><Button type="button" variant="secondary" className="flex-1" onClick={() => setShowForm(false)}>Batal</Button><Button type="submit" className="flex-1">Simpan</Button></div>
@@ -364,7 +390,7 @@ function CategoriesSheet({ onClose }: { onClose: () => void }) {
             <div className="size-8 rounded-full flex items-center justify-center" style={{ backgroundColor: `color-mix(in oklch, ${c.color} 22%, transparent)` }}><Icon className="size-4" style={{ color: c.color }} /></div>
             <span className="flex-1 text-sm">{c.label}</span>
             <span className="text-xs text-muted-foreground">{c.type === 'income' ? 'Pemasukan' : 'Pengeluaran'}</span>
-            <button onClick={() => deleteCustomCategory(c.id)} className="text-muted-foreground hover:text-destructive"><Trash2 className="size-3" /></button>
+            <button onClick={() => deleteCustomCategory(c.id)} aria-label={`Hapus kategori ${c.label}`} className="text-muted-foreground hover:text-destructive"><Trash2 className="size-3" /></button>
           </div>
         )
       })}
@@ -380,17 +406,17 @@ function PinSheet({ onClose }: { onClose: () => void }) {
   const [confirm, setConfirm] = useState('')
   const [error, setError] = useState('')
 
-  function handleSave() {
+  async function handleSave() {
     if (newPin.length < 4) { setError('PIN minimal 4 digit'); return }
     if (newPin !== confirm) { setError('PIN tidak cocok'); return }
-    setPin(newPin); onClose()
+    await setPin(newPin); onClose()
   }
 
   return (
     <div className="flex flex-col gap-4">
       {pin && (
         <div className="p-3 rounded-xl bg-secondary text-sm">
-          <p>PIN aktif: {'•'.repeat(pin.length)}</p>
+          <p>PIN aktif: ••••</p>
           <Button size="sm" variant="destructive" className="mt-2" onClick={() => { setPin(null); onClose() }}>Nonaktifkan PIN</Button>
         </div>
       )}
@@ -489,6 +515,7 @@ function SettingsSheet({ onClose, onOpenSheet }: { onClose: () => void; onOpenSh
             <button
               key={c.id}
               onClick={() => setAccentColor(c.id)}
+              aria-label={`Warna aksen ${c.label}`}
               className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition ${
                 accentColor === c.id
                   ? 'ring-2 ring-offset-2 bg-opacity-100'
@@ -680,8 +707,8 @@ function RecurringSheet({ onClose }: { onClose: () => void }) {
               <p className="text-xs text-muted-foreground">{cat?.label} · {freqLabels[item.frequency]}</p>
             </div>
             <span className={cn('text-sm font-semibold tabular-nums', item.type === 'income' ? 'text-success' : '')}>{item.type === 'income' ? '+' : '-'}{formatIDR(item.amount)}</span>
-            <button onClick={() => toggleRecurring(item.id)} className="text-muted-foreground">{item.active ? <ToggleRight className="size-5 text-success" /> : <ToggleLeft className="size-5" />}</button>
-            <button onClick={() => deleteRecurring(item.id)} className="text-muted-foreground hover:text-destructive"><Trash2 className="size-4" /></button>
+            <button onClick={() => toggleRecurring(item.id)} aria-label={item.active ? `Nonaktifkan ${item.description}` : `Aktifkan ${item.description}`} className="text-muted-foreground">{item.active ? <ToggleRight className="size-5 text-success" /> : <ToggleLeft className="size-5" />}</button>
+            <button onClick={() => deleteRecurring(item.id)} aria-label={`Hapus ${item.description}`} className="text-muted-foreground hover:text-destructive"><Trash2 className="size-4" /></button>
           </div>
         )
       })}
@@ -743,7 +770,7 @@ function OnboardingTips({ onDismiss }: { onDismiss: () => void }) {
       <CardContent className="p-4 flex flex-col gap-3">
         <div className="flex items-center justify-between">
           <span className="text-sm font-semibold flex items-center gap-2"><Lightbulb className="size-4 text-accent" /> Tips Keuangan</span>
-          <button onClick={onDismiss} className="text-muted-foreground hover:text-foreground"><X className="size-4" /></button>
+          <button onClick={onDismiss} aria-label="Tutup tips" className="text-muted-foreground hover:text-foreground"><X className="size-4" /></button>
         </div>
         {tips.map((t) => (
           <div key={t.title} className="flex gap-3 items-start">
@@ -765,7 +792,7 @@ function UserAvatar() {
 
   return (
     <div className="relative">
-      <button onClick={() => setShowMenu(!showMenu)} className="flex size-8 items-center justify-center overflow-hidden rounded-full bg-primary/20 ring-2 ring-primary/30">
+      <button onClick={() => setShowMenu(!showMenu)} aria-label="Menu profil" className="flex size-8 items-center justify-center overflow-hidden rounded-full bg-primary/20 ring-2 ring-primary/30">
         {user.image ? (
           <img src={user.image} alt="" className="size-full object-cover" />
         ) : (
@@ -843,6 +870,7 @@ function AppShell() {
           <MonthNavigator monthKey={monthKey} onChange={setMonthKey} />
           <button
             onClick={() => setSheet('settings')}
+            aria-label="Pengaturan"
             className="flex size-9 items-center justify-center rounded-full bg-white text-muted-foreground shadow-md hover:text-primary transition"
             style={{ boxShadow: '0 4px 12px rgba(138,110,207,0.15)' }}
           >
@@ -909,6 +937,7 @@ function AppShell() {
           <div className="flex justify-center">
             <button
               onClick={() => { haptic.medium(); setSheet('scan') }}
+              aria-label="Scan struk"
               className="clay-btn -mt-7 flex size-14 items-center justify-center"
             >
               <Camera className="size-6" />
@@ -934,6 +963,7 @@ function AppShell() {
       {/* FAB */}
       <button
         onClick={() => setSheet('add')}
+        aria-label="Catat transaksi baru"
         className="clay-btn fixed bottom-24 right-5 z-30 flex size-12 items-center justify-center sm:hidden"
       >
         <Plus className="size-5" />
@@ -946,7 +976,7 @@ function AppShell() {
       <BottomSheet open={sheet === 'goals'} onClose={() => setSheet(null)} title="Target Tabungan"><GoalsSheet onClose={() => setSheet(null)} /></BottomSheet>
       <BottomSheet open={sheet === 'wallets'} onClose={() => setSheet(null)} title="Dompet & Rekening"><WalletsSheet onClose={() => setSheet(null)} /></BottomSheet>
       <BottomSheet open={sheet === 'recurring'} onClose={() => setSheet(null)} title="Transaksi Berulang"><RecurringSheet onClose={() => setSheet(null)} /></BottomSheet>
-      <BottomSheet open={sheet === 'export'} onClose={() => setSheet(null)} title="Export & Backup"><ExportSheet onClose={() => setSheet(null)} monthKey={monthKey} /></BottomSheet>
+      <BottomSheet open={sheet === 'export'} onClose={() => setSheet(null)} title="Export & Backup"><ExportSheetNew onClose={() => setSheet(null)} /></BottomSheet>
       <BottomSheet open={sheet === 'categories'} onClose={() => setSheet(null)} title="Kategori Custom"><CategoriesSheet onClose={() => setSheet(null)} /></BottomSheet>
       <BottomSheet open={sheet === 'pin'} onClose={() => setSheet(null)} title="Pengaman PIN"><PinSheet onClose={() => setSheet(null)} /></BottomSheet>
       <BottomSheet open={sheet === 'benchmark'} onClose={() => setSheet(null)} title="Benchmark"><BenchmarkSheet onClose={() => setSheet(null)} /></BottomSheet>
@@ -965,7 +995,9 @@ export default function Page() {
     <FinwiseProvider>
       <SplashScreen />
       <SmartNotifications />
-      <AppShell />
+      <ErrorBoundary>
+        <AppShell />
+      </ErrorBoundary>
     </FinwiseProvider>
   )
 }

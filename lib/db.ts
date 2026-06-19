@@ -1,5 +1,7 @@
 import { supabase } from './supabase'
-import type { Transaction, Budget, Goal, Wallet, RecurringItem } from '@/components/finwise-store'
+import type { Transaction, Goal, Wallet, RecurringItem } from '@/lib/finwise'
+
+type Budget = Partial<Record<string, number>>
 
 // Get current user ID from session
 async function getUserId(): Promise<string | null> {
@@ -28,9 +30,9 @@ export async function getTransactions(): Promise<Transaction[]> {
     type: t.type as 'income' | 'expense',
     amount: t.amount,
     category: t.category,
-    note: t.note || '',
+    description: t.note || t.description || '',
     date: t.date,
-    wallet: t.wallet || 'cash',
+    walletId: t.wallet || t.walletId || 'cash',
   }))
 }
 
@@ -46,9 +48,9 @@ export async function addTransaction(tx: Transaction): Promise<boolean> {
       type: tx.type,
       amount: tx.amount,
       category: tx.category,
-      note: tx.note,
+      note: tx.description,
       date: tx.date,
-      wallet: tx.wallet,
+      wallet: tx.walletId,
     })
 
   return !error
@@ -64,9 +66,9 @@ export async function updateTransaction(tx: Transaction): Promise<boolean> {
       type: tx.type,
       amount: tx.amount,
       category: tx.category,
-      note: tx.note,
+      note: tx.description,
       date: tx.date,
-      wallet: tx.wallet,
+      wallet: tx.walletId,
     })
     .eq('id', tx.id)
     .eq('user_id', userId)
@@ -151,10 +153,10 @@ export async function getGoals(): Promise<Goal[]> {
   return data.map(g => ({
     id: g.id,
     name: g.name,
-    target: g.target,
-    saved: g.saved,
+    targetAmount: g.target || g.targetAmount || 0,
+    currentAmount: g.saved || g.currentAmount || 0,
     color: g.color,
-    emoji: g.emoji,
+    icon: g.emoji || g.icon || "🎯",
     deadline: g.deadline,
   }))
 }
@@ -176,10 +178,10 @@ export async function setGoals(goals: Goal[]): Promise<boolean> {
       id: g.id,
       user_id: userId,
       name: g.name,
-      target: g.target,
-      saved: g.saved,
+      target: g.targetAmount,
+      saved: g.currentAmount,
       color: g.color,
-      emoji: g.emoji,
+      emoji: g.icon,
       deadline: g.deadline,
     })))
 
@@ -255,9 +257,9 @@ export async function getRecurring(): Promise<RecurringItem[]> {
     type: r.type as 'income' | 'expense',
     amount: r.amount,
     category: r.category,
-    note: r.note || '',
-    frequency: r.frequency as 'daily' | 'weekly' | 'monthly' | 'yearly',
-    wallet: r.wallet || 'cash',
+    description: r.note || r.description || '',
+    frequency: r.frequency || 'bulanan',
+    active: r.active !== false,
   }))
 }
 
@@ -280,9 +282,9 @@ export async function setRecurring(items: RecurringItem[]): Promise<boolean> {
       type: r.type,
       amount: r.amount,
       category: r.category,
-      note: r.note,
+      note: r.description,
       frequency: r.frequency,
-      wallet: r.wallet,
+      active: r.active,
     })))
 
   return !error

@@ -25,25 +25,25 @@ export function FinWiseMascot({
   const animations = {
     happy: {
       y: [0, -10, 0],
-      transition: { duration: 2, repeat: Infinity, ease: "easeInOut" }
+      transition: { duration: 2, repeat: Infinity, ease: "easeInOut" as const }
     },
     sad: {
       y: [0, 5, 0],
       rotate: [0, -5, 5, 0],
-      transition: { duration: 3, repeat: Infinity, ease: "easeInOut" }
+      transition: { duration: 3, repeat: Infinity, ease: "easeInOut" as const }
     },
     loading: {
       x: [0, 20, 0, -20, 0],
-      transition: { duration: 1.5, repeat: Infinity, ease: "linear" }
+      transition: { duration: 1.5, repeat: Infinity, ease: "linear" as const }
     },
     celebrating: {
       y: [0, -20, 0],
       scale: [1, 1.1, 1],
-      transition: { duration: 0.6, repeat: Infinity, ease: "easeOut" }
+      transition: { duration: 0.6, repeat: Infinity, ease: "easeOut" as const }
     },
     thinking: {
       rotate: [0, 10, -10, 0],
-      transition: { duration: 2, repeat: Infinity, ease: "easeInOut" }
+      transition: { duration: 2, repeat: Infinity, ease: "easeInOut" as const }
     }
   }
 
@@ -127,7 +127,7 @@ export function LoadingScreen({ message = 'Memuat data...' }: { message?: string
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 z-[998] flex flex-col items-center justify-center bg-[#F5F3FF]/80 backdrop-blur-sm"
+      className="fixed inset-0 z-[998] flex flex-col items-center justify-center bg-background/80 backdrop-blur-sm"
     >
       <FinWiseMascot 
         size={128} 
@@ -249,7 +249,7 @@ export function AboutPage() {
   return (
     <div className="flex flex-col items-center justify-center py-12 px-4 max-w-md mx-auto">
       <FinWiseMascot 
-        size={200} 
+        size={256} 
         state="happy"
         animate
       />

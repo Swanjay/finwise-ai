@@ -1,25 +1,21 @@
 'use client'
 
 import { motion } from 'framer-motion'
-import { FinWiseMascot } from '@/components/finwise/mascot'
+import FinWiseLogo from '@/components/finwise-logo'
 import { Button } from '@/components/ui/button'
-import { Home, Search } from 'lucide-react'
+import { Home } from 'lucide-react'
 import Link from 'next/link'
 
 export default function NotFound() {
   return (
-    <div className="min-h-screen bg-[#F5F3FF] flex flex-col items-center justify-center px-6">
+    <div className="min-h-screen bg-background flex flex-col items-center justify-center px-6">
       {/* Confused Mascot */}
       <motion.div
         initial={{ scale: 0.8, opacity: 0, y: 20 }}
         animate={{ scale: 1, opacity: 1, y: 0 }}
         transition={{ duration: 0.6, ease: "easeOut" }}
       >
-        <FinWiseMascot 
-          size={180} 
-          state="thinking"
-          animate
-        />
+        <FinWiseLogo size={128} showText={false} />
       </motion.div>
 
       {/* 404 Message */}
@@ -36,7 +32,7 @@ export default function NotFound() {
           Halaman Tidak Ditemukan 🐱
         </h2>
         <p className="mt-2 text-muted-foreground max-w-sm">
-          Sepertinya halaman yang kamu cari sudah pindah atau tidak ada. 
+          Sepertinya halaman yang kamu cari sudah pindah atau tidak ada.
           Kucing kami sedang mencarinya!
         </p>
       </motion.div>
@@ -64,8 +60,8 @@ export default function NotFound() {
         className="mt-12 text-center"
       >
         <p className="text-xs text-muted-foreground italic">
-          "Kucing memiliki 230 tulang, lebih banyak dari manusia (206). 
-          Mungkin mereka lebih fleksibel dalam menemukan jalan! 🐈"
+          &ldquo;Kucing memiliki 230 tulang, lebih banyak dari manusia (206).
+          Mungkin mereka lebih fleksibel dalam menemukan jalan! 🐈&rdquo;
         </p>
       </motion.div>
     </div>
