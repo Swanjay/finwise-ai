@@ -2,7 +2,7 @@
 
 import { useState, useCallback } from 'react'
 import { motion, useMotionValue, useTransform, PanInfo, AnimatePresence } from 'framer-motion'
-import { Trash2, Pencil, MapPin } from 'lucide-react'
+import { Trash2, Pencil, MapPin, Camera, X, Eye } from 'lucide-react'
 import { formatIDR, type Transaction } from '@/lib/finwise'
 import { useFinwise } from '@/components/finwise-store'
 import { cn } from '@/lib/utils'
@@ -30,7 +30,11 @@ export function TransactionRow({
   })
 
   const [isDeleting, setIsDeleting] = useState(false)
+  const [showReceipt, setShowReceipt] = useState(false)
   const x = useMotionValue(0)
+
+  // Use receiptUrl (thumbnail) if available, fallback to receiptPhoto
+  const receiptThumb = tx.receiptUrl || tx.receiptPhoto
 
   // Reveal opacity for action buttons based on swipe distance
   const deleteOpacity = useTransform(x, [-ACTION_WIDTH * 2, -ACTION_WIDTH, 0], [1, 0.8, 0])
@@ -88,6 +92,37 @@ export function TransactionRow({
 
   return (
     <AnimatePresence>
+      {/* Receipt photo overlay */}
+      {showReceipt && receiptThumb && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4"
+          onClick={() => setShowReceipt(false)}
+        >
+          <motion.div
+            initial={{ scale: 0.8, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0.8, opacity: 0 }}
+            className="relative max-w-sm max-h-[80vh]"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <img
+              src={tx.receiptPhoto || receiptThumb}
+              alt="Struk"
+              className="rounded-xl max-h-[80vh] object-contain shadow-2xl"
+            />
+            <button
+              onClick={() => setShowReceipt(false)}
+              className="absolute -top-2 -right-2 size-8 rounded-full bg-card shadow-lg flex items-center justify-center"
+            >
+              <X className="size-4" />
+            </button>
+          </motion.div>
+        </motion.div>
+      )}
+
       {!isDeleting ? (
         <motion.li
           layout
@@ -135,9 +170,9 @@ export function TransactionRow({
               style={{ backgroundColor: `color-mix(in oklch, ${cat.color} 22%, transparent)` }}
               aria-hidden
             >
-              {tx.receiptPhoto ? (
+              {receiptThumb ? (
                 <img
-                  src={tx.receiptPhoto}
+                  src={receiptThumb}
                   alt="Struk"
                   className="size-10 rounded-full object-cover"
                 />
@@ -165,6 +200,18 @@ export function TransactionRow({
                     <MapPin className="size-2.5" />
                     {tx.location.name.length > 15 ? tx.location.name.slice(0, 15) + '...' : tx.location.name}
                   </span>
+                )}
+                {/* Receipt camera badge */}
+                {receiptThumb && (
+                  <button
+                    type="button"
+                    onClick={(e) => { e.stopPropagation(); setShowReceipt(true) }}
+                    className="inline-flex items-center gap-0.5 rounded-full bg-green-50 px-1.5 py-0 text-[10px] text-green-600 hover:bg-green-100 transition"
+                    title="Lihat foto struk"
+                  >
+                    <Camera className="size-2.5" />
+                    Struk
+                  </button>
                 )}
               </div>
             </div>

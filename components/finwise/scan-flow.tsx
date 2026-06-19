@@ -1,10 +1,11 @@
 'use client'
 
-import { useRef, useState, useCallback } from 'react'
+import { useRef, useState, useCallback, useEffect } from 'react'
 import {
   Camera, Check, Loader2, Sparkles, X, Image as ImageIcon,
   RotateCcw, Trash2, Plus, Receipt, ShoppingBag, ChevronRight,
-  Edit3, Eye, AlertCircle, CheckCircle2,
+  Edit3, Eye, AlertCircle, CheckCircle2, ScanLine, Calculator,
+  Tag,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -39,6 +40,43 @@ const STEP_INDICATORS = [
   { key: 'edit', label: 'Edit', icon: Edit3 },
   { key: 'confirm', label: 'Simpan', icon: Check },
 ]
+
+/** Sub-step indicators shown during the scanning phase */
+const SCAN_SUB_STEPS = [
+  { key: 'photo', label: 'Memindai foto…', icon: ScanLine },
+  { key: 'detect', label: 'Mendeteksi item…', icon: Eye },
+  { key: 'total', label: 'Menghitung total…', icon: Calculator },
+]
+
+// ─── Compression: shrink image to ~200KB JPEG thumbnail ───
+function compressToThumbnail(dataUrl: string, targetKB = 200): Promise<string> {
+  return new Promise((resolve) => {
+    const img = new window.Image()
+    img.onload = () => {
+      const canvas = document.createElement('canvas')
+      // Scale down to max 600px wide for thumbnail
+      const maxW = 600
+      const scale = Math.min(1, maxW / img.width)
+      canvas.width = Math.round(img.width * scale)
+      canvas.height = Math.round(img.height * scale)
+      const ctx = canvas.getContext('2d')
+      if (!ctx) { resolve(dataUrl); return }
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height)
+
+      // Try progressively lower quality to hit target size
+      let quality = 0.7
+      let result = ''
+      for (let q = quality; q >= 0.1; q -= 0.1) {
+        result = canvas.toDataURL('image/jpeg', q)
+        const sizeKB = Math.round((result.length * 3) / 4 / 1024)
+        if (sizeKB <= targetKB) break
+      }
+      resolve(result)
+    }
+    img.onerror = () => resolve(dataUrl)
+    img.src = dataUrl
+  })
+}
 
 function fileToDataUrl(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -107,28 +145,65 @@ async function getGalleryPhoto(): Promise<string | null> {
   }
 }
 
-// Skeleton loader for scanning state
-function ScanSkeleton() {
+// ─── Animated scanning sub-step indicator ───
+function ScanningSteps() {
+  const [subIdx, setSubIdx] = useState(0)
+
+  useEffect(() => {
+    // Cycle through sub-steps every 1.5s
+    const t1 = setTimeout(() => setSubIdx(1), 1500)
+    const t2 = setTimeout(() => setSubIdx(2), 3000)
+    return () => { clearTimeout(t1); clearTimeout(t2) }
+  }, [])
+
   return (
-    <div className="flex flex-col gap-4 animate-pulse">
-      <div className="flex flex-col items-center gap-4 py-8">
-        <div className="relative">
-          <div className="size-12 rounded-full bg-primary/20" />
-          <Sparkles className="absolute -right-1 -top-1 size-5 text-accent animate-pulse" />
+    <div className="flex flex-col items-center gap-5 py-8">
+      {/* Animated receipt icon */}
+      <div className="relative">
+        <div className="size-16 rounded-2xl bg-primary/10 flex items-center justify-center">
+          <Receipt className="size-8 text-primary animate-pulse" />
         </div>
-        <div className="h-5 w-48 rounded bg-muted" />
-        <div className="h-4 w-36 rounded bg-muted/60" />
-      </div>
-      {/* Fake result skeleton */}
-      <div className="space-y-3">
-        <div className="h-10 rounded-xl bg-muted" />
-        <div className="h-10 rounded-xl bg-muted" />
-        <div className="grid grid-cols-4 gap-2">
-          {Array.from({ length: 8 }).map((_, i) => (
-            <div key={i} className="h-16 rounded-xl bg-muted" />
-          ))}
+        <div className="absolute -bottom-1 -right-1 size-7 rounded-full bg-primary flex items-center justify-center shadow-md">
+          <Loader2 className="size-4 text-primary-foreground animate-spin" />
         </div>
       </div>
+
+      {/* Sub-step progress indicators */}
+      <div className="flex flex-col items-center gap-3 w-full max-w-[260px]">
+        {SCAN_SUB_STEPS.map((s, i) => {
+          const Icon = s.icon
+          const active = i <= subIdx
+          const isCurrent = i === subIdx
+          const done = i < subIdx
+          return (
+            <div
+              key={s.key}
+              className={cn(
+                'flex items-center gap-2.5 w-full rounded-lg px-3 py-2 transition-all duration-500',
+                isCurrent
+                  ? 'bg-primary/15 text-foreground'
+                  : done
+                    ? 'bg-green-500/10 text-green-600'
+                    : 'bg-muted/50 text-muted-foreground',
+              )}
+            >
+              {done ? (
+                <CheckCircle2 className="size-4 shrink-0" />
+              ) : isCurrent ? (
+                <Loader2 className="size-4 shrink-0 animate-spin" />
+              ) : (
+                <Icon className="size-4 shrink-0 opacity-40" />
+              )}
+              <span className={cn('text-sm', isCurrent && 'font-medium')}>
+                {s.label}
+              </span>
+            </div>
+          )
+        })}
+      </div>
+
+      {/* Retry notice */}
+      <p className="text-xs text-muted-foreground">Proses ini biasanya 5–10 detik</p>
     </div>
   )
 }
@@ -185,7 +260,7 @@ function ReceiptThumb({ photo, onView }: { photo: string; onView: () => void }) 
   )
 }
 
-// Editable item row
+// Editable item row with category & description
 function ItemRow({
   item,
   index,
@@ -198,43 +273,62 @@ function ItemRow({
   onRemove: (idx: number) => void
 }) {
   return (
-    <div className="flex items-center gap-2 group">
-      <div className="flex-1 min-w-0">
+    <div className="rounded-lg border border-border bg-card/80 p-2.5 space-y-2 group">
+      {/* Row 1: name + delete */}
+      <div className="flex items-center gap-2">
         <Input
           value={item.name}
           onChange={(e) => onUpdate(index, { ...item, name: e.target.value })}
-          className="h-8 text-sm"
+          className="h-8 text-sm flex-1"
           placeholder="Nama item"
         />
+        <button
+          type="button"
+          onClick={() => onRemove(index)}
+          className="p-1 rounded text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition opacity-0 group-hover:opacity-100"
+        >
+          <Trash2 className="size-3.5" />
+        </button>
       </div>
-      {item.qty !== undefined && (
-        <div className="w-12">
+      {/* Row 2: qty + price */}
+      <div className="flex items-center gap-2">
+        {item.qty !== undefined && (
+          <div className="w-14">
+            <Input
+              type="number"
+              min={1}
+              value={item.qty}
+              onChange={(e) => onUpdate(index, { ...item, qty: Number(e.target.value) || 1 })}
+              className="h-7 text-xs text-center"
+              placeholder="Qty"
+            />
+          </div>
+        )}
+        <div className="flex-1">
           <Input
             type="number"
-            min={1}
-            value={item.qty}
-            onChange={(e) => onUpdate(index, { ...item, qty: Number(e.target.value) || 1 })}
-            className="h-8 text-sm text-center"
+            inputMode="numeric"
+            value={item.price}
+            onChange={(e) => onUpdate(index, { ...item, price: Number(e.target.value) || 0 })}
+            className="h-7 text-sm text-right tabular-nums"
+            placeholder="Rp"
           />
         </div>
-      )}
-      <div className="w-28">
-        <Input
-          type="number"
-          inputMode="numeric"
-          value={item.price}
-          onChange={(e) => onUpdate(index, { ...item, price: Number(e.target.value) || 0 })}
-          className="h-8 text-sm text-right tabular-nums"
-          placeholder="Rp"
-        />
       </div>
-      <button
-        type="button"
-        onClick={() => onRemove(index)}
-        className="p-1 rounded text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition opacity-0 group-hover:opacity-100"
-      >
-        <Trash2 className="size-3.5" />
-      </button>
+      {/* Row 3 (optional): category selector */}
+      <div className="flex items-center gap-2">
+        <Tag className="size-3 text-muted-foreground shrink-0" />
+        <select
+          value={item.category || ''}
+          onChange={(e) => onUpdate(index, { ...item, category: e.target.value as CategoryId || undefined })}
+          className="flex-1 h-7 text-xs rounded-md border border-border bg-background px-2 text-muted-foreground"
+        >
+          <option value="">Kategori (opsional)</option>
+          {EXPENSE_CATEGORIES.map((c) => (
+            <option key={c.id} value={c.id}>{c.label}</option>
+          ))}
+        </select>
+      </div>
     </div>
   )
 }
@@ -268,7 +362,9 @@ export function ScanFlow({ onDone }: { onDone: () => void }) {
   const [error, setError] = useState<string | null>(null)
   const [retryCount, setRetryCount] = useState(0)
   const [capturedPhoto, setCapturedPhoto] = useState<string | null>(null)
+  const [receiptThumb, setReceiptThumb] = useState<string | null>(null)
   const [showPhoto, setShowPhoto] = useState(false)
+  const [isRetrying, setIsRetrying] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
 
   const MAX_RETRIES = 2
@@ -278,6 +374,8 @@ export function ScanFlow({ onDone }: { onDone: () => void }) {
     setStep('scanning')
     if (!isRetry) {
       setCapturedPhoto(image)
+      // Generate compressed thumbnail in background
+      compressToThumbnail(image, 200).then((thumb) => setReceiptThumb(thumb))
     }
 
     try {
@@ -315,6 +413,7 @@ export function ScanFlow({ onDone }: { onDone: () => void }) {
         items,
       })
       setRetryCount(0)
+      setIsRetrying(false)
       setStep(items.length > 0 ? 'edit' : 'confirm')
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Gagal membaca struk.'
@@ -326,8 +425,18 @@ export function ScanFlow({ onDone }: { onDone: () => void }) {
         return
       }
       setError(msg)
+      setIsRetrying(false)
       setStep('idle')
     }
+  }
+
+  /** Manual retry from error state */
+  function handleRetry() {
+    if (!capturedPhoto) return
+    setRetryCount(0)
+    setIsRetrying(true)
+    setError(null)
+    processImage(capturedPhoto, true)
   }
 
   async function handleCamera() {
@@ -387,6 +496,7 @@ export function ScanFlow({ onDone }: { onDone: () => void }) {
       description: result.store,
       date: result.date,
       receiptPhoto: capturedPhoto || undefined,
+      receiptUrl: receiptThumb || undefined,
       items: result.items.length > 0 ? result.items : undefined,
     })
     onDone()
@@ -396,7 +506,9 @@ export function ScanFlow({ onDone }: { onDone: () => void }) {
     setResult(null)
     setError(null)
     setCapturedPhoto(null)
+    setReceiptThumb(null)
     setRetryCount(0)
+    setIsRetrying(false)
     setStep('idle')
   }
 
@@ -419,12 +531,22 @@ export function ScanFlow({ onDone }: { onDone: () => void }) {
               <AlertCircle className="size-4 shrink-0 mt-0.5" />
               <div className="flex-1">
                 <span>{error}</span>
-                <button
-                  onClick={() => { setError(null); }}
-                  className="block mt-1 text-xs underline opacity-80 hover:opacity-100"
-                >
-                  Tutup
-                </button>
+                <div className="flex items-center gap-3 mt-2">
+                  {capturedPhoto && !error.includes('login') && !error.includes('Tunggu') && (
+                    <button
+                      onClick={handleRetry}
+                      className="flex items-center gap-1 text-xs font-medium underline opacity-80 hover:opacity-100"
+                    >
+                      <RotateCcw className="size-3" /> Coba lagi
+                    </button>
+                  )}
+                  <button
+                    onClick={() => { setError(null) }}
+                    className="text-xs underline opacity-80 hover:opacity-100"
+                  >
+                    Tutup
+                  </button>
+                </div>
               </div>
             </div>
           )}
@@ -477,7 +599,7 @@ export function ScanFlow({ onDone }: { onDone: () => void }) {
         </>
       )}
 
-      {/* ─── SCANNING: loading ─── */}
+      {/* ─── SCANNING: animated step indicators ─── */}
       {step === 'scanning' && (
         <>
           {retryCount > 0 && (
@@ -486,7 +608,7 @@ export function ScanFlow({ onDone }: { onDone: () => void }) {
               <span>Mencoba ulang ({retryCount}/{MAX_RETRIES})…</span>
             </div>
           )}
-          <ScanSkeleton />
+          <ScanningSteps />
         </>
       )}
 
@@ -531,7 +653,7 @@ export function ScanFlow({ onDone }: { onDone: () => void }) {
           {/* Items list */}
           <div>
             <div className="flex items-center justify-between mb-2">
-              <Label className="text-xs">Item Struk</Label>
+              <Label className="text-xs">Item Struk ({result.items.length})</Label>
               <button
                 type="button"
                 onClick={handleAddItem}
@@ -540,7 +662,7 @@ export function ScanFlow({ onDone }: { onDone: () => void }) {
                 <Plus className="size-3" /> Tambah
               </button>
             </div>
-            <div className="space-y-2 rounded-xl border border-border p-3 bg-card/50 max-h-48 overflow-y-auto">
+            <div className="space-y-2 max-h-64 overflow-y-auto">
               {result.items.length === 0 ? (
                 <p className="text-sm text-muted-foreground text-center py-4">
                   Tidak ada item terdeteksi
@@ -642,11 +764,13 @@ export function ScanFlow({ onDone }: { onDone: () => void }) {
             </div>
           </div>
 
-          {/* Receipt photo toggle */}
+          {/* Receipt photo status */}
           {capturedPhoto && (
             <div className="flex items-center gap-2 rounded-lg bg-muted/50 p-2.5">
               <CheckCircle2 className="size-4 text-green-500" />
-              <span className="text-xs text-muted-foreground">Foto struk akan disimpan</span>
+              <span className="text-xs text-muted-foreground">
+                Foto struk akan disimpan {receiptThumb ? '(thumbnail ~200KB)' : ''}
+              </span>
             </div>
           )}
 

@@ -22,7 +22,7 @@ import { ScanFlow } from '@/components/finwise/scan-flow'
 import { AdvisorChat } from '@/components/finwise/advisor-chat'
 import { SplashScreen } from '@/components/splash-screen'
 import { LoadingScreen, AchievementsList } from '@/components/finwise/mascot'
-import { SmartNotifications, RequestNotificationButton } from '@/components/finwise/smart-notifications'
+import { SmartNotifications, NotificationBell, NotificationCenter, RequestNotificationButton } from '@/components/finwise/smart-notifications'
 import { useGamification, BadgeGrid, BadgeUnlockToast } from '@/components/finwise/gamification'
 import { SmartBudgetSheet } from '@/components/finwise/smart-budget'
 import { SplitBillSheet } from '@/components/finwise/split-bill'
@@ -47,7 +47,7 @@ import {
 import { cn } from '@/lib/utils'
 
 type Tab = 'home' | 'transactions' | 'trends' | 'budget'
-type Sheet = 'add' | 'scan' | 'advisor' | 'settings' | 'goals' | 'wallets' | 'transfer' | 'recurring' | 'export' | 'categories' | 'pin' | 'benchmark' | 'smart-budget' | 'split-bill' | null
+type Sheet = 'add' | 'scan' | 'advisor' | 'settings' | 'goals' | 'wallets' | 'transfer' | 'recurring' | 'export' | 'categories' | 'pin' | 'benchmark' | 'smart-budget' | 'split-bill' | 'notifications' | null
 
 // ─── PIN Lock Screen ───
 function PinLock() {
@@ -734,6 +734,18 @@ function SettingsSheet({ onClose, onOpenSheet }: { onClose: () => void; onOpenSh
         </div>
       </div>
 
+      {/* Export & Import */}
+      <div className="border-t border-border pt-4">
+        <Button
+          variant="outline"
+          className="w-full gap-2"
+          onClick={() => { onClose(); onOpenSheet?.('export') }}
+        >
+          <Download className="size-4" />
+          Ekspor & Impor Data
+        </Button>
+      </div>
+
       {/* Reset Data */}
       <div className="border-t border-destructive/20 pt-4">
         {!showResetConfirm ? (
@@ -1073,6 +1085,7 @@ function AppShell() {
         </div>
         <div className="flex items-center gap-2">
           <MonthNavigator monthKey={monthKey} onChange={setMonthKey} />
+          <NotificationBell onClick={() => { haptic.light(); setSheet('notifications') }} />
           <button
             onClick={() => { haptic.light(); toggleTheme() }}
             aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
@@ -1218,6 +1231,7 @@ function AppShell() {
       <BottomSheet open={sheet === 'advisor'} onClose={() => setSheet(null)} title="AI Advisor"><AdvisorChat /></BottomSheet>
       <BottomSheet open={sheet === 'smart-budget'} onClose={() => setSheet(null)} title="🤖 Smart Budget"><SmartBudgetSheet onClose={() => setSheet(null)} /></BottomSheet>
       <BottomSheet open={sheet === 'split-bill'} onClose={() => setSheet(null)} title="👥 Split Bill"><SplitBillSheet onClose={() => setSheet(null)} /></BottomSheet>
+      <BottomSheet open={sheet === 'notifications'} onClose={() => setSheet(null)} title="🔔 Notifikasi"><NotificationCenter onClose={() => setSheet(null)} /></BottomSheet>
 
       {/* Badge unlock toast */}
       {newBadge && <BadgeUnlockToast badge={newBadge} onClose={clearNewBadge} />}

@@ -46,6 +46,7 @@ export interface Transaction {
   tags?: string[]
   location?: { name: string; lat?: number; lng?: number; address?: string }
   receiptPhoto?: string // base64 data URL of the receipt photo
+  receiptUrl?: string // compressed receipt thumbnail (~200KB JPEG)
   items?: ReceiptLineItem[]
 }
 
@@ -53,6 +54,8 @@ export interface ReceiptLineItem {
   name: string
   price: number
   qty?: number
+  category?: CategoryId
+  description?: string
 }
 
 export interface Wallet {
