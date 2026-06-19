@@ -1,9 +1,6 @@
 'use client'
 
-import { ArrowDownRight, ArrowUpRight, Eye, EyeOff, Pencil, TrendingUp, Wallet, Plus } from 'lucide-react'
-import { useState } from 'react'
-import { Input } from '@/components/ui/input'
-import { Button } from '@/components/ui/button'
+import { ArrowDownRight, ArrowUpRight, Eye, EyeOff, TrendingUp, Wallet } from 'lucide-react'
 import { formatIDR, spendingByCategory, summarize, type Transaction } from '@/lib/finwise'
 import { useFinwise } from '@/components/finwise-store'
 import { SpendingDonut } from './spending-donut'
@@ -14,15 +11,12 @@ import { LevelBadge, useGamification } from './gamification'
 import Image from 'next/image'
 
 export function DashboardView({ transactions, month }: { transactions: Transaction[]; month: string }) {
-  const { monthlyIncome, allCategories, budgets, initialBalance, updateInitialBalance, hideBalance, toggleHideBalance } = useFinwise()
+  const { allCategories, hideBalance, toggleHideBalance, getTotalBalance } = useFinwise()
   const { stats } = useGamification()
   const { income, expense, surplus } = summarize(transactions)
-  const [editingBal, setEditingBal] = useState(false)
-  const byCat = spendingByCategory(transactions, allCategories)
-  const totalBalance = initialBalance + surplus
+  const totalBalance = getTotalBalance()
   const positive = totalBalance >= 0
-  const [showInitInput, setShowInitInput] = useState(false)
-  const [initInput, setInitInput] = useState('')
+  const byCat = spendingByCategory(transactions, allCategories)
 
   const spentMap = new Map<string, number>()
   for (const t of transactions) {
@@ -30,13 +24,6 @@ export function DashboardView({ transactions, month }: { transactions: Transacti
   }
 
   const recent = transactions.slice(0, 5)
-
-  function saveInitBalance() {
-    const val = Number(initInput.replace(/\D/g, '')) || 0
-    updateInitialBalance(val)
-    setShowInitInput(false)
-    setInitInput('')
-  }
 
   return (
     <div className="flex flex-col gap-4">
@@ -70,32 +57,15 @@ export function DashboardView({ transactions, month }: { transactions: Transacti
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2 text-sm font-semibold text-muted-foreground">
             <Wallet className="size-4 text-primary" />
-            Total Saldo
+            Total Saldo Semua Dompet
           </div>
-          <div className="flex items-center gap-2">
-            <button onClick={toggleHideBalance} className="text-muted-foreground hover:text-primary transition">
-              {hideBalance ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
-            </button>
-            <button onClick={() => setShowInitInput(true)} className="text-muted-foreground hover:text-primary transition">
-              <Pencil className="size-3.5" />
-            </button>
-          </div>
+          <button onClick={toggleHideBalance} className="text-muted-foreground hover:text-primary transition">
+            {hideBalance ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+          </button>
         </div>
         <div className={`text-3xl font-bold font-heading ${positive ? 'text-[#2D2057]' : 'text-destructive'}`}>
           {hideBalance ? '••••••' : formatIDR(totalBalance)}
         </div>
-        {showInitInput && (
-          <div className="mt-3 flex gap-2">
-            <Input
-              inputMode="numeric"
-              placeholder="Saldo awal"
-              value={initInput}
-              onChange={(e) => setInitInput(e.target.value.replace(/\D/g, ''))}
-              className="h-9 rounded-full clay-input text-sm"
-            />
-            <Button size="sm" onClick={saveInitBalance} className="clay-btn rounded-full px-4">Simpan</Button>
-          </div>
-        )}
       </div>
 
       {/* ─── Stats Cards ─── */}

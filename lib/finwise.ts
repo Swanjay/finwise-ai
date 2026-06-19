@@ -50,7 +50,7 @@ export interface Wallet {
   id: string
   name: string
   icon: string
-  balance: number
+  balance: number // initial balance (set by user, used as starting point)
   color: string
 }
 

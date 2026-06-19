@@ -16,7 +16,7 @@ import { LocationPicker, type LocationData } from '@/components/finwise/location
 import { cn } from '@/lib/utils'
 
 export function AddTransactionForm({ onDone }: { onDone: () => void }) {
-  const { addTransaction, tags: savedTags, addTag: saveTag } = useFinwise()
+  const { addTransaction, tags: savedTags, addTag: saveTag, wallets } = useFinwise()
   const [type, setType] = useState<TxType>('expense')
   const [amount, setAmount] = useState('')
   const [category, setCategory] = useState<CategoryId>('food')
@@ -26,6 +26,7 @@ export function AddTransactionForm({ onDone }: { onDone: () => void }) {
   const [tagInput, setTagInput] = useState('')
   const [showTagSuggestions, setShowTagSuggestions] = useState(false)
   const [location, setLocation] = useState<LocationData | null>(null)
+  const [walletId, setWalletId] = useState(wallets[0]?.id || 'cash')
   const tagInputRef = useRef<HTMLInputElement>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
@@ -71,6 +72,7 @@ export function AddTransactionForm({ onDone }: { onDone: () => void }) {
         amount: Number(amount),
         description: description || (type === 'income' ? 'Pemasukan' : 'Pengeluaran'),
         date,
+        walletId,
         tags: selectedTags.length > 0 ? selectedTags : undefined,
         location: location || undefined,
       })
@@ -136,6 +138,32 @@ export function AddTransactionForm({ onDone }: { onDone: () => void }) {
           value={description}
           onChange={(e) => setDescription(e.target.value)}
         />
+      </div>
+
+      {/* Wallet selector */}
+      <div className="flex flex-col gap-1.5">
+        <Label>{type === 'expense' ? 'Ambil dari Dompet' : 'Masuk ke Dompet'}</Label>
+        <div className="grid grid-cols-3 gap-2">
+          {wallets.map((w) => {
+            const active = walletId === w.id
+            return (
+              <button
+                key={w.id}
+                type="button"
+                onClick={() => setWalletId(w.id)}
+                className={cn(
+                  'flex items-center gap-2 rounded-xl border px-3 py-2 text-sm transition',
+                  active
+                    ? 'border-primary bg-primary/15 text-foreground'
+                    : 'border-border text-muted-foreground hover:bg-secondary',
+                )}
+              >
+                <span>{w.icon}</span>
+                <span className="truncate">{w.name}</span>
+              </button>
+            )
+          })}
+        </div>
       </div>
 
       <div className="flex flex-col gap-1.5">

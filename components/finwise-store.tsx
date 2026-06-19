@@ -90,6 +90,8 @@ interface FinwiseStore {
   addWallet: (w: Wallet) => void
   updateWallet: (id: string, data: Partial<Wallet>) => void
   deleteWallet: (id: string) => void
+  getWalletBalance: (walletId: string) => number
+  getTotalBalance: () => number
 
   // Goals
   goals: Goal[]
@@ -310,6 +312,22 @@ export function FinwiseProvider({ children }: { children: ReactNode }) {
     setWallets((prev) => prev.filter((w) => w.id !== id))
   }, [])
 
+  // Computed wallet balance: initialBalance + income - expenses for that wallet
+  const getWalletBalance = useCallback((walletId: string): number => {
+    const wallet = wallets.find(w => w.id === walletId)
+    if (!wallet) return 0
+    const txTotal = transactions.reduce((sum, tx) => {
+      if (tx.walletId !== walletId) return sum
+      return sum + (tx.type === 'income' ? tx.amount : -tx.amount)
+    }, 0)
+    return wallet.balance + txTotal
+  }, [wallets, transactions])
+
+  // Total saldo across all wallets
+  const getTotalBalance = useCallback((): number => {
+    return wallets.reduce((sum, w) => sum + getWalletBalance(w.id), 0)
+  }, [wallets, getWalletBalance])
+
   // Goals
   const addGoal = useCallback((g: Goal) => {
     setGoals((prev) => [...prev, g])
@@ -415,7 +433,7 @@ export function FinwiseProvider({ children }: { children: ReactNode }) {
         allCategories, addCustomCategory, deleteCustomCategory,
         budgets, setBudget,
         monthlyIncome, updateMonthlyIncome,
-        wallets, addWallet, updateWallet, deleteWallet,
+        wallets, addWallet, updateWallet, deleteWallet, getWalletBalance, getTotalBalance,
         goals, addGoal, updateGoal, deleteGoal, addToGoal,
         recurring, addRecurring, toggleRecurring, deleteRecurring,
         pin, setPin, isLocked, unlock,

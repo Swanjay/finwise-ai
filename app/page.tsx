@@ -299,7 +299,7 @@ function GoalsSheet({ onClose }: { onClose: () => void }) {
 
 // ─── Wallets Sheet ───
 function WalletsSheet({ onClose }: { onClose: () => void }) {
-  const { wallets, addWallet, updateWallet, deleteWallet } = useFinwise()
+  const { wallets, addWallet, updateWallet, deleteWallet, getWalletBalance, getTotalBalance } = useFinwise()
   const [showForm, setShowForm] = useState(false)
   const [name, setName] = useState('')
   const [icon, setIcon] = useState('💵')
@@ -315,6 +315,11 @@ function WalletsSheet({ onClose }: { onClose: () => void }) {
 
   return (
     <div className="flex flex-col gap-4 max-h-[60vh] overflow-y-auto">
+      {/* Total saldo */}
+      <div className="rounded-xl bg-primary/10 p-3 text-center">
+        <p className="text-xs text-muted-foreground">Total Saldo</p>
+        <p className="text-xl font-bold text-primary">{formatIDR(getTotalBalance())}</p>
+      </div>
       <Button size="sm" onClick={() => setShowForm(!showForm)} className="gap-1 self-end"><Plus className="size-4" /> Baru</Button>
       {showForm && (
         <form onSubmit={handleSubmit} className="flex flex-col gap-2 p-3 rounded-xl border border-primary/30">
@@ -328,19 +333,23 @@ function WalletsSheet({ onClose }: { onClose: () => void }) {
           <div className="flex gap-2"><Button type="button" variant="secondary" className="flex-1" onClick={() => setShowForm(false)}>Batal</Button><Button type="submit" className="flex-1">Simpan</Button></div>
         </form>
       )}
-      {wallets.map((w) => (
+      {wallets.map((w) => {
+        const computed = getWalletBalance(w.id)
+        return (
         <Card key={w.id}>
           <CardContent className="p-4 flex items-center gap-3">
             <span className="text-2xl">{w.icon}</span>
             <div className="flex-1">
               <p className="font-medium text-sm">{w.name}</p>
-              <p className="text-xs text-muted-foreground tabular-nums">{formatIDR(w.balance)}</p>
+              <p className="text-xs text-muted-foreground tabular-nums">Saldo: {formatIDR(computed)}</p>
+              <p className="text-[10px] text-muted-foreground/60">Awal: {formatIDR(w.balance)}</p>
             </div>
-            <Input inputMode="numeric" placeholder="Saldo" className="w-28 h-7 text-xs text-right" defaultValue={w.balance || ''} onBlur={(e) => updateWallet(w.id, { balance: Number(e.target.value.replace(/\D/g, '')) || 0 })} />
+            <Input inputMode="numeric" placeholder="Saldo awal" className="w-28 h-7 text-xs text-right" defaultValue={w.balance || ''} onBlur={(e) => updateWallet(w.id, { balance: Number(e.target.value.replace(/\D/g, '')) || 0 })} />
             <button onClick={() => deleteWallet(w.id)} aria-label={`Hapus dompet ${w.name}`} className="text-muted-foreground hover:text-destructive"><Trash2 className="size-4" /></button>
           </CardContent>
         </Card>
-      ))}
+        )
+      })}
       <Button variant="secondary" onClick={onClose}>Tutup</Button>
     </div>
   )
