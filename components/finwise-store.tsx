@@ -120,7 +120,6 @@ interface FinwiseStore {
 
   // Setup
   setupDone: boolean
-  completeSetup: (income: number, budgets: Partial<Record<string, number>>) => void
 
   // Initial Balance
   initialBalance: number
@@ -160,7 +159,7 @@ export function FinwiseProvider({ children }: { children: ReactNode }) {
   const [isLocked, setIsLocked] = useState(true)
   const [theme, setTheme] = useState<'dark' | 'light'>('light')
   const [accentColor, setAccentColorState] = useState('purple')
-  const [setupDone, setSetupDone] = useState(false)
+  const [setupDone, setSetupDone] = useState(true) // Skip onboarding
   const [tipsDismissed, setTipsDismissed] = useState(false)
   const [initialBalance, setInitialBalance] = useState(0)
   const [hideBalance, setHideBalance] = useState(false)
@@ -179,7 +178,7 @@ export function FinwiseProvider({ children }: { children: ReactNode }) {
     setPinState(loadJSON(KEYS.pin, null))
     setTheme(loadJSON(KEYS.theme, 'light'))
     setAccentColorState(loadJSON(KEYS.accent, 'purple'))
-    setSetupDone(loadJSON(KEYS.setup, false))
+    setSetupDone(true) // Always skip onboarding
     setTipsDismissed(loadJSON(KEYS.tipsDismissed, false))
     setInitialBalance(loadJSON(KEYS.initialBalance, 0))
     setHideBalance(loadJSON(KEYS.hideBalance, false))
@@ -377,14 +376,6 @@ export function FinwiseProvider({ children }: { children: ReactNode }) {
     setTheme((prev) => prev === 'dark' ? 'light' : 'dark')
   }, [])
 
-  // Setup
-  const completeSetup = useCallback((income: number, newBudgets: Partial<Record<string, number>>) => {
-    setMonthlyIncomeState(income)
-    setBudgets(newBudgets)
-    setSetupDone(true)
-    saveJSON(KEYS.setup, true)
-  }, [])
-
   // Tips
   const dismissTips = useCallback(() => {
     setTipsDismissed(true)
@@ -438,7 +429,7 @@ export function FinwiseProvider({ children }: { children: ReactNode }) {
         recurring, addRecurring, toggleRecurring, deleteRecurring,
         pin, setPin, isLocked, unlock,
         theme, toggleTheme, accentColor, setAccentColor,
-        setupDone, completeSetup,
+        setupDone,
         tipsDismissed, dismissTips,
         initialBalance, updateInitialBalance,
         hideBalance, toggleHideBalance,

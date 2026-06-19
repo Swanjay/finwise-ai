@@ -48,74 +48,6 @@ import { cn } from '@/lib/utils'
 type Tab = 'home' | 'transactions' | 'trends' | 'budget'
 type Sheet = 'add' | 'scan' | 'advisor' | 'settings' | 'goals' | 'wallets' | 'transfer' | 'recurring' | 'export' | 'categories' | 'pin' | 'benchmark' | 'smart-budget' | 'split-bill' | null
 
-// ─── Onboarding ───
-function OnboardingFlow() {
-  const { completeSetup } = useFinwise()
-  const [step, setStep] = useState(0)
-  const [incomeStr, setIncomeStr] = useState('')
-  const [budgetValues, setBudgetValues] = useState<Record<string, string>>({})
-
-  function handleFinish() {
-    const inc = Number(incomeStr) || 0
-    const b: Partial<Record<string, number>> = {}
-    EXPENSE_CATEGORIES.forEach((c) => {
-      const v = Number(budgetValues[c.id]) || 0
-      if (v > 0) b[c.id] = v
-    })
-    completeSetup(inc, b)
-  }
-
-  return (
-    <div className="mx-auto flex min-h-screen w-full max-w-md flex-col items-center justify-center px-6">
-      <div className="flex flex-col items-center gap-2 mb-8">
-        <Sparkles className="size-10 text-accent" />
-        <h1 className="font-heading text-3xl font-bold">FinWise</h1>
-        <p className="text-sm text-muted-foreground text-center">Atur keuangan pribadi dengan lebih pintar</p>
-      </div>
-      {step === 0 && (
-        <Card className="w-full border-primary/30">
-          <CardHeader><CardTitle className="font-heading text-base">💰 Berapa pemasukan bulananmu?</CardTitle></CardHeader>
-          <CardContent className="flex flex-col gap-4">
-            <div className="flex flex-col gap-1.5">
-              <Label>Pemasukan per bulan (Rp)</Label>
-              <Input inputMode="numeric" placeholder="0" value={incomeStr} onChange={(e) => setIncomeStr(e.target.value.replace(/\D/g, ''))} className="h-12 text-lg tabular-nums" autoFocus />
-              <p className="text-xs text-muted-foreground">Isi 0 jika belum tahu, bisa diubah nanti</p>
-            </div>
-            <div className="flex gap-2">
-              <Button variant="secondary" className="flex-1" onClick={() => { setIncomeStr('0'); setStep(1) }}>Lewati</Button>
-              <Button className="flex-1" onClick={() => setStep(1)}>Lanjut</Button>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-      {step === 1 && (
-        <Card className="w-full border-primary/30">
-          <CardHeader><CardTitle className="font-heading text-base">📊 Atur Anggaran per Kategori</CardTitle></CardHeader>
-          <CardContent className="flex flex-col gap-3">
-            <p className="text-xs text-muted-foreground">Opsional — kosongkan atau isi 0 jika tidak ingin set limit</p>
-            {EXPENSE_CATEGORIES.map((c) => {
-              const Icon = c.icon
-              return (
-                <div key={c.id} className="flex items-center gap-3">
-                  <div className="flex size-8 shrink-0 items-center justify-center rounded-full" style={{ backgroundColor: `color-mix(in oklch, ${c.color} 22%, transparent)` }}>
-                    <Icon className="size-4" style={{ color: c.color }} />
-                  </div>
-                  <Label className="flex-1 text-sm">{c.label}</Label>
-                  <Input inputMode="numeric" placeholder="0" value={budgetValues[c.id] || ''} onChange={(e) => setBudgetValues((prev) => ({ ...prev, [c.id]: e.target.value.replace(/\D/g, '') }))} className="w-28 h-8 text-xs tabular-nums text-right" />
-                </div>
-              )
-            })}
-            <div className="flex gap-2 mt-2">
-              <Button variant="secondary" className="flex-1" onClick={() => setStep(0)}>Kembali</Button>
-              <Button className="flex-1" onClick={handleFinish}>🚀 Mulai</Button>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-    </div>
-  )
-}
-
 // ─── PIN Lock Screen ───
 function PinLock() {
   const { pin, unlock } = useFinwise()
@@ -962,7 +894,7 @@ function UserAvatar() {
 
 // ─── Main App Shell ───
 function AppShell() {
-  const { transactions, setupDone, isLocked, pin, tipsDismissed, dismissTips, allCategories } = useFinwise()
+  const { transactions, isLocked, pin, tipsDismissed, dismissTips, allCategories } = useFinwise()
   const { stats, newBadge, clearNewBadge } = useGamification()
   const [tab, setTab] = useState<Tab>('home')
   const [sheet, setSheet] = useState<Sheet>(null)
@@ -987,7 +919,6 @@ function AppShell() {
 
   const monthTx = useMemo(() => filterByMonth(transactions, monthKey), [transactions, monthKey])
 
-  if (!setupDone) return <OnboardingFlow />
   if (isLocked && pin) return <PinLock />
   if (isLoading) return <LoadingScreen message="Menyiapkan dashboard..." />
 
