@@ -92,14 +92,41 @@ export default function LoginPage() {
       }
 
       if (data.ok && data.user?.sig) {
-        // Send HMAC-signed credentials to NextAuth
-        await signIn("telegram", {
-          id: data.user.id,
-          name: data.user.name,
-          username: data.user.username,
-          sig: data.user.sig,
-          callbackUrl: "/",
-        })
+        // Send HMAC-signed credentials to NextAuth via fetch (not form POST)
+        // This prevents ERR_FAILED page navigation on failure
+        try {
+          const csrfRes = await fetch("/api/auth/csrf")
+          const { csrfToken } = await csrfRes.json()
+
+          const callbackRes = await fetch("/api/auth/callback/telegram", {
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body: new URLSearchParams({
+              id: data.user.id,
+              name: data.user.name,
+              username: data.user.username,
+              sig: data.user.sig,
+              csrfToken,
+              callbackUrl: "/",
+              json: "true",
+            }),
+            redirect: "manual", // Don't follow redirect automatically
+          })
+
+          // Check if auth was successful
+          if (callbackRes.ok || callbackRes.status === 302 || callbackRes.type === "opaqueredirect") {
+            // Session cookie is set, navigate to app
+            window.location.href = "/"
+          } else {
+            const errData = await callbackRes.json().catch(() => null)
+            setError(errData?.error || `Login gagal (${callbackRes.status})`)
+            setLoading(null)
+          }
+        } catch (signInErr) {
+          console.error("Auth callback error:", signInErr)
+          setError("Koneksi ke server gagal. Coba lagi.")
+          setLoading(null)
+        }
       } else {
         setError(data.error || "Kode salah")
       }
