@@ -13,6 +13,7 @@ export default function LoginPage() {
   const [tgUsername, setTgUsername] = useState("")
   const [tgCode, setTgCode] = useState("")
   const [botUrl, setBotUrl] = useState("")
+  const [channelUrl, setChannelUrl] = useState("")
   const router = useRouter()
 
   async function handleGoogleLogin() {
@@ -32,6 +33,7 @@ export default function LoginPage() {
     setLoading("telegram")
     setError("")
     setBotUrl("")
+    setChannelUrl("")
 
     try {
       const res = await fetch("/api/telegram-login", {
@@ -49,6 +51,12 @@ export default function LoginPage() {
 
       if (data.needStart) {
         setBotUrl(data.botUrl)
+        setLoading(null)
+        return
+      }
+
+      if (data.needJoin) {
+        setChannelUrl(data.channelUrl)
         setLoading(null)
         return
       }
@@ -192,6 +200,26 @@ export default function LoginPage() {
                 </a>
                 <p className="text-xs text-muted-foreground">
                   Setelah kirim /start, balik sini dan klik tombol biru lagi
+                </p>
+              </div>
+            )}
+
+            {channelUrl && (
+              <div className="space-y-2 rounded-xl border border-orange-300/30 bg-orange-500/5 p-4">
+                <p className="text-sm font-medium">📢 Belum join channel!</p>
+                <p className="text-xs text-muted-foreground">
+                  Kamu harus join channel Telegram dulu sebelum bisa login:
+                </p>
+                <a
+                  href={channelUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex w-full items-center justify-center gap-2 rounded-lg bg-[#229ED9] px-4 py-2.5 text-sm font-medium text-white transition active:scale-[0.98]"
+                >
+                  <MessageCircle className="size-4" /> Join Channel @ainsyir
+                </a>
+                <p className="text-xs text-muted-foreground">
+                  Setelah join, balik sini dan coba lagi
                 </p>
               </div>
             )}

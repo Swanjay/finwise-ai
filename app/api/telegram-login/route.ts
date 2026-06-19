@@ -4,6 +4,10 @@ import { rateLimitMiddleware, getClientIp } from "@/lib/rate-limit-kv"
 import { createTelegramSignature } from "@/auth"
 import { telegramLoginSchema } from "@/lib/validate"
 
+// Required Telegram channel to join before requesting OTP
+const REQUIRED_CHANNEL_ID = "-1004346668987" // @ainsyir
+const REQUIRED_CHANNEL_URL = "https://t.me/ainsyir"
+
 // In-memory code store (resets on cold start, fine for demo)
 const codes = new Map<string, { code: string; expires: number; attempts: number; user?: Record<string, string> }>()
 
@@ -66,6 +70,18 @@ export async function POST(req: Request) {
           needStart: true,
           botUrl: `https://t.me/${botUsername}?start=finwise`,
         }, { status: 404 })
+      }
+
+      // Check if user is member of required channel
+      const memberRes = await fetch(`https://api.telegram.org/bot${botToken}/getChatMember?chat_id=${REQUIRED_CHANNEL_ID}&user_id=${chatId}`)
+      const memberData = await memberRes.json()
+
+      if (!memberData.ok || !["creator", "administrator", "member"].includes(memberData.result?.status)) {
+        return NextResponse.json({
+          error: "Kamu harus join channel Telegram dulu sebelum bisa login.",
+          needJoin: true,
+          channelUrl: REQUIRED_CHANNEL_URL,
+        }, { status: 403 })
       }
 
       // Send code via bot
