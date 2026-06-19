@@ -14,6 +14,7 @@ import { EXPENSE_CATEGORIES, walletAutoCategory, type CategoryId, type TxType } 
 import { useFinwise } from '@/components/finwise-store'
 import { LocationPicker, type LocationData } from '@/components/finwise/location-picker'
 import { cn } from '@/lib/utils'
+import { CustomKeypad } from '@/components/finwise/custom-keypad'
 
 export function AddTransactionForm({ onDone }: { onDone: () => void }) {
   const { addTransaction, tags: savedTags, addTag: saveTag, wallets } = useFinwise()
@@ -59,8 +60,7 @@ export function AddTransactionForm({ onDone }: { onDone: () => void }) {
     }
   }
 
-  function submit(e: React.FormEvent) {
-    e.preventDefault()
+  function saveTransaction() {
     if (!valid || isSubmitting) return
     
     setIsSubmitting(true)
@@ -80,6 +80,11 @@ export function AddTransactionForm({ onDone }: { onDone: () => void }) {
     }, 100)
   }
 
+  function submit(e: React.FormEvent) {
+    e.preventDefault()
+    saveTransaction()
+  }
+
   return (
     <form onSubmit={submit} className="flex flex-col gap-4">
       <Tabs value={type} onValueChange={(v) => setType(v as TxType)}>
@@ -89,18 +94,13 @@ export function AddTransactionForm({ onDone }: { onDone: () => void }) {
         </TabsList>
       </Tabs>
 
-      <div className="flex flex-col gap-1.5">
-        <Label htmlFor="amount">Jumlah (Rp)</Label>
-        <Input
-          id="amount"
-          inputMode="numeric"
-          autoFocus
-          placeholder="0"
-          value={amount}
-          onChange={(e) => setAmount(e.target.value.replace(/\D/g, ''))}
-          className="h-12 text-lg tabular-nums"
-        />
-      </div>
+      {/* Custom Keypad with Calculator */}
+      <CustomKeypad
+        value={amount}
+        onChange={setAmount}
+        onConfirm={saveTransaction}
+        type={type}
+      />
 
       {type === 'expense' && (
         <div className="flex flex-col gap-1.5">
@@ -249,6 +249,7 @@ export function AddTransactionForm({ onDone }: { onDone: () => void }) {
 
       <LocationPicker value={location} onChange={setLocation} />
 
+      {/* Submit button - also accessible at bottom */}
       <Button type="submit" disabled={!valid} className="h-12">
         {isSubmitting ? (
           <>
