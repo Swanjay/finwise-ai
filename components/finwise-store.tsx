@@ -38,6 +38,8 @@ const KEYS = {
   initialBalance: 'fw.initBal.v1',
   hideBalance: 'fw.hideBal.v1',
   tags: 'fw.tags.v1',
+  fontSize: 'fw.fontSize.v1',
+  compactMode: 'fw.compact.v1',
 }
 
 function loadJSON<T>(key: string, fallback: T): T {
@@ -118,6 +120,10 @@ interface FinwiseStore {
   toggleTheme: () => void
   accentColor: string
   setAccentColor: (color: string) => void
+  fontSize: 'sm' | 'base' | 'lg'
+  setFontSize: (size: 'sm' | 'base' | 'lg') => void
+  compactMode: boolean
+  toggleCompactMode: () => void
 
   // Setup
   setupDone: boolean
@@ -160,6 +166,8 @@ export function FinwiseProvider({ children }: { children: ReactNode }) {
   const [isLocked, setIsLocked] = useState(true)
   const [theme, setTheme] = useState<'dark' | 'light'>('light')
   const [accentColor, setAccentColorState] = useState('purple')
+  const [fontSize, setFontSizeState] = useState<'sm' | 'base' | 'lg'>('base')
+  const [compactMode, setCompactModeState] = useState(false)
   const [setupDone, setSetupDone] = useState(true) // Skip onboarding
   const [tipsDismissed, setTipsDismissed] = useState(false)
   const [initialBalance, setInitialBalance] = useState(0)
@@ -179,6 +187,8 @@ export function FinwiseProvider({ children }: { children: ReactNode }) {
     setPinState(loadJSON(KEYS.pin, null))
     setTheme(loadJSON(KEYS.theme, 'light'))
     setAccentColorState(loadJSON(KEYS.accent, 'purple'))
+    setFontSizeState(loadJSON(KEYS.fontSize, 'base'))
+    setCompactModeState(loadJSON(KEYS.compactMode, false))
     setSetupDone(true) // Always skip onboarding
     setTipsDismissed(loadJSON(KEYS.tipsDismissed, false))
     setInitialBalance(loadJSON(KEYS.initialBalance, 0))
@@ -202,7 +212,18 @@ export function FinwiseProvider({ children }: { children: ReactNode }) {
   useEffect(() => { if (loaded) saveJSON(KEYS.initialBalance, initialBalance) }, [initialBalance, loaded])
   useEffect(() => { if (loaded) saveJSON(KEYS.hideBalance, hideBalance) }, [hideBalance, loaded])
   useEffect(() => { if (loaded) saveJSON(KEYS.tags, tags) }, [tags, loaded])
+  useEffect(() => { if (loaded) saveJSON(KEYS.fontSize, fontSize) }, [fontSize, loaded])
+  useEffect(() => { if (loaded) saveJSON(KEYS.compactMode, compactMode) }, [compactMode, loaded])
   useEffect(() => { if (loaded) { document.documentElement.classList.toggle('dark', theme === 'dark'); document.documentElement.classList.toggle('light', theme === 'light') } }, [theme, loaded])
+
+  // Apply font size CSS variable and compact class
+  useEffect(() => {
+    if (!loaded) return
+    const root = document.documentElement
+    const sizes: Record<string, string> = { sm: '14px', base: '16px', lg: '18px' }
+    root.style.setProperty('--app-font-size', sizes[fontSize] || '16px')
+    root.classList.toggle('compact', compactMode)
+  }, [fontSize, compactMode, loaded])
 
   // Apply accent color CSS variables
   const ACCENT_COLORS: Record<string, { 
@@ -237,6 +258,14 @@ export function FinwiseProvider({ children }: { children: ReactNode }) {
 
   const setAccentColor = useCallback((color: string) => {
     setAccentColorState(color)
+  }, [])
+
+  const setFontSize = useCallback((size: 'sm' | 'base' | 'lg') => {
+    setFontSizeState(size)
+  }, [])
+
+  const toggleCompactMode = useCallback(() => {
+    setCompactModeState(prev => !prev)
   }, [])
 
   // Initial Balance
@@ -425,6 +454,8 @@ export function FinwiseProvider({ children }: { children: ReactNode }) {
     setIsLocked(false)
     setTheme('light')
     setAccentColorState('purple')
+    setFontSizeState('base')
+    setCompactModeState(false)
     setSetupDone(false)
     setTipsDismissed(false)
     setTags([])
@@ -442,6 +473,7 @@ export function FinwiseProvider({ children }: { children: ReactNode }) {
         recurring, addRecurring, toggleRecurring, deleteRecurring,
         pin, setPin, isLocked, unlock,
         theme, toggleTheme, accentColor, setAccentColor,
+        fontSize, setFontSize, compactMode, toggleCompactMode,
         setupDone,
         tipsDismissed, dismissTips,
         initialBalance, updateInitialBalance,

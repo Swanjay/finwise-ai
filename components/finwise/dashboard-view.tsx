@@ -1,4 +1,4 @@
-'use client'
+'use client' // dashboard-view.tsx
 
 import { ArrowDownRight, ArrowUpRight, Eye, EyeOff, TrendingUp, Wallet } from 'lucide-react'
 import { formatIDR, spendingByCategory, summarize, type Transaction } from '@/lib/finwise'
@@ -9,9 +9,13 @@ import { TransactionRow } from './transaction-row'
 import { EmptyState } from './mascot'
 import { LevelBadge, useGamification } from './gamification'
 import Image from 'next/image'
+import { CashflowChart } from './cashflow-chart'
+import { TopSpending } from './top-spending'
+import { UpcomingBills } from './upcoming-bills'
+import { BarChart3, PieChart, Target, CalendarClock } from 'lucide-react'
 
 export function DashboardView({ transactions, month }: { transactions: Transaction[]; month: string }) {
-  const { allCategories, hideBalance, toggleHideBalance, getTotalBalance } = useFinwise()
+  const { allCategories, hideBalance, toggleHideBalance, getTotalBalance, recurring } = useFinwise()
   const { stats } = useGamification()
   const { income, expense, surplus } = summarize(transactions)
   const totalBalance = getTotalBalance()
@@ -104,6 +108,15 @@ export function DashboardView({ transactions, month }: { transactions: Transacti
         </div>
       </div>
 
+      {/* ─── Cashflow Chart ─── */}
+      <div className="clay-card p-4">
+        <h3 className="font-heading text-sm font-bold text-[#2D2057] mb-3 flex items-center gap-2">
+          <BarChart3 className="size-4 text-primary" />
+          Cashflow Bulanan
+        </h3>
+        <CashflowChart transactions={transactions} month={month} />
+      </div>
+
       {/* ─── Spending Donut ─── */}
       {byCat.length > 0 && (
         <div className="clay-card p-4">
@@ -124,13 +137,31 @@ export function DashboardView({ transactions, month }: { transactions: Transacti
         </div>
       )}
 
+      {/* ─── Top Spending Categories ─── */}
+      <div className="clay-card p-4">
+        <h3 className="font-heading text-sm font-bold text-[#2D2057] mb-3 flex items-center gap-2">
+          <PieChart className="size-4 text-primary" />
+          Top Pengeluaran
+        </h3>
+        <TopSpending transactions={transactions} allCategories={allCategories} />
+      </div>
+
       {/* ─── Budget Progress ─── */}
       <div className="clay-card-purple p-4">
         <h3 className="font-heading text-sm font-bold text-[#2D2057] mb-3 flex items-center gap-2">
-          <TrendingUp className="size-4 text-primary" />
+          <Target className="size-4 text-primary" />
           Progres Anggaran
         </h3>
         <BudgetProgress spentByCat={spentMap} />
+      </div>
+
+      {/* ─── Upcoming Bills ─── */}
+      <div className="clay-card p-4">
+        <h3 className="font-heading text-sm font-bold text-[#2D2057] mb-3 flex items-center gap-2">
+          <CalendarClock className="size-4 text-primary" />
+          Tagihan Mendatang
+        </h3>
+        <UpcomingBills recurring={recurring} allCategories={allCategories} />
       </div>
 
       {/* ─── Recent Transactions ─── */}

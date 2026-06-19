@@ -544,7 +544,7 @@ function BenchmarkSheet({ onClose }: { onClose: () => void }) {
 
 // ─── Settings Sheet ───
 function SettingsSheet({ onClose, onOpenSheet }: { onClose: () => void; onOpenSheet?: (sheet: Sheet) => void }) {
-  const { monthlyIncome, updateMonthlyIncome, budgets, setBudget, theme, toggleTheme, accentColor, setAccentColor, resetAll, transactions } = useFinwise()
+  const { monthlyIncome, updateMonthlyIncome, budgets, setBudget, theme, toggleTheme, accentColor, setAccentColor, fontSize, setFontSize, compactMode, toggleCompactMode, resetAll, transactions } = useFinwise()
   const { stats } = useGamification()
   const [incStr, setIncStr] = useState(String(monthlyIncome))
   const [showResetConfirm, setShowResetConfirm] = useState(false)
@@ -603,6 +603,58 @@ function SettingsSheet({ onClose, onOpenSheet }: { onClose: () => void; onOpenSh
             </button>
           ))}
         </div>
+      </div>
+
+      {/* Font Size */}
+      <div className="flex flex-col gap-2">
+        <Label className="text-sm">Ukuran Font</Label>
+        <div className="flex gap-2">
+          {([
+            { id: 'sm' as const, label: 'Kecil', preview: 'A' },
+            { id: 'base' as const, label: 'Normal', preview: 'A' },
+            { id: 'lg' as const, label: 'Besar', preview: 'A' },
+          ]).map((s) => (
+            <button
+              key={s.id}
+              onClick={() => setFontSize(s.id)}
+              className={cn(
+                'flex-1 rounded-xl border px-3 py-2 text-center font-medium transition',
+                fontSize === s.id
+                  ? 'border-primary bg-primary/10 text-primary'
+                  : 'border-border text-muted-foreground hover:bg-secondary'
+              )}
+            >
+              <span className={cn(
+                'block font-bold',
+                s.id === 'sm' && 'text-xs',
+                s.id === 'base' && 'text-sm',
+                s.id === 'lg' && 'text-base'
+              )}>{s.preview}</span>
+              <span className="text-[10px]">{s.label}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Compact Mode */}
+      <div className="flex items-center justify-between">
+        <div>
+          <span className="text-sm">Mode Kompak</span>
+          <p className="text-[10px] text-muted-foreground">Kurangi padding & jarak elemen</p>
+        </div>
+        <button
+          onClick={toggleCompactMode}
+          aria-label={compactMode ? 'Nonaktifkan mode kompak' : 'Aktifkan mode kompak'}
+          className={cn(
+            'relative flex h-7 w-12 items-center rounded-full p-0.5 transition-colors',
+            compactMode ? 'bg-primary' : 'bg-secondary'
+          )}
+        >
+          <span className={cn(
+            'size-6 rounded-full bg-white shadow-md transition-transform',
+            compactMode && 'translate-x-5'
+          )} />
+        </button>
       </div>
 
       {/* Income */}
@@ -894,7 +946,7 @@ function UserAvatar() {
 
 // ─── Main App Shell ───
 function AppShell() {
-  const { transactions, isLocked, pin, tipsDismissed, dismissTips, allCategories, addTransaction } = useFinwise()
+  const { transactions, isLocked, pin, tipsDismissed, dismissTips, allCategories, addTransaction, theme, toggleTheme } = useFinwise()
   const { stats, newBadge, clearNewBadge } = useGamification()
   const [tab, setTab] = useState<Tab>('home')
   const [sheet, setSheet] = useState<Sheet>(null)
@@ -970,6 +1022,14 @@ function AppShell() {
         </div>
         <div className="flex items-center gap-2">
           <MonthNavigator monthKey={monthKey} onChange={setMonthKey} />
+          <button
+            onClick={() => { haptic.light(); toggleTheme() }}
+            aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+            className="flex size-9 items-center justify-center rounded-full bg-white text-muted-foreground shadow-md hover:text-primary transition dark:bg-[#231e30]"
+            style={{ boxShadow: '0 4px 12px rgba(138,110,207,0.15)' }}
+          >
+            {theme === 'dark' ? <Sun className="size-4" /> : <Moon className="size-4" />}
+          </button>
           <button
             onClick={() => setSheet('settings')}
             aria-label="Pengaturan"
