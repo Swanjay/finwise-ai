@@ -129,13 +129,23 @@ export function TransactionRow({
             onDragEnd={handleDragEnd}
             whileTap={{ scale: 0.99 }}
           >
-            {/* Category icon */}
+            {/* Receipt thumbnail or category icon */}
             <span
               className="flex size-10 shrink-0 items-center justify-center rounded-full"
               style={{ backgroundColor: `color-mix(in oklch, ${cat.color} 22%, transparent)` }}
               aria-hidden
             >
-              {Icon ? <Icon className="size-5" style={{ color: cat.color }} /> : <span className="size-5" />}
+              {tx.receiptPhoto ? (
+                <img
+                  src={tx.receiptPhoto}
+                  alt="Struk"
+                  className="size-10 rounded-full object-cover"
+                />
+              ) : Icon ? (
+                <Icon className="size-5" style={{ color: cat.color }} />
+              ) : (
+                <span className="size-5" />
+              )}
             </span>
 
             {/* Details */}

@@ -36,6 +36,51 @@ const CATEGORY_KEYWORDS: Record<CategoryId, string[]> = {
     'telkomsel', 'indosat', 'tri', 'axis'],
 }
 
+// Extract individual line items from receipt text
+function extractItems(text: string): { name: string; price: number; qty?: number }[] {
+  const items: { name: string; price: number; qty?: number }[] = []
+  const lines = text.split('\n')
+
+  // Pattern: "Item Name  2 x 15.000" or "Item Name  15.000" or "Item Name   Rp 15.000"
+  const itemPatterns = [
+    /^(.+?)\s+(\d+)\s*[xX×]\s*(?:Rp\.?\s*)?([\d.,]+)\s*$/,
+    /^(.+?)\s+(?:Rp\.?\s*)?([\d.,]+)\s*$/,
+  ]
+
+  for (const line of lines) {
+    const trimmed = line.trim()
+    if (!trimmed || trimmed.length < 3) continue
+
+    // Skip header/footer/total lines
+    const skip = /total|subtotal|bayar|payment|tunai|cash|kartu|card|kembali|change|ppn|pajak|tax|diskon|discount|member|poin|point/i
+    if (skip.test(trimmed)) continue
+
+    // Try pattern with qty
+    const qtyMatch = trimmed.match(itemPatterns[0])
+    if (qtyMatch) {
+      const name = qtyMatch[1].trim()
+      const qty = parseInt(qtyMatch[2])
+      const price = parseInt(qtyMatch[3].replace(/[.,]/g, ''))
+      if (name.length >= 2 && price > 0 && price < 10_000_000 && qty > 0 && qty < 100) {
+        items.push({ name, price, qty })
+        continue
+      }
+    }
+
+    // Try pattern without qty
+    const simpleMatch = trimmed.match(itemPatterns[1])
+    if (simpleMatch) {
+      const name = simpleMatch[1].trim()
+      const price = parseInt(simpleMatch[2].replace(/[.,]/g, ''))
+      if (name.length >= 2 && price > 100 && price < 10_000_000) {
+        items.push({ name, price })
+      }
+    }
+  }
+
+  return items
+}
+
 // Extract amount from OCR text
 function extractAmount(text: string): number {
   const totalPatterns = [
@@ -224,11 +269,14 @@ export async function POST(req: Request) {
 
 
     // Step 2: Parse the OCR text
+    const items = extractItems(ocrText)
     const result = {
       store: extractStore(ocrText),
       amount: extractAmount(ocrText),
       category: detectCategory(ocrText),
       date: extractDate(ocrText),
+      items,
+      ocrText, // raw OCR text for debugging
     }
 
     return Response.json(result)

@@ -1,7 +1,11 @@
 'use client'
 
-import { useRef, useState } from 'react'
-import { Camera, Check, Loader2, Sparkles, X, Image as ImageIcon } from 'lucide-react'
+import { useRef, useState, useCallback } from 'react'
+import {
+  Camera, Check, Loader2, Sparkles, X, Image as ImageIcon,
+  RotateCcw, Trash2, Plus, Receipt, ShoppingBag, ChevronRight,
+  Edit3, Eye, AlertCircle, CheckCircle2,
+} from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -9,21 +13,16 @@ import {
   EXPENSE_CATEGORIES,
   formatIDR,
   type CategoryId,
+  type ReceiptLineItem,
 } from '@/lib/finwise'
 import { useFinwise } from '@/components/finwise-store'
 import { cn } from '@/lib/utils'
 
-type Step = 'idle' | 'scanning' | 'confirm'
+type Step = 'idle' | 'scanning' | 'edit' | 'confirm'
 
 const VALID_CATEGORIES: CategoryId[] = [
-  'food',
-  'transport',
-  'shopping',
-  'entertainment',
-  'bills',
-  'health',
-  'education',
-  'internet',
+  'food', 'transport', 'shopping', 'entertainment',
+  'bills', 'health', 'education', 'internet',
 ]
 
 interface ScanResult {
@@ -31,16 +30,23 @@ interface ScanResult {
   amount: number
   category: CategoryId
   date: string
+  items: ReceiptLineItem[]
 }
+
+const STEP_INDICATORS = [
+  { key: 'idle', label: 'Foto', icon: Camera },
+  { key: 'scanning', label: 'Scan', icon: Sparkles },
+  { key: 'edit', label: 'Edit', icon: Edit3 },
+  { key: 'confirm', label: 'Simpan', icon: Check },
+]
 
 function fileToDataUrl(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader()
     reader.onload = () => resolve(reader.result as string)
-    const isLarge = file.size > 2 * 1024 * 1024 // 2MB
+    const isLarge = file.size > 2 * 1024 * 1024
     reader.onerror = reject
     if (isLarge) {
-      // Use canvas to compress
       const img = new window.Image()
       img.onload = () => {
         const canvas = document.createElement('canvas')
@@ -62,7 +68,6 @@ function fileToDataUrl(file: File): Promise<string> {
   })
 }
 
-// Check if running inside Capacitor native
 function isNative(): boolean {
   if (typeof window === 'undefined') return false
   return !!(window as any).Capacitor?.isNativePlatform?.()
@@ -102,16 +107,178 @@ async function getGalleryPhoto(): Promise<string | null> {
   }
 }
 
+// Skeleton loader for scanning state
+function ScanSkeleton() {
+  return (
+    <div className="flex flex-col gap-4 animate-pulse">
+      <div className="flex flex-col items-center gap-4 py-8">
+        <div className="relative">
+          <div className="size-12 rounded-full bg-primary/20" />
+          <Sparkles className="absolute -right-1 -top-1 size-5 text-accent animate-pulse" />
+        </div>
+        <div className="h-5 w-48 rounded bg-muted" />
+        <div className="h-4 w-36 rounded bg-muted/60" />
+      </div>
+      {/* Fake result skeleton */}
+      <div className="space-y-3">
+        <div className="h-10 rounded-xl bg-muted" />
+        <div className="h-10 rounded-xl bg-muted" />
+        <div className="grid grid-cols-4 gap-2">
+          {Array.from({ length: 8 }).map((_, i) => (
+            <div key={i} className="h-16 rounded-xl bg-muted" />
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// Step indicator bar
+function StepBar({ current }: { current: Step }) {
+  const stepOrder: Step[] = ['idle', 'scanning', 'edit', 'confirm']
+  const currentIdx = stepOrder.indexOf(current)
+
+  return (
+    <div className="flex items-center justify-center gap-1 mb-4">
+      {STEP_INDICATORS.map((s, i) => {
+        const Icon = s.icon
+        const active = i <= currentIdx
+        const isCurrent = i === currentIdx
+        return (
+          <div key={s.key} className="flex items-center">
+            <div
+              className={cn(
+                'flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-medium transition-all',
+                isCurrent
+                  ? 'bg-primary text-primary-foreground shadow-sm'
+                  : active
+                    ? 'bg-primary/15 text-primary'
+                    : 'bg-muted text-muted-foreground',
+              )}
+            >
+              <Icon className="size-3" />
+              {s.label}
+            </div>
+            {i < STEP_INDICATORS.length - 1 && (
+              <div className={cn('w-4 h-px mx-0.5', active && i < currentIdx ? 'bg-primary' : 'bg-muted')} />
+            )}
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
+// Receipt photo preview thumbnail
+function ReceiptThumb({ photo, onView }: { photo: string; onView: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onView}
+      className="relative group shrink-0 rounded-lg overflow-hidden border border-border shadow-sm w-16 h-20"
+    >
+      <img src={photo} alt="Struk" className="w-full h-full object-cover" />
+      <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition">
+        <Eye className="size-4 text-white" />
+      </div>
+    </button>
+  )
+}
+
+// Editable item row
+function ItemRow({
+  item,
+  index,
+  onUpdate,
+  onRemove,
+}: {
+  item: ReceiptLineItem
+  index: number
+  onUpdate: (idx: number, item: ReceiptLineItem) => void
+  onRemove: (idx: number) => void
+}) {
+  return (
+    <div className="flex items-center gap-2 group">
+      <div className="flex-1 min-w-0">
+        <Input
+          value={item.name}
+          onChange={(e) => onUpdate(index, { ...item, name: e.target.value })}
+          className="h-8 text-sm"
+          placeholder="Nama item"
+        />
+      </div>
+      {item.qty !== undefined && (
+        <div className="w-12">
+          <Input
+            type="number"
+            min={1}
+            value={item.qty}
+            onChange={(e) => onUpdate(index, { ...item, qty: Number(e.target.value) || 1 })}
+            className="h-8 text-sm text-center"
+          />
+        </div>
+      )}
+      <div className="w-28">
+        <Input
+          type="number"
+          inputMode="numeric"
+          value={item.price}
+          onChange={(e) => onUpdate(index, { ...item, price: Number(e.target.value) || 0 })}
+          className="h-8 text-sm text-right tabular-nums"
+          placeholder="Rp"
+        />
+      </div>
+      <button
+        type="button"
+        onClick={() => onRemove(index)}
+        className="p-1 rounded text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition opacity-0 group-hover:opacity-100"
+      >
+        <Trash2 className="size-3.5" />
+      </button>
+    </div>
+  )
+}
+
+// Full receipt photo modal
+function PhotoModal({ photo, onClose }: { photo: string; onClose: () => void }) {
+  return (
+    <div
+      className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4"
+      onClick={onClose}
+    >
+      <div className="relative max-w-md max-h-[80vh]" onClick={(e) => e.stopPropagation()}>
+        <img src={photo} alt="Struk" className="rounded-xl max-h-[80vh] object-contain" />
+        <Button
+          size="icon"
+          variant="secondary"
+          className="absolute -top-2 -right-2 rounded-full shadow-lg"
+          onClick={onClose}
+        >
+          <X className="size-4" />
+        </Button>
+      </div>
+    </div>
+  )
+}
+
 export function ScanFlow({ onDone }: { onDone: () => void }) {
   const { addTransaction } = useFinwise()
   const [step, setStep] = useState<Step>('idle')
   const [result, setResult] = useState<ScanResult | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [retryCount, setRetryCount] = useState(0)
+  const [capturedPhoto, setCapturedPhoto] = useState<string | null>(null)
+  const [showPhoto, setShowPhoto] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
 
-  async function processImage(image: string) {
+  const MAX_RETRIES = 2
+
+  async function processImage(image: string, isRetry = false) {
     setError(null)
     setStep('scanning')
+    if (!isRetry) {
+      setCapturedPhoto(image)
+    }
 
     try {
       const res = await fetch('/api/scan-receipt', {
@@ -128,31 +295,46 @@ export function ScanFlow({ onDone }: { onDone: () => void }) {
         throw new Error(data.error || 'Gagal membaca struk.')
       }
 
-      const data = (await res.json()) as Partial<ScanResult>
+      const data = (await res.json()) as Partial<ScanResult> & { items?: ReceiptLineItem[] }
       const today = new Date().toISOString().slice(0, 10)
       const category =
         data.category && VALID_CATEGORIES.includes(data.category)
           ? data.category
           : 'shopping'
 
+      // Auto-calculate total from items if amount is 0
+      const items = data.items || []
+      const itemsTotal = items.reduce((sum, it) => sum + it.price * (it.qty || 1), 0)
+      const amount = Number(data.amount) || itemsTotal || 0
+
       setResult({
         store: data.store?.trim() || 'Struk Belanja',
-        amount: Number(data.amount) || 0,
+        amount,
         category,
         date: data.date || today,
+        items,
       })
-      setStep('confirm')
+      setRetryCount(0)
+      setStep(items.length > 0 ? 'edit' : 'confirm')
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Gagal membaca struk.')
+      const msg = err instanceof Error ? err.message : 'Gagal membaca struk.'
+      if (retryCount < MAX_RETRIES && !msg.includes('login') && !msg.includes('Tunggu')) {
+        // Auto-retry with backoff
+        setRetryCount((c) => c + 1)
+        const delay = 1000 * Math.pow(2, retryCount)
+        setTimeout(() => processImage(image, true), delay)
+        return
+      }
+      setError(msg)
       setStep('idle')
     }
   }
 
-  // Native Capacitor camera button
   async function handleCamera() {
     setError(null)
     const image = await getCameraPhoto()
     if (!image) return
+    setRetryCount(0)
     await processImage(image)
   }
 
@@ -160,16 +342,40 @@ export function ScanFlow({ onDone }: { onDone: () => void }) {
     setError(null)
     const image = await getGalleryPhoto()
     if (!image) return
+    setRetryCount(0)
     await processImage(image)
   }
 
-  // Web file input handler
   async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file) return
     const image = await fileToDataUrl(file)
     if (fileRef.current) fileRef.current.value = ''
+    setRetryCount(0)
     await processImage(image)
+  }
+
+  function handleUpdateItem(idx: number, item: ReceiptLineItem) {
+    if (!result) return
+    const newItems = [...result.items]
+    newItems[idx] = item
+    const newTotal = newItems.reduce((sum, it) => sum + it.price * (it.qty || 1), 0)
+    setResult({ ...result, items: newItems, amount: newTotal })
+  }
+
+  function handleRemoveItem(idx: number) {
+    if (!result) return
+    const newItems = result.items.filter((_, i) => i !== idx)
+    const newTotal = newItems.reduce((sum, it) => sum + it.price * (it.qty || 1), 0)
+    setResult({ ...result, items: newItems, amount: newTotal })
+  }
+
+  function handleAddItem() {
+    if (!result) return
+    setResult({
+      ...result,
+      items: [...result.items, { name: '', price: 0 }],
+    })
   }
 
   function save() {
@@ -180,32 +386,71 @@ export function ScanFlow({ onDone }: { onDone: () => void }) {
       amount: result.amount,
       description: result.store,
       date: result.date,
+      receiptPhoto: capturedPhoto || undefined,
+      items: result.items.length > 0 ? result.items : undefined,
     })
     onDone()
+  }
+
+  function reset() {
+    setResult(null)
+    setError(null)
+    setCapturedPhoto(null)
+    setRetryCount(0)
+    setStep('idle')
   }
 
   const native = isNative()
 
   return (
-    <div className="flex flex-col gap-5">
+    <div className="flex flex-col gap-4">
+      <StepBar current={step} />
+
+      {/* Photo modal */}
+      {showPhoto && capturedPhoto && (
+        <PhotoModal photo={capturedPhoto} onClose={() => setShowPhoto(false)} />
+      )}
+
+      {/* ─── IDLE: capture ─── */}
       {step === 'idle' && (
         <>
           {error && (
-            <div className="flex items-center gap-2 rounded-xl bg-destructive/10 p-3 text-sm text-destructive">
-              <X className="size-4 shrink-0" />
-              <span>{error}</span>
+            <div className="flex items-start gap-2 rounded-xl bg-destructive/10 p-3 text-sm text-destructive">
+              <AlertCircle className="size-4 shrink-0 mt-0.5" />
+              <div className="flex-1">
+                <span>{error}</span>
+                <button
+                  onClick={() => { setError(null); }}
+                  className="block mt-1 text-xs underline opacity-80 hover:opacity-100"
+                >
+                  Tutup
+                </button>
+              </div>
             </div>
           )}
-          <div className="rounded-2xl border border-dashed border-primary/40 bg-surface-2/50 p-8 text-center">
-            <Camera className="mx-auto size-10 text-primary" />
-            <p className="mt-3 font-medium">Scan struk belanjamu</p>
+
+          <div className="rounded-2xl border border-dashed border-primary/40 bg-surface-2/50 p-6 text-center">
+            <div className="mx-auto flex size-12 items-center justify-center rounded-full bg-primary/10">
+              <Receipt className="size-6 text-primary" />
+            </div>
+            <p className="mt-3 font-medium">Scan Struk Belanja</p>
             <p className="mt-1 text-sm text-muted-foreground text-balance">
-              AI akan membaca nama toko, total, dan kategori secara otomatis.
+              AI akan membaca item, harga, dan total secara otomatis.
             </p>
           </div>
 
+          {/* Previously captured photo preview */}
+          {capturedPhoto && (
+            <div className="flex items-center gap-3 rounded-xl bg-muted/50 p-3">
+              <ReceiptThumb photo={capturedPhoto} onView={() => setShowPhoto(true)} />
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium">Foto tersimpan</p>
+                <p className="text-xs text-muted-foreground">Foto struk akan disimpan bersama transaksi</p>
+              </div>
+            </div>
+          )}
+
           {native ? (
-            // Native: use Capacitor Camera plugin
             <>
               <Button onClick={handleCamera} className="h-12">
                 <Camera className="size-5" /> Ambil Foto Struk
@@ -215,7 +460,6 @@ export function ScanFlow({ onDone }: { onDone: () => void }) {
               </Button>
             </>
           ) : (
-            // Web: use file input
             <>
               <input
                 ref={fileRef}
@@ -233,50 +477,147 @@ export function ScanFlow({ onDone }: { onDone: () => void }) {
         </>
       )}
 
+      {/* ─── SCANNING: loading ─── */}
       {step === 'scanning' && (
-        <div className="flex flex-col items-center gap-4 py-12">
-          <div className="relative">
-            <Loader2 className="size-12 animate-spin text-primary" />
-            <Sparkles className="absolute -right-1 -top-1 size-5 text-accent" />
+        <>
+          {retryCount > 0 && (
+            <div className="flex items-center gap-2 rounded-xl bg-amber-500/10 p-2 text-xs text-amber-600">
+              <RotateCcw className="size-3 animate-spin" />
+              <span>Mencoba ulang ({retryCount}/{MAX_RETRIES})…</span>
+            </div>
+          )}
+          <ScanSkeleton />
+        </>
+      )}
+
+      {/* ─── EDIT: review items ─── */}
+      {step === 'edit' && result && (
+        <div className="flex flex-col gap-3">
+          <div className="flex items-center gap-2 rounded-xl bg-accent/10 p-3 text-sm text-accent">
+            <Sparkles className="size-4 shrink-0" />
+            <span>Item terdeteksi! Periksa & sesuaikan sebelum simpan.</span>
           </div>
-          <p className="font-medium">AI sedang membaca struk…</p>
-          <p className="text-sm text-muted-foreground">Mengekstrak toko & total</p>
+
+          {/* Store + photo row */}
+          <div className="flex items-start gap-3">
+            {capturedPhoto && (
+              <ReceiptThumb photo={capturedPhoto} onView={() => setShowPhoto(true)} />
+            )}
+            <div className="flex-1 min-w-0">
+              <Label htmlFor="scan-store" className="text-xs">Nama Toko</Label>
+              <Input
+                id="scan-store"
+                value={result.store}
+                onChange={(e) => setResult({ ...result, store: e.target.value })}
+                className="mt-1"
+              />
+            </div>
+          </div>
+
+          {/* Date */}
+          <div className="flex gap-2">
+            <div className="flex-1">
+              <Label htmlFor="scan-date" className="text-xs">Tanggal</Label>
+              <Input
+                id="scan-date"
+                type="date"
+                value={result.date}
+                onChange={(e) => setResult({ ...result, date: e.target.value })}
+                className="mt-1"
+              />
+            </div>
+          </div>
+
+          {/* Items list */}
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <Label className="text-xs">Item Struk</Label>
+              <button
+                type="button"
+                onClick={handleAddItem}
+                className="flex items-center gap-1 text-xs text-primary hover:underline"
+              >
+                <Plus className="size-3" /> Tambah
+              </button>
+            </div>
+            <div className="space-y-2 rounded-xl border border-border p-3 bg-card/50 max-h-48 overflow-y-auto">
+              {result.items.length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-4">
+                  Tidak ada item terdeteksi
+                </p>
+              ) : (
+                result.items.map((item, i) => (
+                  <ItemRow
+                    key={i}
+                    item={item}
+                    index={i}
+                    onUpdate={handleUpdateItem}
+                    onRemove={handleRemoveItem}
+                  />
+                ))
+              )}
+            </div>
+          </div>
+
+          {/* Total */}
+          <div className="rounded-xl bg-primary/5 border border-primary/20 p-3">
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-muted-foreground">Total</span>
+              <span className="text-lg font-bold tabular-nums">{formatIDR(result.amount)}</span>
+            </div>
+            <Input
+              inputMode="numeric"
+              value={result.amount}
+              onChange={(e) => setResult({ ...result, amount: Number(e.target.value) || 0 })}
+              className="mt-2 h-8 text-right text-sm"
+              placeholder="Edit total manual"
+            />
+          </div>
+
+          {/* Actions */}
+          <div className="flex gap-2 pt-1">
+            <Button variant="secondary" className="flex-1" onClick={() => setStep('confirm')}>
+              Lewati <ChevronRight className="size-4" />
+            </Button>
+            <Button className="flex-1" onClick={() => setStep('confirm')}>
+              <Check className="size-4" /> Lanjut
+            </Button>
+          </div>
         </div>
       )}
 
+      {/* ─── CONFIRM: category + save ─── */}
       {step === 'confirm' && result && (
         <div className="flex flex-col gap-4">
-          <div className="flex items-center gap-2 rounded-xl bg-accent/10 p-3 text-sm text-accent">
-            <Sparkles className="size-4 shrink-0" />
-            <span>AI selesai membaca. Periksa & sesuaikan sebelum simpan.</span>
+          {/* Summary card */}
+          <div className="flex items-center gap-3 rounded-xl bg-card border border-border p-3">
+            {capturedPhoto && (
+              <ReceiptThumb photo={capturedPhoto} onView={() => setShowPhoto(true)} />
+            )}
+            <div className="flex-1 min-w-0">
+              <p className="font-medium truncate">{result.store}</p>
+              <p className="text-xs text-muted-foreground">{result.date}</p>
+              {result.items.length > 0 && (
+                <p className="text-xs text-muted-foreground">{result.items.length} item</p>
+              )}
+            </div>
+            <span className="text-lg font-bold tabular-nums">{formatIDR(result.amount)}</span>
           </div>
 
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="scan-store">Nama Toko / Deskripsi</Label>
-            <Input
-              id="scan-store"
-              value={result.store}
-              onChange={(e) => setResult({ ...result, store: e.target.value })}
-            />
-          </div>
+          {/* Edit back to items */}
+          {result.items.length > 0 && (
+            <button
+              type="button"
+              onClick={() => setStep('edit')}
+              className="flex items-center gap-2 text-sm text-primary hover:underline"
+            >
+              <Edit3 className="size-3.5" /> Edit item struk
+            </button>
+          )}
 
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="scan-amount">Total (Rp)</Label>
-            <Input
-              id="scan-amount"
-              inputMode="numeric"
-              value={result.amount}
-              onChange={(e) =>
-                setResult({ ...result, amount: Number(e.target.value) || 0 })
-              }
-            />
-            <span className="text-xs text-muted-foreground tabular-nums">
-              {formatIDR(result.amount)}
-            </span>
-          </div>
-
-          <div className="flex flex-col gap-1.5">
-            <Label>Kategori</Label>
+          {/* Category picker */}
+          <div>
+            <Label className="text-xs mb-2 block">Kategori</Label>
             <div className="grid grid-cols-4 gap-2">
               {EXPENSE_CATEGORIES.map((c) => {
                 const Icon = c.icon
@@ -301,13 +642,18 @@ export function ScanFlow({ onDone }: { onDone: () => void }) {
             </div>
           </div>
 
+          {/* Receipt photo toggle */}
+          {capturedPhoto && (
+            <div className="flex items-center gap-2 rounded-lg bg-muted/50 p-2.5">
+              <CheckCircle2 className="size-4 text-green-500" />
+              <span className="text-xs text-muted-foreground">Foto struk akan disimpan</span>
+            </div>
+          )}
+
+          {/* Action buttons */}
           <div className="flex gap-2 pt-1">
-            <Button
-              variant="secondary"
-              className="flex-1"
-              onClick={() => setStep('idle')}
-            >
-              <X className="size-4" /> Ulang
+            <Button variant="secondary" className="flex-1" onClick={reset}>
+              <RotateCcw className="size-4" /> Ulang
             </Button>
             <Button className="flex-1" onClick={save}>
               <Check className="size-4" /> Simpan

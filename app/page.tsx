@@ -42,6 +42,7 @@ import {
   autoCategory, generateId,
   type CategoryId, type Transaction, type Category, type TxType,
   type Wallet as WalletType, type Goal, type RecurringItem,
+  WALLET_ICON_OPTIONS, WALLET_COLOR_PRESETS,
 } from '@/lib/finwise'
 import { cn } from '@/lib/utils'
 
@@ -232,18 +233,36 @@ function GoalsSheet({ onClose }: { onClose: () => void }) {
 
 // ─── Wallets Sheet ───
 function WalletsSheet({ onClose }: { onClose: () => void }) {
-  const { wallets, addWallet, updateWallet, deleteWallet, getWalletBalance, getTotalBalance } = useFinwise()
+  const { wallets, addWallet, updateWallet, deleteWallet, getWalletBalance, getTotalBalance, transactions, allCategories } = useFinwise()
   const [showForm, setShowForm] = useState(false)
   const [name, setName] = useState('')
   const [icon, setIcon] = useState('💵')
   const [initBalance, setInitBalance] = useState('')
+  const [walletColor, setWalletColor] = useState(WALLET_COLOR_PRESETS[0])
+  const [walletType, setWalletType] = useState<'bank' | 'ewallet' | 'cash' | 'credit'>('cash')
+  const [editingId, setEditingId] = useState<string | null>(null)
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!name) return
-    const balance = Number(initBalance.replace(/\D/g, '')) || 0
-    addWallet({ id: generateId(), name, icon, balance, color: COLOR_PRESETS[wallets.length % COLOR_PRESETS.length] })
-    setName(''); setInitBalance(''); setShowForm(false)
+    const balance = Number(initBalance.replace(/\\D/g, '')) || 0
+    if (editingId) {
+      updateWallet(editingId, { name, icon, balance, color: walletColor, type: walletType })
+      setEditingId(null)
+    } else {
+      addWallet({ id: generateId(), name, icon, balance, color: walletColor, type: walletType })
+    }
+    setName(''); setInitBalance(''); setIcon('💵'); setWalletColor(WALLET_COLOR_PRESETS[0]); setWalletType('cash'); setShowForm(false)
+  }
+
+  function startEdit(w: WalletType) {
+    setName(w.name)
+    setIcon(w.icon)
+    setInitBalance(String(w.balance))
+    setWalletColor(w.color)
+    setWalletType(w.type || 'cash')
+    setEditingId(w.id)
+    setShowForm(true)
   }
 
   return (
@@ -255,33 +274,65 @@ function WalletsSheet({ onClose }: { onClose: () => void }) {
       </div>
       <div className="flex gap-2 self-end">
         <Button size="sm" variant="outline" onClick={() => { onClose(); setTimeout(() => { const ev = new CustomEvent('open-sheet', { detail: 'transfer' }); window.dispatchEvent(ev) }, 100) }} className="gap-1"><ArrowLeftRight className="size-4" /> Transfer</Button>
-        <Button size="sm" onClick={() => setShowForm(!showForm)} className="gap-1"><Plus className="size-4" /> Baru</Button>
+        <Button size="sm" onClick={() => { setShowForm(!showForm); setEditingId(null); setName(''); setIcon('💵'); setInitBalance(''); }} className="gap-1"><Plus className="size-4" /> Baru</Button>
       </div>
       {showForm && (
         <form onSubmit={handleSubmit} className="flex flex-col gap-2 p-3 rounded-xl border border-primary/30">
           <Input placeholder="Nama dompet (e.g. GoPay)" value={name} onChange={(e) => setName(e.target.value)} />
           <Input inputMode="numeric" placeholder="Saldo awal (Rp)" value={initBalance} onChange={(e) => setInitBalance(e.target.value)} />
-          <div className="flex gap-2">
-            {['💵', '🏦', '📱', '💳', '🪙'].map((e) => (
-              <button key={e} type="button" onClick={() => setIcon(e)} className={cn('text-2xl p-2 rounded-lg', icon === e ? 'bg-primary/20' : 'bg-secondary')}>{e}</button>
-            ))}
+
+          {/* Wallet Type */}
+          <div>
+            <Label className="text-xs mb-1 block">Tipe Dompet</Label>
+            <div className="grid grid-cols-4 gap-1">
+              {(['cash', 'bank', 'ewallet', 'credit'] as const).map((t) => (
+                <button key={t} type="button" onClick={() => setWalletType(t)} className={cn('text-[10px] py-1.5 px-2 rounded-lg font-medium transition', walletType === t ? 'bg-primary text-white' : 'bg-secondary text-muted-foreground')}>
+                  {t === 'cash' ? '💵 Cash' : t === 'bank' ? '🏦 Bank' : t === 'ewallet' ? '📱 E-Wallet' : '💳 Kredit'}
+                </button>
+              ))}
+            </div>
           </div>
-          <div className="flex gap-2"><Button type="button" variant="secondary" className="flex-1" onClick={() => setShowForm(false)}>Batal</Button><Button type="submit" className="flex-1">Simpan</Button></div>
+
+          {/* Icon Picker */}
+          <div>
+            <Label className="text-xs mb-1 block">Ikon</Label>
+            <div className="flex flex-wrap gap-1.5">
+              {WALLET_ICON_OPTIONS.map((opt) => (
+                <button key={opt.emoji} type="button" onClick={() => setIcon(opt.emoji)} className={cn('text-xl p-1.5 rounded-lg transition', icon === opt.emoji ? 'bg-primary/20 ring-2 ring-primary/40' : 'bg-secondary hover:bg-secondary/80')}>{opt.emoji}</button>
+              ))}
+            </div>
+          </div>
+
+          {/* Color Picker */}
+          <div>
+            <Label className="text-xs mb-1 block">Warna</Label>
+            <div className="flex flex-wrap gap-1.5">
+              {WALLET_COLOR_PRESETS.map((c) => (
+                <button key={c} type="button" onClick={() => setWalletColor(c)} className={cn('size-7 rounded-full transition', walletColor === c ? 'ring-2 ring-offset-2 ring-primary' : 'hover:scale-110')} style={{ backgroundColor: c }} />
+              ))}
+            </div>
+          </div>
+
+          <div className="flex gap-2"><Button type="button" variant="secondary" className="flex-1" onClick={() => { setShowForm(false); setEditingId(null) }}>Batal</Button><Button type="submit" className="flex-1">{editingId ? 'Update' : 'Simpan'}</Button></div>
         </form>
       )}
       {wallets.map((w) => {
         const computed = getWalletBalance(w.id)
+        const walletTx = transactions.filter(t => t.walletId === w.id)
+        const txCount = walletTx.length
         return (
-        <Card key={w.id}>
-          <CardContent className="p-4 flex items-center gap-3">
-            <span className="text-2xl">{w.icon}</span>
-            <div className="flex-1">
-              <p className="font-medium text-sm">{w.name}</p>
-              <p className="text-xs text-muted-foreground tabular-nums">Saldo: {formatIDR(computed)}</p>
-              <p className="text-[10px] text-muted-foreground/60">Awal: {formatIDR(w.balance)}</p>
+        <Card key={w.id} style={{ borderLeft: `3px solid ${w.color}` }}>
+          <CardContent className="p-3 flex items-center gap-3">
+            <div className="flex items-center justify-center size-10 rounded-xl text-lg shrink-0" style={{ backgroundColor: `${w.color}20`, color: w.color }}>
+              {w.icon}
             </div>
-            <Input inputMode="numeric" placeholder="Saldo awal" className="w-28 h-7 text-xs text-right" defaultValue={w.balance || ''} onBlur={(e) => updateWallet(w.id, { balance: Number(e.target.value.replace(/\D/g, '')) || 0 })} />
-            <button onClick={() => deleteWallet(w.id)} aria-label={`Hapus dompet ${w.name}`} className="text-muted-foreground hover:text-destructive"><Trash2 className="size-4" /></button>
+            <div className="flex-1 min-w-0">
+              <p className="font-medium text-sm truncate">{w.name}</p>
+              <p className="text-xs text-muted-foreground tabular-nums">{formatIDR(computed)}</p>
+              <p className="text-[10px] text-muted-foreground/60">{txCount} transaksi · {w.type || 'cash'}</p>
+            </div>
+            <button onClick={() => startEdit(w)} aria-label={`Edit ${w.name}`} className="text-muted-foreground hover:text-primary p-1"><Settings className="size-3.5" /></button>
+            <button onClick={() => deleteWallet(w.id)} aria-label={`Hapus dompet ${w.name}`} className="text-muted-foreground hover:text-destructive p-1"><Trash2 className="size-3.5" /></button>
           </CardContent>
         </Card>
         )

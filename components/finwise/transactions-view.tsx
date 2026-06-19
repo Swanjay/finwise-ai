@@ -26,6 +26,8 @@ import { BottomSheet } from './bottom-sheet'
 import { useFinwise } from '@/components/finwise-store'
 import { CATEGORIES, type Transaction, type TxType } from '@/lib/finwise'
 import { cn } from '@/lib/utils'
+import { StaggerList, StaggerItem } from './stagger-list'
+import { motion, AnimatePresence } from 'framer-motion'
 
 type Filter = 'all' | TxType
 type SortOption = 'newest' | 'oldest' | 'highest' | 'lowest'
@@ -182,9 +184,19 @@ export function TransactionsView() {
   ]
 
   return (
-    <div className="flex flex-col gap-3">
+    <motion.div
+      className="flex flex-col gap-3"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.3 }}
+    >
       {/* Search bar */}
-      <div className="relative">
+      <motion.div
+        className="relative"
+        initial={{ opacity: 0, y: -8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3, delay: 0.05 }}
+      >
         <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
         <Input
           placeholder="Cari transaksi atau tag…"
@@ -201,16 +213,23 @@ export function TransactionsView() {
             <X className="size-4" />
           </button>
         )}
-      </div>
+      </motion.div>
 
       {/* Type filter pills + Sort dropdown */}
-      <div className="flex items-center gap-2">
+      <motion.div
+        className="flex items-center gap-2"
+        initial={{ opacity: 0, y: -5 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3, delay: 0.1 }}
+      >
         <div className="flex gap-1.5">
           {filters.map((f) => (
-            <button
+            <motion.button
               key={f.id}
               type="button"
               onClick={() => setFilter(f.id)}
+              whileTap={{ scale: 0.93 }}
+              transition={{ type: 'spring', stiffness: 500, damping: 25 }}
               className={cn(
                 'rounded-full px-3 py-1.5 text-xs font-medium transition',
                 filter === f.id
@@ -219,7 +238,7 @@ export function TransactionsView() {
               )}
             >
               {f.label}
-            </button>
+            </motion.button>
           ))}
         </div>
 
@@ -238,12 +257,13 @@ export function TransactionsView() {
             </SelectContent>
           </Select>
         </div>
-      </div>
+      </motion.div>
 
       {/* Advanced filters toggle */}
-      <button
+      <motion.button
         type="button"
         onClick={() => setShowAdvanced(!showAdvanced)}
+        whileTap={{ scale: 0.97 }}
         className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition self-start"
       >
         <SlidersHorizontal className="size-3.5" />
@@ -258,151 +278,168 @@ export function TransactionsView() {
         ) : (
           <ChevronDown className="size-3.5" />
         )}
-      </button>
+      </motion.button>
 
       {/* Advanced filters panel */}
-      {showAdvanced && (
-        <Card className="border-dashed">
-          <CardContent className="p-3 flex flex-col gap-3">
-            {/* Date range */}
-            <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-medium text-muted-foreground">
-                Rentang Waktu
-              </label>
-              <div className="flex flex-wrap gap-1.5">
-                {(
-                  [
-                    { id: 'all', label: 'Semua' },
-                    { id: 'this_month', label: 'Bulan Ini' },
-                    { id: 'last_month', label: 'Bulan Lalu' },
-                    { id: 'custom', label: 'Kustom' },
-                  ] as const
-                ).map((opt) => (
-                  <button
-                    key={opt.id}
-                    type="button"
-                    onClick={() => setDateRange(opt.id)}
-                    className={cn(
-                      'rounded-full px-2.5 py-1 text-xs font-medium transition',
-                      dateRange === opt.id
-                        ? 'bg-primary text-primary-foreground'
-                        : 'bg-secondary text-muted-foreground hover:text-foreground',
-                    )}
-                  >
-                    {opt.label}
-                  </button>
-                ))}
-              </div>
-              {dateRange === 'custom' && (
-                <div className="flex gap-2 mt-1">
-                  <div className="flex-1">
-                    <label className="text-[10px] text-muted-foreground">Dari</label>
-                    <Input
-                      type="date"
-                      value={customDateFrom}
-                      onChange={(e) => setCustomDateFrom(e.target.value)}
-                      className="h-8 text-xs"
-                    />
+      <AnimatePresence>
+        {showAdvanced && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
+            className="overflow-hidden"
+          >
+            <Card className="border-dashed">
+              <CardContent className="p-3 flex flex-col gap-3">
+                {/* Date range */}
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs font-medium text-muted-foreground">
+                    Rentang Waktu
+                  </label>
+                  <div className="flex flex-wrap gap-1.5">
+                    {(
+                      [
+                        { id: 'all', label: 'Semua' },
+                        { id: 'this_month', label: 'Bulan Ini' },
+                        { id: 'last_month', label: 'Bulan Lalu' },
+                        { id: 'custom', label: 'Kustom' },
+                      ] as const
+                    ).map((opt) => (
+                      <button
+                        key={opt.id}
+                        type="button"
+                        onClick={() => setDateRange(opt.id)}
+                        className={cn(
+                          'rounded-full px-2.5 py-1 text-xs font-medium transition',
+                          dateRange === opt.id
+                            ? 'bg-primary text-primary-foreground'
+                            : 'bg-secondary text-muted-foreground hover:text-foreground',
+                        )}
+                      >
+                        {opt.label}
+                      </button>
+                    ))}
                   </div>
-                  <div className="flex-1">
-                    <label className="text-[10px] text-muted-foreground">Sampai</label>
+                  {dateRange === 'custom' && (
+                    <div className="flex gap-2 mt-1">
+                      <div className="flex-1">
+                        <label className="text-[10px] text-muted-foreground">Dari</label>
+                        <Input
+                          type="date"
+                          value={customDateFrom}
+                          onChange={(e) => setCustomDateFrom(e.target.value)}
+                          className="h-8 text-xs"
+                        />
+                      </div>
+                      <div className="flex-1">
+                        <label className="text-[10px] text-muted-foreground">Sampai</label>
+                        <Input
+                          type="date"
+                          value={customDateTo}
+                          onChange={(e) => setCustomDateTo(e.target.value)}
+                          className="h-8 text-xs"
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Category filter */}
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs font-medium text-muted-foreground">
+                    Kategori
+                  </label>
+                  <Select
+                    value={selectedCategory}
+                    onValueChange={(v) => setSelectedCategory(v ?? 'all')}
+                  >
+                    <SelectTrigger size="sm" className="w-full">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Semua Kategori</SelectItem>
+                      {usedCategories.map((catId) => {
+                        const cat = CATEGORIES[catId]
+                        return (
+                          <SelectItem key={catId} value={catId}>
+                            {cat?.label ?? catId}
+                          </SelectItem>
+                        )
+                      })}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Amount range */}
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs font-medium text-muted-foreground">
+                    Rentang Nominal (Rp)
+                  </label>
+                  <div className="flex gap-2">
                     <Input
-                      type="date"
-                      value={customDateTo}
-                      onChange={(e) => setCustomDateTo(e.target.value)}
-                      className="h-8 text-xs"
+                      type="number"
+                      placeholder="Min"
+                      value={amountMin}
+                      onChange={(e) => setAmountMin(e.target.value)}
+                      className="h-8 text-xs flex-1"
+                      min={0}
+                    />
+                    <span className="flex items-center text-xs text-muted-foreground">—</span>
+                    <Input
+                      type="number"
+                      placeholder="Max"
+                      value={amountMax}
+                      onChange={(e) => setAmountMax(e.target.value)}
+                      className="h-8 text-xs flex-1"
+                      min={0}
                     />
                   </div>
                 </div>
-              )}
-            </div>
 
-            {/* Category filter */}
-            <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-medium text-muted-foreground">
-                Kategori
-              </label>
-              <Select
-                value={selectedCategory}
-                onValueChange={(v) => setSelectedCategory(v ?? 'all')}
-              >
-                <SelectTrigger size="sm" className="w-full">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Semua Kategori</SelectItem>
-                  {usedCategories.map((catId) => {
-                    const cat = CATEGORIES[catId]
-                    return (
-                      <SelectItem key={catId} value={catId}>
-                        {cat?.label ?? catId}
-                      </SelectItem>
-                    )
-                  })}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Amount range */}
-            <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-medium text-muted-foreground">
-                Rentang Nominal (Rp)
-              </label>
-              <div className="flex gap-2">
-                <Input
-                  type="number"
-                  placeholder="Min"
-                  value={amountMin}
-                  onChange={(e) => setAmountMin(e.target.value)}
-                  className="h-8 text-xs flex-1"
-                  min={0}
-                />
-                <span className="flex items-center text-xs text-muted-foreground">—</span>
-                <Input
-                  type="number"
-                  placeholder="Max"
-                  value={amountMax}
-                  onChange={(e) => setAmountMax(e.target.value)}
-                  className="h-8 text-xs flex-1"
-                  min={0}
-                />
-              </div>
-            </div>
-
-            {/* Clear all button */}
-            {activeFilterCount > 0 && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={clearAllAdvanced}
-                className="self-start text-xs text-destructive hover:text-destructive"
-              >
-                <X className="size-3.5" />
-                Reset Filter
-              </Button>
-            )}
-          </CardContent>
-        </Card>
-      )}
+                {/* Clear all button */}
+                {activeFilterCount > 0 && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={clearAllAdvanced}
+                    className="self-start text-xs text-destructive hover:text-destructive"
+                  >
+                    <X className="size-3.5" />
+                    Reset Filter
+                  </Button>
+                )}
+              </CardContent>
+            </Card>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Tag filter chips */}
       {usedTags.length > 0 && (
-        <div className="flex gap-1.5 flex-wrap">
+        <motion.div
+          className="flex gap-1.5 flex-wrap"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.15 }}
+        >
           <Tag className="size-3.5 text-muted-foreground shrink-0 mt-0.5" />
           {selectedTag && (
-            <button
+            <motion.button
               type="button"
               onClick={() => setSelectedTag(null)}
+              whileTap={{ scale: 0.93 }}
               className="rounded-full bg-destructive/15 px-2.5 py-0.5 text-xs font-medium text-destructive hover:bg-destructive/25 transition"
             >
               ✕ Hapus filter
-            </button>
+            </motion.button>
           )}
           {usedTags.map((tag) => (
-            <button
+            <motion.button
               key={tag}
               type="button"
               onClick={() => setSelectedTag(selectedTag === tag ? null : tag)}
+              whileTap={{ scale: 0.93 }}
               className={cn(
                 'rounded-full px-2.5 py-0.5 text-xs font-medium transition',
                 selectedTag === tag
@@ -411,9 +448,9 @@ export function TransactionsView() {
               )}
             >
               #{tag}
-            </button>
+            </motion.button>
           ))}
-        </div>
+        </motion.div>
       )}
 
       {/* Results summary */}
@@ -428,24 +465,30 @@ export function TransactionsView() {
         ← Geser kiri untuk hapus · Geser kanan untuk edit →
       </p>
 
-      {/* Transaction list */}
+      {/* Transaction list with staggered animation */}
       <Card>
         <CardContent className="p-2">
           {filtered.length === 0 ? (
-            <p className="py-10 text-center text-sm text-muted-foreground">
+            <motion.p
+              className="py-10 text-center text-sm text-muted-foreground"
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.3 }}
+            >
               Tidak ada transaksi yang cocok.
-            </p>
+            </motion.p>
           ) : (
-            <ul className="flex flex-col">
+            <StaggerList className="flex flex-col">
               {filtered.map((tx) => (
-                <TransactionRow
-                  key={tx.id}
-                  tx={tx}
-                  onDelete={deleteTransaction}
-                  onEdit={setEditingTx}
-                />
+                <StaggerItem key={tx.id}>
+                  <TransactionRow
+                    tx={tx}
+                    onDelete={deleteTransaction}
+                    onEdit={setEditingTx}
+                  />
+                </StaggerItem>
               ))}
-            </ul>
+            </StaggerList>
           )}
         </CardContent>
       </Card>
@@ -463,6 +506,6 @@ export function TransactionsView() {
           />
         )}
       </BottomSheet>
-    </div>
+    </motion.div>
   )
 }

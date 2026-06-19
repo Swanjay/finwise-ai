@@ -10,7 +10,7 @@ import {
   TabsList,
   TabsTrigger,
 } from '@/components/ui/tabs'
-import { EXPENSE_CATEGORIES, type CategoryId, type TxType, type Transaction } from '@/lib/finwise'
+import { EXPENSE_CATEGORIES, walletAutoCategory, type CategoryId, type TxType, type Transaction } from '@/lib/finwise'
 import { useFinwise } from '@/components/finwise-store'
 import { LocationPicker, type LocationData } from '@/components/finwise/location-picker'
 import { cn } from '@/lib/utils'
@@ -151,23 +151,29 @@ export function EditTransactionForm({
       {/* Wallet selector */}
       <div className="flex flex-col gap-1.5">
         <Label>{type === 'expense' ? 'Ambil dari Dompet' : 'Masuk ke Dompet'}</Label>
-        <div className="grid grid-cols-3 gap-2">
+        <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
           {wallets.map((w) => {
             const active = walletId === w.id
             return (
               <button
                 key={w.id}
                 type="button"
-                onClick={() => setWalletId(w.id)}
+                onClick={() => {
+                  setWalletId(w.id)
+                  if (type === 'expense') {
+                    const hint = walletAutoCategory(w.id, description)
+                    if (hint) setCategory(hint)
+                  }
+                }}
                 className={cn(
-                  'flex items-center gap-2 rounded-xl border px-3 py-2 text-sm transition',
+                  'flex flex-col items-center gap-1 rounded-xl border p-2 text-[11px] transition',
                   active
                     ? 'border-primary bg-primary/15 text-foreground'
                     : 'border-border text-muted-foreground hover:bg-secondary',
                 )}
               >
-                <span>{w.icon}</span>
-                <span className="truncate">{w.name}</span>
+                <span className="text-base">{w.icon}</span>
+                <span className="truncate font-medium">{w.name}</span>
               </button>
             )
           })}

@@ -12,6 +12,7 @@ import {
   BUILTIN_CATEGORIES,
   DEFAULT_WALLETS,
   autoCategory,
+  autoCategoryWithWallet,
   generateId,
   type Transaction,
   type Category,
@@ -283,7 +284,7 @@ export function FinwiseProvider({ children }: { children: ReactNode }) {
 
   // Transactions
   const addTransaction = useCallback((tx: Omit<Transaction, 'id'>) => {
-    const finalTx = { ...tx, id: generateId(), category: tx.category || autoCategory(tx.description) }
+    const finalTx = { ...tx, id: generateId(), category: tx.category || autoCategoryWithWallet(tx.description, tx.walletId) }
     setTransactions((prev) => [finalTx, ...prev])
     // Log audit (async, non-blocking)
     logTransactionAudit('guest', 'create', finalTx.id, undefined, finalTx as unknown as Record<string, unknown>)

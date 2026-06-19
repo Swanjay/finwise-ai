@@ -45,6 +45,14 @@ export interface Transaction {
   walletId?: string
   tags?: string[]
   location?: { name: string; lat?: number; lng?: number; address?: string }
+  receiptPhoto?: string // base64 data URL of the receipt photo
+  items?: ReceiptLineItem[]
+}
+
+export interface ReceiptLineItem {
+  name: string
+  price: number
+  qty?: number
 }
 
 export interface Wallet {
@@ -53,6 +61,7 @@ export interface Wallet {
   icon: string
   balance: number // initial balance (set by user, used as starting point)
   color: string
+  type?: 'bank' | 'ewallet' | 'cash' | 'credit' // wallet type for auto-categorize
 }
 
 export interface Goal {
@@ -107,6 +116,151 @@ export const ICON_OPTIONS: { name: string; icon: LucideIcon }[] = [
   { name: 'TrendingUp', icon: TrendingUp },
 ]
 
+// ─── Wallet Icons (emoji-based for easy display) ───
+export const WALLET_ICON_OPTIONS: { emoji: string; label: string }[] = [
+  { emoji: '💵', label: 'Cash' },
+  { emoji: '🏦', label: 'Bank' },
+  { emoji: '📱', label: 'E-Wallet' },
+  { emoji: '💜', label: 'GoPay' },
+  { emoji: '💙', label: 'OVO' },
+  { emoji: '🔷', label: 'DANA' },
+  { emoji: '🧡', label: 'ShopeePay' },
+  { emoji: '🔴', label: 'BCA' },
+  { emoji: '🟡', label: 'Mandiri' },
+  { emoji: '🔵', label: 'BRI' },
+  { emoji: '🟠', label: 'BNI' },
+  { emoji: '💳', label: 'Kartu Kredit' },
+  { emoji: '🐷', label: 'Tabungan' },
+  { emoji: '💰', label: 'Investasi' },
+  { emoji: '🪙', label: 'Koin' },
+  { emoji: '💎', label: 'Premium' },
+  { emoji: '🟢', label: 'LinkAja' },
+  { emoji: '🟡', label: 'Jenius' },
+  { emoji: '🔴', label: 'SeaBank' },
+  { emoji: '⭐', label: 'Star' },
+  { emoji: '🎯', label: 'Goal' },
+  { emoji: '🏷️', label: 'Voucher' },
+  { emoji: '🎁', label: 'Bonus' },
+]
+
+// ─── Wallet Color Presets ───
+export const WALLET_COLOR_PRESETS = [
+  '#8A6ECF', // purple
+  '#5B9BD5', // blue
+  '#4CAF50', // green
+  '#F97316', // orange
+  '#EC4899', // pink
+  '#14B8A6', // teal
+  '#EAB308', // yellow
+  '#EF4444', // red
+  '#6366F1', // indigo
+  '#A855F7', // violet
+  '#F59E0B', // amber
+  '#10B981', // emerald
+  '#3B82F6', // sky
+  '#D946EF', // fuchsia
+  '#F43F5E', // rose
+  '#0EA5E9', // cyan
+]
+
+// ─── Wallet Auto-Categorize ───
+export const WALLET_CATEGORY_HINTS: Record<string, { type: 'bank' | 'ewallet' | 'cash' | 'credit'; defaultCategory: CategoryId; keywords: string[] }> = {
+  gopay: { type: 'ewallet', defaultCategory: 'transport', keywords: ['gojek', 'gocar', 'gofood', 'gopay'] },
+  ovo: { type: 'ewallet', defaultCategory: 'transport', keywords: ['ovo', 'grab', 'grabfood'] },
+  dana: { type: 'ewallet', defaultCategory: 'shopping', keywords: ['dana', 'transfer dana'] },
+  shopeepay: { type: 'ewallet', defaultCategory: 'shopping', keywords: ['shopeepay', 'shopee'] },
+  linkaja: { type: 'ewallet', defaultCategory: 'bills', keywords: ['linkaja', 'telkomsel'] },
+  bca: { type: 'bank', defaultCategory: 'transfer', keywords: ['bca', 'bca mobile', 'mybca'] },
+  mandiri: { type: 'bank', defaultCategory: 'transfer', keywords: ['mandiri', 'livin'] },
+  bri: { type: 'bank', defaultCategory: 'transfer', keywords: ['bri', 'brimo'] },
+  bni: { type: 'bank', defaultCategory: 'transfer', keywords: ['bni', 'bni mobile'] },
+  jenius: { type: 'bank', defaultCategory: 'transfer', keywords: ['jenius'] },
+  seabank: { type: 'bank', defaultCategory: 'transfer', keywords: ['seabank', 'sea bank'] },
+  cash: { type: 'cash', defaultCategory: 'food', keywords: [] },
+  credit: { type: 'credit', defaultCategory: 'shopping', keywords: ['kartu kredit', 'cc'] },
+}
+
+export function walletAutoCategory(walletId: string, description: string): CategoryId | null {
+  const lower = description.toLowerCase()
+  // Check if wallet name matches any hint
+  for (const [key, hint] of Object.entries(WALLET_CATEGORY_HINTS)) {
+    if (walletId.toLowerCase().includes(key) || hint.keywords.some(kw => lower.includes(kw))) {
+      return hint.defaultCategory
+    }
+  }
+  return null
+}
+
+// ─── Wallet Stats Helper ───
+export interface WalletStats {
+  walletId: string
+  walletName: string
+  walletIcon: string
+  walletColor: string
+  totalIncome: number
+  totalExpense: number
+  transactionCount: number
+  topCategory: string | null
+  balance: number
+}
+
+export function getWalletStatsList(
+  wallets: Wallet[],
+  transactions: Transaction[],
+  getWalletBalance: (id: string) => number,
+  allCategories: Record<string, Category>,
+): WalletStats[] {
+  return wallets.map((w) => {
+    const walletTx = transactions.filter((t) => t.walletId === w.id)
+    const income = walletTx.filter((t) => t.type === 'income').reduce((s, t) => s + t.amount, 0)
+    const expense = walletTx.filter((t) => t.type === 'expense').reduce((s, t) => s + t.amount, 0)
+
+    // Find top spending category for this wallet
+    const catMap = new Map<string, number>()
+    for (const t of walletTx) {
+      if (t.type === 'expense' && t.category !== 'transfer') {
+        catMap.set(t.category, (catMap.get(t.category) ?? 0) + t.amount)
+      }
+    }
+    const sorted = Array.from(catMap.entries()).sort((a, b) => b[1] - a[1])
+    const topCat = sorted[0] ? allCategories[sorted[0][0]]?.label ?? sorted[0][0] : null
+
+    return {
+      walletId: w.id,
+      walletName: w.name,
+      walletIcon: w.icon,
+      walletColor: w.color,
+      totalIncome: income,
+      totalExpense: expense,
+      transactionCount: walletTx.length,
+      topCategory: topCat,
+      balance: getWalletBalance(w.id),
+    }
+  })
+}
+
+export function spendingByWallet(
+  transactions: Transaction[],
+  wallets: Wallet[],
+): { walletId: string; walletName: string; walletIcon: string; walletColor: string; value: number }[] {
+  const map = new Map<string, number>()
+  for (const t of transactions) {
+    if (t.type !== 'expense' || t.category === 'transfer') continue
+    const wid = t.walletId || 'cash'
+    map.set(wid, (map.get(wid) ?? 0) + t.amount)
+  }
+  return wallets
+    .map((w) => ({
+      walletId: w.id,
+      walletName: w.name,
+      walletIcon: w.icon,
+      walletColor: w.color,
+      value: map.get(w.id) ?? 0,
+    }))
+    .filter((d) => d.value > 0)
+    .sort((a, b) => b.value - a.value)
+}
+
 export const COLOR_PRESETS = [
   'oklch(0.7 0.18 295)',
   'oklch(0.78 0.14 200)',
@@ -140,6 +294,16 @@ export function autoCategory(description: string): CategoryId {
   return 'shopping' // default fallback
 }
 
+export function autoCategoryWithWallet(description: string, walletId?: string): CategoryId {
+  // First try wallet-based auto-categorize
+  if (walletId) {
+    const walletHint = walletAutoCategory(walletId, description)
+    if (walletHint) return walletHint
+  }
+  // Fall back to keyword-based
+  return autoCategory(description)
+}
+
 // ─── Benchmark Data (Indonesia averages) ───
 export const BENCHMARK: Record<string, { label: string; avgPct: number }> = {
   food: { label: 'Makan & Minum', avgPct: 30 },
@@ -154,9 +318,11 @@ export const BENCHMARK: Record<string, { label: string; avgPct: number }> = {
 
 // ─── Default Wallets ───
 export const DEFAULT_WALLETS: Wallet[] = [
-  { id: 'cash', name: 'Cash', icon: '💵', balance: 0, color: 'oklch(0.75 0.16 160)' },
-  { id: 'bank', name: 'Rekening Bank', icon: '🏦', balance: 0, color: 'oklch(0.78 0.14 200)' },
-  { id: 'ewallet', name: 'E-Wallet', icon: '📱', balance: 0, color: 'oklch(0.7 0.18 295)' },
+  { id: 'cash', name: 'Cash', icon: '💵', balance: 0, color: '#4CAF50', type: 'cash' },
+  { id: 'bca', name: 'BCA', icon: '🔴', balance: 0, color: '#3B82F6', type: 'bank' },
+  { id: 'gopay', name: 'GoPay', icon: '💜', balance: 0, color: '#8A6ECF', type: 'ewallet' },
+  { id: 'ovo', name: 'OVO', icon: '💙', balance: 0, color: '#6366F1', type: 'ewallet' },
+  { id: 'dana', name: 'DANA', icon: '🔷', balance: 0, color: '#5B9BD5', type: 'ewallet' },
 ]
 
 // ─── Helpers ───
