@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import crypto from "crypto"
 import { encode } from "next-auth/jwt"
 import { createTelegramSignature } from "@/auth"
+import { rateLimitMiddleware } from "@/lib/rate-limit-kv"
 
 // Custom Telegram auth callback that bypasses NextAuth's redirect flow
 // This works around Cloudflare blocking form POST to /api/auth/callback/telegram
@@ -10,6 +11,10 @@ const AUTH_SECRET = process.env.NEXTAUTH_SECRET || process.env.AUTH_SECRET || ""
 
 export async function POST(req: Request) {
   try {
+    // Rate limit: 10 requests per minute per IP
+    const rateLimitResponse = await rateLimitMiddleware(req, { windowMs: 60_000, max: 10 })
+    if (rateLimitResponse) return rateLimitResponse
+
     const body = await req.json()
     const { id, name, username, sig } = body
 
@@ -21,7 +26,7 @@ export async function POST(req: Request) {
     const expected = createTelegramSignature(id, username)
 
     if (sig !== expected) {
-      console.error("[auth/telegram] Sig mismatch", { id, username, sig, expected })
+      console.error("[auth/telegram] Sig mismatch", { id, username })
       return NextResponse.json({ error: "Signature tidak valid" }, { status: 401 })
     }
 

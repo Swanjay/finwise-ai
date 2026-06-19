@@ -3,7 +3,7 @@
 // Narrow CSP: replace wildcards with specific domains where possible
 // TODO: Replace NEXT_PUBLIC_SUPABASE_URL with your actual Supabase project URL to remove *.supabase.co wildcard
 const supabaseOrigin = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://*.supabase.co'
-const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://finny.biz.id'
+const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://finwise.my.id'
 
 const nextConfig = {
   typescript: {
@@ -54,7 +54,7 @@ const nextConfig = {
             key: 'Content-Security-Policy',
             value: [
               "default-src 'self'",
-              "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://va.vercel-scripts.com https://vitals.vercel-insights.com",
+              "script-src 'self' 'unsafe-inline' https://va.vercel-scripts.com https://vitals.vercel-insights.com",
               "style-src 'self' 'unsafe-inline'",
               // Images: same-origin only (mascot images are in /public). Removed *.vercel.app — not needed.
               "img-src 'self' data: blob: https://*.googleusercontent.com",

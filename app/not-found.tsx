@@ -1,69 +1,50 @@
-'use client'
-
-import { motion } from 'framer-motion'
-import FinWiseLogo from '@/components/finwise-logo'
-import { Button } from '@/components/ui/button'
-import { Home } from 'lucide-react'
-import Link from 'next/link'
+import Link from "next/link"
 
 export default function NotFound() {
   return (
-    <div className="min-h-screen bg-background flex flex-col items-center justify-center px-6">
-      {/* Confused Mascot */}
-      <motion.div
-        initial={{ scale: 0.8, opacity: 0, y: 20 }}
-        animate={{ scale: 1, opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, ease: "easeOut" }}
+    <div style={{
+      minHeight: "100vh",
+      display: "flex",
+      flexDirection: "column",
+      alignItems: "center",
+      justifyContent: "center",
+      fontFamily: "system-ui, -apple-system, sans-serif",
+      padding: "2rem",
+      textAlign: "center",
+      background: "linear-gradient(135deg, #f0f4ff 0%, #e8f0fe 100%)",
+    }}>
+      <div style={{ fontSize: "6rem", marginBottom: "1rem" }}>🐱</div>
+      <h1 style={{
+        fontSize: "2rem",
+        fontWeight: 700,
+        color: "#1a1a2e",
+        marginBottom: "0.5rem",
+      }}>
+        404 — Halaman Tidak Ditemukan
+      </h1>
+      <p style={{
+        fontSize: "1.1rem",
+        color: "#555",
+        marginBottom: "2rem",
+        maxWidth: "400px",
+      }}>
+        Sepertinya halaman yang kamu cari sudah dipindah atau tidak ada.
+      </p>
+      <Link
+        href="/"
+        style={{
+          padding: "0.75rem 2rem",
+          borderRadius: "12px",
+          background: "#4f46e5",
+          color: "#fff",
+          fontWeight: 600,
+          fontSize: "1rem",
+          textDecoration: "none",
+          boxShadow: "0 4px 14px rgba(79,70,229,0.3)",
+        }}
       >
-        <FinWiseLogo size={128} showText={false} />
-      </motion.div>
-
-      {/* 404 Message */}
-      <motion.div
-        initial={{ y: 20, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ delay: 0.3, duration: 0.5 }}
-        className="mt-8 text-center"
-      >
-        <h1 className="text-6xl font-heading font-bold text-primary">
-          404
-        </h1>
-        <h2 className="mt-2 text-xl font-heading font-semibold text-foreground">
-          Halaman Tidak Ditemukan 🐱
-        </h2>
-        <p className="mt-2 text-muted-foreground max-w-sm">
-          Sepertinya halaman yang kamu cari sudah pindah atau tidak ada.
-          Kucing kami sedang mencarinya!
-        </p>
-      </motion.div>
-
-      {/* Actions */}
-      <motion.div
-        initial={{ y: 20, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ delay: 0.6, duration: 0.5 }}
-        className="mt-8 flex flex-col sm:flex-row gap-3"
-      >
-        <Link href="/">
-          <Button className="gap-2 rounded-full px-6">
-            <Home className="size-4" />
-            Kembali ke Home
-          </Button>
-        </Link>
-      </motion.div>
-
-      {/* Fun Fact */}
-      <motion.div
-        initial={{ y: 20, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ delay: 0.9, duration: 0.5 }}
-        className="mt-12 text-center"
-      >
-        <p className="text-xs text-muted-foreground italic">
-          &ldquo;Kucing memiliki 230 tulang, lebih banyak dari manusia (206).
-          Mungkin mereka lebih fleksibel dalam menemukan jalan! 🐈&rdquo;
-        </p>
-      </motion.div>
+        Kembali ke Beranda
+      </Link>
     </div>
   )
 }

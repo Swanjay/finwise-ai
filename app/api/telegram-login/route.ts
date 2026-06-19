@@ -5,7 +5,7 @@ import { createTelegramSignature } from "@/auth"
 import { telegramLoginSchema } from "@/lib/validate"
 
 // Required Telegram channel to join before requesting OTP
-const REQUIRED_CHANNEL_ID = process.env.TELEGRAM_CHANNEL_ID || "-1004346668987" // @ainsyir
+const REQUIRED_CHANNEL_ID = process.env.TELEGRAM_CHANNEL_ID!
 const REQUIRED_CHANNEL_URL = process.env.TELEGRAM_CHANNEL_URL || "https://t.me/ainsyir"
 
 // In-memory code store — WARNING: resets on Vercel cold start.

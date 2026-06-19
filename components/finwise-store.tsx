@@ -53,9 +53,15 @@ function saveJSON(key: string, value: unknown) {
 }
 
 async function hashPin(pin: string): Promise<string> {
+  // Salted hash using PBKDF2 (100k iterations) — much stronger than plain SHA-256 for short PINs
   const encoder = new TextEncoder()
-  const data = encoder.encode(pin)
-  const hashBuffer = await crypto.subtle.digest('SHA-256', data)
+  const salt = encoder.encode("finwise-pin-v1-" + pin.length)
+  const keyMaterial = await crypto.subtle.importKey("raw", encoder.encode(pin), "PBKDF2", false, ["deriveBits"])
+  const hashBuffer = await crypto.subtle.deriveBits(
+    { name: "PBKDF2", salt, iterations: 100_000, hash: "SHA-256" },
+    keyMaterial,
+    256
+  )
   const hashArray = Array.from(new Uint8Array(hashBuffer))
   return hashArray.map((b) => b.toString(16).padStart(2, '0')).join('')
 }
