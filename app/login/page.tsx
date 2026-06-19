@@ -1,5 +1,6 @@
 "use client"
 import { useState } from "react"
+import { signIn } from "next-auth/react"
 import { Loader2, MessageCircle, CheckCircle } from "lucide-react"
 import { useRouter } from "next/navigation"
 import FinWiseLogo from "@/components/finwise-logo"

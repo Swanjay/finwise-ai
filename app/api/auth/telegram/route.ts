@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import crypto from "crypto"
 import { encode } from "next-auth/jwt"
+import { createTelegramSignature } from "@/auth"
 
 // Custom Telegram auth callback that bypasses NextAuth's redirect flow
 // This works around Cloudflare blocking form POST to /api/auth/callback/telegram
@@ -16,11 +17,11 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Data tidak lengkap" }, { status: 400 })
     }
 
-    // Verify HMAC signature
-    const secret = crypto.createHash("sha256").update(AUTH_SECRET).digest()
-    const expected = crypto.createHmac("sha256", secret).update(`${id}:${name}:${username}`).digest("hex")
+    // Verify HMAC signature — must match createTelegramSignature() from auth.ts
+    const expected = createTelegramSignature(id, username)
 
     if (sig !== expected) {
+      console.error("[auth/telegram] Sig mismatch", { id, username, sig, expected })
       return NextResponse.json({ error: "Signature tidak valid" }, { status: 401 })
     }
 
