@@ -370,8 +370,6 @@ export function FinwiseProvider({ children }: { children: ReactNode }) {
     Object.values(KEYS).forEach(key => {
       try { localStorage.removeItem(key) } catch { /* ignore */ }
     })
-    // Clear guest cookie
-    document.cookie = "fw-guest=; path=/; max-age=0"
 
     // Reset state to defaults
     setTransactions([])

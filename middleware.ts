@@ -12,19 +12,17 @@ export async function middleware(req: NextRequest) {
 
   // API routes get 401 JSON instead of redirect
   if (pathname.startsWith('/api/')) {
-    const guestCookie = req.cookies.get('fw-guest')?.value === 'true'
     const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET })
-    if (!guestCookie && !token) {
+    if (!token) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
     return NextResponse.next()
   }
 
-  // Page routes — check guest cookie or auth
-  const isGuest = req.cookies.get('fw-guest')?.value === 'true'
+  // Page routes — check auth token
   const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET })
 
-  if (isGuest || token) {
+  if (token) {
     return NextResponse.next()
   }
 

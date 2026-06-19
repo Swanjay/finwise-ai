@@ -186,10 +186,9 @@ async function ocrSpace(imageDataUrl: string): Promise<string> {
 
 export async function POST(req: Request) {
   try {
-    // Auth check — allow guest or authenticated
-    const guestCookie = req.headers.get('cookie')?.includes('fw-guest=true')
+    // Auth check — require authenticated session
     const session = await getServerSession(authOptions)
-    if (!session && !guestCookie) {
+    if (!session) {
       return Response.json({ error: 'Unauthorized' }, { status: 401 })
     }
 

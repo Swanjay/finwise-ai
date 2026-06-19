@@ -461,9 +461,8 @@ function createLocalStream(text: string) {
 }
 
 export async function POST(req: Request) {
-  const guestCookie = req.headers.get('cookie')?.includes('fw-guest=true')
   const session = await getServerSession(authOptions)
-  if (!session && !guestCookie) return Response.json({ error: 'Unauthorized' }, { status: 401 })
+  if (!session) return Response.json({ error: 'Unauthorized' }, { status: 401 })
 
   const ip = getClientIp(req)
   const rl = checkRateLimit(`advisor:${ip}`, { windowMs: 60_000, max: 20 })

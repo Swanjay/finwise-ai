@@ -1,5 +1,6 @@
 import type { NextAuthOptions } from "next-auth"
 import CredentialsProvider from "next-auth/providers/credentials"
+import GoogleProvider from "next-auth/providers/google"
 import crypto from "crypto"
 
 function createTelegramSignature(id: string, username: string): string {
@@ -10,6 +11,16 @@ function createTelegramSignature(id: string, username: string): string {
 
 export const authOptions: NextAuthOptions = {
   providers: [
+    // Google OAuth — only enabled if credentials are set
+    ...(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET
+      ? [
+          GoogleProvider({
+            clientId: process.env.GOOGLE_CLIENT_ID,
+            clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+          }),
+        ]
+      : []),
+    // Telegram login
     CredentialsProvider({
       id: "telegram",
       name: "Telegram",
