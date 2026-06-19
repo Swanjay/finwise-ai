@@ -41,6 +41,7 @@ const KEYS = {
   tags: 'fw.tags.v1',
   fontSize: 'fw.fontSize.v1',
   compactMode: 'fw.compact.v1',
+  setupDone: 'fw.setupDone.v1',
 }
 
 function loadJSON<T>(key: string, fallback: T): T {
@@ -169,7 +170,7 @@ export function FinwiseProvider({ children }: { children: ReactNode }) {
   const [accentColor, setAccentColorState] = useState('purple')
   const [fontSize, setFontSizeState] = useState<'sm' | 'base' | 'lg'>('base')
   const [compactMode, setCompactModeState] = useState(false)
-  const [setupDone, setSetupDone] = useState(true) // Skip onboarding
+  const [setupDone, setSetupDone] = useState(true) // Will be overwritten in useEffect
   const [tipsDismissed, setTipsDismissed] = useState(false)
   const [initialBalance, setInitialBalance] = useState(0)
   const [hideBalance, setHideBalance] = useState(false)
@@ -190,7 +191,7 @@ export function FinwiseProvider({ children }: { children: ReactNode }) {
     setAccentColorState(loadJSON(KEYS.accent, 'purple'))
     setFontSizeState(loadJSON(KEYS.fontSize, 'base'))
     setCompactModeState(loadJSON(KEYS.compactMode, false))
-    setSetupDone(true) // Always skip onboarding
+    setSetupDone(localStorage.getItem('fw.setupDone.v1') === 'true')
     setTipsDismissed(loadJSON(KEYS.tipsDismissed, false))
     setInitialBalance(loadJSON(KEYS.initialBalance, 0))
     setHideBalance(loadJSON(KEYS.hideBalance, false))

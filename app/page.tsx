@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useMemo, useEffect, useCallback } from 'react'
 import Link from 'next/link'
 import {
   BarChart3, Camera, Home, ListChecks, Plus, Sparkles, Wallet,
@@ -102,6 +102,7 @@ function MonthNavigator({ monthKey, onChange }: { monthKey: string; onChange: (k
 // ─── Export Sheet (imported from component) ───
 import { ExportSheet as ExportSheetNew } from '@/components/finwise/export-sheet'
 import { ErrorBoundary } from '@/components/error-boundary'
+import { OnboardingWizard } from '@/components/finwise/onboarding-wizard'
 
 // ─── Backup/Restore Sheet ───
 function BackupSheet({ onClose }: { onClose: () => void }) {
@@ -1239,13 +1240,56 @@ function AppShell() {
   )
 }
 
+function OnboardingGate() {
+  const { setupDone, wallets, addWallet, updateWallet, updateMonthlyIncome, loaded } = useFinwise()
+  const [showWizard, setShowWizard] = useState(false)
+
+  useEffect(() => {
+    if (loaded && !setupDone) {
+      setShowWizard(true)
+    }
+  }, [loaded, setupDone])
+
+  const handleComplete = useCallback((data: {
+    selectedCategories: string[]
+    wallet: { name: string; icon: string; balance: number; color: string; type: 'bank' | 'ewallet' | 'cash' | 'credit' }
+    monthlyIncome: number
+  }) => {
+    // Set up wallet
+    const firstWallet = data.wallet
+    // Check if this wallet already exists (from defaults)
+    const existing = wallets.find(w => w.name.toLowerCase() === firstWallet.name.toLowerCase())
+    if (existing) {
+      updateWallet(existing.id, { balance: firstWallet.balance })
+    } else {
+      addWallet({ ...firstWallet, id: generateId() })
+    }
+
+    // Set monthly income
+    if (data.monthlyIncome > 0) {
+      updateMonthlyIncome(data.monthlyIncome)
+    }
+
+    // Mark setup done
+    localStorage.setItem('fw.setupDone.v1', 'true')
+    setShowWizard(false)
+    window.location.reload()
+  }, [wallets, addWallet, updateWallet, updateMonthlyIncome])
+
+  if (showWizard) {
+    return <OnboardingWizard onComplete={handleComplete} />
+  }
+
+  return <AppShell />
+}
+
 export default function Page() {
   return (
     <FinwiseProvider>
       <SplashScreen />
       <SmartNotifications />
       <ErrorBoundary>
-        <AppShell />
+        <OnboardingGate />
       </ErrorBoundary>
     </FinwiseProvider>
   )
