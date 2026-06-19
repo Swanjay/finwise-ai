@@ -92,7 +92,7 @@ export default function LoginPage() {
       if (data.ok && data.user?.sig) {
         // Use custom auth endpoint (bypasses NextAuth form POST blocked by Cloudflare)
         try {
-          const authRes = await fetch("/api/auth/telegram", {
+          const authRes = await fetch("/api/auth-telegram", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({

@@ -6,7 +6,7 @@ export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl
 
   // Public routes — no auth needed
-  const publicPaths = ['/login', '/api/auth', '/auth/error', '/api/telegram-login', '/_next', '/logo.svg', '/favicon.ico', '/mascot-', '/finwise-cat-', '/logo-', '/manifest.json', '/sw.js', '/workbox-']
+  const publicPaths = ['/login', '/api/auth', '/api/auth-telegram', '/auth/error', '/api/telegram-login', '/_next', '/logo.svg', '/favicon.ico', '/mascot-', '/finwise-cat-', '/logo-', '/manifest.json', '/sw.js', '/workbox-']
   const isPublic = publicPaths.some(p => pathname.startsWith(p))
   if (isPublic) return NextResponse.next()
 
