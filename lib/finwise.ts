@@ -13,6 +13,7 @@ import {
   Gift,
   Briefcase,
   TrendingUp,
+  ArrowLeftRight,
   CreditCard,
   Plane,
   Baby,
@@ -84,6 +85,7 @@ export const BUILTIN_CATEGORIES: Record<string, Category> = {
   health: { id: 'health', label: 'Kesehatan', icon: HeartPulse, color: 'oklch(0.72 0.15 350)', type: 'expense' },
   education: { id: 'education', label: 'Pendidikan', icon: GraduationCap, color: 'oklch(0.74 0.13 240)', type: 'expense' },
   internet: { id: 'internet', label: 'Internet & Pulsa', icon: Wifi, color: 'oklch(0.78 0.13 180)', type: 'expense' },
+  transfer: { id: 'transfer', label: 'Transfer', icon: ArrowLeftRight, color: 'oklch(0.7 0.1 250)', type: 'expense' },
   income: { id: 'income', label: 'Pemasukan', icon: Briefcase, color: 'oklch(0.75 0.16 160)', type: 'income' },
 }
 
@@ -174,18 +176,21 @@ export function formatIDRShort(value: number): string {
 
 export function summarize(transactions: Transaction[]) {
   const income = transactions
-    .filter((t) => t.type === 'income')
+    .filter((t) => t.type === 'income' && t.category !== 'transfer')
     .reduce((s, t) => s + t.amount, 0)
   const expense = transactions
-    .filter((t) => t.type === 'expense')
+    .filter((t) => t.type === 'expense' && t.category !== 'transfer')
     .reduce((s, t) => s + t.amount, 0)
-  return { income, expense, surplus: income - expense }
+  const transfers = transactions
+    .filter((t) => t.category === 'transfer')
+    .reduce((s, t) => s + t.amount, 0)
+  return { income, expense, surplus: income - expense, transfers }
 }
 
 export function spendingByCategory(transactions: Transaction[], allCategories: Record<string, Category>) {
   const map = new Map<string, number>()
   for (const t of transactions) {
-    if (t.type !== 'expense') continue
+    if (t.type !== 'expense' || t.category === 'transfer') continue
     map.set(t.category, (map.get(t.category) ?? 0) + t.amount)
   }
   return Array.from(map.entries())

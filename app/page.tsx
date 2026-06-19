@@ -9,6 +9,7 @@ import {
   ArrowUpRight, Search, Filter, X, Check, Trash2, ToggleLeft,
   ToggleRight, CalendarClock, Shield, Eye, EyeOff, Moon, Sun,
   PiggyBank, ReceiptText, ShieldCheck, Upload, LogOut,
+  ArrowDownUp, ArrowLeftRight,
 } from 'lucide-react'
 import { useSession, signOut } from 'next-auth/react'
 import { FinwiseProvider, useFinwise } from '@/components/finwise-store'
@@ -45,7 +46,7 @@ import {
 import { cn } from '@/lib/utils'
 
 type Tab = 'home' | 'transactions' | 'trends' | 'budget'
-type Sheet = 'add' | 'scan' | 'advisor' | 'settings' | 'goals' | 'wallets' | 'recurring' | 'export' | 'categories' | 'pin' | 'benchmark' | 'smart-budget' | 'split-bill' | null
+type Sheet = 'add' | 'scan' | 'advisor' | 'settings' | 'goals' | 'wallets' | 'transfer' | 'recurring' | 'export' | 'categories' | 'pin' | 'benchmark' | 'smart-budget' | 'split-bill' | null
 
 // ─── Onboarding ───
 function OnboardingFlow() {
@@ -320,7 +321,10 @@ function WalletsSheet({ onClose }: { onClose: () => void }) {
         <p className="text-xs text-muted-foreground">Total Saldo</p>
         <p className="text-xl font-bold text-primary">{formatIDR(getTotalBalance())}</p>
       </div>
-      <Button size="sm" onClick={() => setShowForm(!showForm)} className="gap-1 self-end"><Plus className="size-4" /> Baru</Button>
+      <div className="flex gap-2 self-end">
+        <Button size="sm" variant="outline" onClick={() => { onClose(); setTimeout(() => { const ev = new CustomEvent('open-sheet', { detail: 'transfer' }); window.dispatchEvent(ev) }, 100) }} className="gap-1"><ArrowLeftRight className="size-4" /> Transfer</Button>
+        <Button size="sm" onClick={() => setShowForm(!showForm)} className="gap-1"><Plus className="size-4" /> Baru</Button>
+      </div>
       {showForm && (
         <form onSubmit={handleSubmit} className="flex flex-col gap-2 p-3 rounded-xl border border-primary/30">
           <Input placeholder="Nama dompet (e.g. GoPay)" value={name} onChange={(e) => setName(e.target.value)} />
@@ -352,6 +356,131 @@ function WalletsSheet({ onClose }: { onClose: () => void }) {
       })}
       <Button variant="secondary" onClick={onClose}>Tutup</Button>
     </div>
+  )
+}
+
+// ─── Transfer Sheet ───
+function TransferSheet({ onClose }: { onClose: () => void }) {
+  const { wallets, addTransaction, getWalletBalance } = useFinwise()
+  const [fromId, setFromId] = useState(wallets[0]?.id || '')
+  const [toId, setToId] = useState(wallets[1]?.id || '')
+  const [amount, setAmount] = useState('')
+  const [note, setNote] = useState('')
+
+  const valid = Number(amount) > 0 && fromId && toId && fromId !== toId
+
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    if (!valid) return
+    const val = Number(amount.replace(/\D/g, ''))
+    const fromName = wallets.find(w => w.id === fromId)?.name || 'Dompet'
+    const toName = wallets.find(w => w.id === toId)?.name || 'Dompet'
+    // Create expense from source wallet
+    addTransaction({
+      type: 'expense',
+      category: 'transfer',
+      amount: val,
+      description: note || `Transfer ke ${toName}`,
+      date: new Date().toISOString().slice(0, 10),
+      walletId: fromId,
+    })
+    // Create income to destination wallet
+    addTransaction({
+      type: 'income',
+      category: 'transfer',
+      amount: val,
+      description: note || `Transfer dari ${fromName}`,
+      date: new Date().toISOString().slice(0, 10),
+      walletId: toId,
+    })
+    onClose()
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+      <div className="flex flex-col gap-1.5">
+        <Label>Dari Dompet</Label>
+        <div className="grid grid-cols-3 gap-2">
+          {wallets.map((w) => {
+            const bal = getWalletBalance(w.id)
+            return (
+              <button
+                key={w.id}
+                type="button"
+                onClick={() => setFromId(w.id)}
+                disabled={w.id === toId}
+                className={cn(
+                  'flex flex-col items-center gap-1 rounded-xl border p-2 text-xs transition',
+                  w.id === toId ? 'opacity-40 cursor-not-allowed' : '',
+                  fromId === w.id
+                    ? 'border-primary bg-primary/15 text-foreground'
+                    : 'border-border text-muted-foreground hover:bg-secondary',
+                )}
+              >
+                <span className="text-lg">{w.icon}</span>
+                <span className="truncate">{w.name}</span>
+                <span className="text-[10px] text-muted-foreground">{formatIDR(bal)}</span>
+              </button>
+            )
+          })}
+        </div>
+      </div>
+
+      <div className="flex justify-center">
+        <div className="rounded-full bg-primary/20 p-2">
+          <ArrowDownUp className="size-5 text-primary" />
+        </div>
+      </div>
+
+      <div className="flex flex-col gap-1.5">
+        <Label>Ke Dompet</Label>
+        <div className="grid grid-cols-3 gap-2">
+          {wallets.map((w) => {
+            const bal = getWalletBalance(w.id)
+            return (
+              <button
+                key={w.id}
+                type="button"
+                onClick={() => setToId(w.id)}
+                disabled={w.id === fromId}
+                className={cn(
+                  'flex flex-col items-center gap-1 rounded-xl border p-2 text-xs transition',
+                  w.id === fromId ? 'opacity-40 cursor-not-allowed' : '',
+                  toId === w.id
+                    ? 'border-primary bg-primary/15 text-foreground'
+                    : 'border-border text-muted-foreground hover:bg-secondary',
+                )}
+              >
+                <span className="text-lg">{w.icon}</span>
+                <span className="truncate">{w.name}</span>
+                <span className="text-[10px] text-muted-foreground">{formatIDR(bal)}</span>
+              </button>
+            )
+          })}
+        </div>
+      </div>
+
+      <div className="flex flex-col gap-1.5">
+        <Label>Jumlah (Rp)</Label>
+        <Input
+          inputMode="numeric"
+          autoFocus
+          placeholder="0"
+          value={amount}
+          onChange={(e) => setAmount(e.target.value.replace(/\D/g, ''))}
+          className="h-12 text-lg tabular-nums"
+        />
+      </div>
+
+      <div className="flex flex-col gap-1.5">
+        <Label>Catatan (opsional)</Label>
+        <Input placeholder="Contoh: Top up GoPay" value={note} onChange={(e) => setNote(e.target.value)} />
+      </div>
+
+      <Button type="submit" disabled={!valid} className="h-12">
+        <ArrowLeftRight className="size-5 mr-2" /> Transfer
+      </Button>
+    </form>
   )
 }
 
@@ -846,6 +975,16 @@ function AppShell() {
     return () => clearTimeout(timer)
   }, [])
 
+  // Listen for open-sheet events (used by WalletsSheet to open TransferSheet)
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const sheetName = (e as CustomEvent).detail as Sheet
+      if (sheetName) setSheet(sheetName)
+    }
+    window.addEventListener('open-sheet', handler)
+    return () => window.removeEventListener('open-sheet', handler)
+  }, [])
+
   const monthTx = useMemo(() => filterByMonth(transactions, monthKey), [transactions, monthKey])
 
   if (!setupDone) return <OnboardingFlow />
@@ -896,6 +1035,7 @@ function AppShell() {
           { icon: Camera, label: 'Scan', sheet: 'scan' as Sheet },
           { icon: Target, label: 'Target', sheet: 'goals' as Sheet },
           { icon: Wallet, label: 'Dompet', sheet: 'wallets' as Sheet },
+          { icon: ArrowLeftRight, label: 'Transfer', sheet: 'transfer' as Sheet },
           { icon: Repeat, label: 'Berulang', sheet: 'recurring' as Sheet },
           { icon: Download, label: 'Export', sheet: 'export' as Sheet },
           { icon: Upload, label: 'Backup', sheet: 'export' as Sheet },
@@ -984,6 +1124,7 @@ function AppShell() {
       <BottomSheet open={sheet === 'settings'} onClose={() => setSheet(null)} title="Pengaturan"><SettingsSheet onClose={() => setSheet(null)} onOpenSheet={setSheet} /></BottomSheet>
       <BottomSheet open={sheet === 'goals'} onClose={() => setSheet(null)} title="Target Tabungan"><GoalsSheet onClose={() => setSheet(null)} /></BottomSheet>
       <BottomSheet open={sheet === 'wallets'} onClose={() => setSheet(null)} title="Dompet & Rekening"><WalletsSheet onClose={() => setSheet(null)} /></BottomSheet>
+      <BottomSheet open={sheet === 'transfer'} onClose={() => setSheet(null)} title="Transfer Antar Dompet"><TransferSheet onClose={() => setSheet(null)} /></BottomSheet>
       <BottomSheet open={sheet === 'recurring'} onClose={() => setSheet(null)} title="Transaksi Berulang"><RecurringSheet onClose={() => setSheet(null)} /></BottomSheet>
       <BottomSheet open={sheet === 'export'} onClose={() => setSheet(null)} title="Export & Backup"><ExportSheetNew onClose={() => setSheet(null)} /></BottomSheet>
       <BottomSheet open={sheet === 'categories'} onClose={() => setSheet(null)} title="Kategori Custom"><CategoriesSheet onClose={() => setSheet(null)} /></BottomSheet>
