@@ -71,6 +71,7 @@ interface FinwiseStore {
   transactions: Transaction[]
   addTransaction: (tx: Omit<Transaction, 'id'>) => void
   deleteTransaction: (id: string) => void
+  updateTransaction: (id: string, data: Partial<Omit<Transaction, 'id'>>) => void
 
   // Categories (built-in + custom)
   allCategories: Record<string, Category>
@@ -270,6 +271,18 @@ export function FinwiseProvider({ children }: { children: ReactNode }) {
     })
   }, [])
 
+  const updateTransaction = useCallback((id: string, data: Partial<Omit<Transaction, 'id'>>) => {
+    setTransactions((prev) =>
+      prev.map((t) => {
+        if (t.id !== id) return t
+        const updated = { ...t, ...data }
+        // Log audit (async, non-blocking)
+        logTransactionAudit('guest', 'update', id, t as unknown as Record<string, unknown>, updated as unknown as Record<string, unknown>)
+        return updated
+      })
+    )
+  }, [])
+
   // Categories
   const addCustomCategory = useCallback((cat: Category) => {
     setCustomCategories((prev) => ({ ...prev, [cat.id]: { ...cat, isCustom: true } }))
@@ -420,7 +433,7 @@ export function FinwiseProvider({ children }: { children: ReactNode }) {
   return (
     <Ctx.Provider
       value={{
-        transactions, addTransaction, deleteTransaction,
+        transactions, addTransaction, deleteTransaction, updateTransaction,
         allCategories, addCustomCategory, deleteCustomCategory,
         budgets, setBudget,
         monthlyIncome, updateMonthlyIncome,
