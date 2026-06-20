@@ -21,6 +21,7 @@ import {
   generateId,
   autoCategory,
   autoCategoryWithWallet,
+  resolveCategory,
   type Transaction,
   type TxType,
 } from '@/lib/finwise'
@@ -176,7 +177,7 @@ export function ExportSheet({ onClose }: { onClose: () => void }) {
         return [
           t.date,
           t.type === 'income' ? 'Pemasukan' : 'Pengeluaran',
-          allCategories[t.category]?.label ?? t.category,
+          resolveCategory(t.category, allCategories)?.label ?? t.category,
           String(t.amount),
           t.description,
           wallet?.name || t.walletId || 'Cash',
@@ -233,7 +234,7 @@ export function ExportSheet({ onClose }: { onClose: () => void }) {
       const txRows = targetTx
         .slice(0, 200)
         .map((t) => {
-          const cat = allCategories[t.category]?.label ?? t.category
+          const cat = resolveCategory(t.category, allCategories)?.label ?? t.category
           const isIncome = t.type === 'income'
           return `
           <tr>
@@ -340,7 +341,7 @@ export function ExportSheet({ onClose }: { onClose: () => void }) {
       for (const t of transactions) {
         if (t.type === 'income') {
           totalIncome += t.amount
-          const cat = allCategories[t.category]?.label ?? t.category
+          const cat = resolveCategory(t.category, allCategories)?.label ?? t.category
           incomeByCategory[cat] = (incomeByCategory[cat] || 0) + t.amount
         } else {
           totalExpense += t.amount

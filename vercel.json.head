@@ -1,0 +1,1 @@
+{"buildCommand":"npx next build --no-lint","installCommand":"npm install --prefer-offline"}

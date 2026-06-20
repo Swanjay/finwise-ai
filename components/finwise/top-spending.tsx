@@ -1,7 +1,7 @@
 'use client'
 
 import { useMemo } from 'react'
-import { formatIDRShort, type Transaction, type Category, BUILTIN_CATEGORIES } from '@/lib/finwise'
+import { formatIDRShort, type Transaction, type Category, BUILTIN_CATEGORIES, resolveCategory } from '@/lib/finwise'
 
 export function TopSpending({
   transactions,
@@ -18,7 +18,7 @@ export function TopSpending({
     }
     return Array.from(map.entries())
       .map(([id, value]) => {
-        const cat = allCategories[id] ?? BUILTIN_CATEGORIES[id] ?? { id, label: id, color: '#64748B', type: 'expense' as const, icon: null }
+        const cat = resolveCategory(id, allCategories) ?? { id, label: id, color: '#64748B', type: 'expense' as const, icon: null }
         return { id, label: cat.label, color: cat.color, value }
       })
       .sort((a, b) => b.value - a.value)

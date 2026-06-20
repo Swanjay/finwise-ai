@@ -1,6 +1,6 @@
 'use client'
 
-import { formatIDRShort, type Category } from '@/lib/finwise'
+import { formatIDRShort, BUILTIN_CATEGORIES, resolveCategory, type Category } from '@/lib/finwise'
 import { useFinwise } from '@/components/finwise-store'
 import { cn } from '@/lib/utils'
 
@@ -26,7 +26,7 @@ export function BudgetProgress({ spentByCat }: { spentByCat: Map<string, number>
         const pct = limit > 0 ? Math.min((spent / limit) * 100, 100) : 0
         const over = spent > limit
         const near = pct >= 80 && !over
-        const cat = allCategories[id]
+        const cat = resolveCategory(id, allCategories)
         if (!cat) return null
         const Icon = cat.icon
 

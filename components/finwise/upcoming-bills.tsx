@@ -2,7 +2,7 @@
 
 import { useMemo } from 'react'
 import { CalendarClock, Bell, ReceiptText } from 'lucide-react'
-import { formatIDR, BUILTIN_CATEGORIES, type RecurringItem, type Category } from '@/lib/finwise'
+import { formatIDR, BUILTIN_CATEGORIES, resolveCategory, type RecurringItem, type Category } from '@/lib/finwise'
 
 function getNextDueDate(frequency: string): Date {
   const now = new Date()
@@ -40,7 +40,7 @@ export function UpcomingBills({
       .map((r) => {
         const nextDue = getNextDueDate(r.frequency)
         const days = daysUntil(nextDue)
-        const cat = allCategories[r.category] ?? BUILTIN_CATEGORIES[r.category]
+        const cat = resolveCategory(r.category, allCategories)
         return { ...r, nextDue, days, cat }
       })
       .filter((r) => r.days <= 7 && r.days >= 0)

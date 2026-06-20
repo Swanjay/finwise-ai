@@ -4,6 +4,7 @@ import {
   getMonthKey,
   formatIDR,
   summarize,
+  resolveCategory,
   type Transaction,
   type RecurringItem,
   type Category,
@@ -141,7 +142,7 @@ export function generateBillReminders(
     if (!r.active) continue
     const nextDue = getNextDueDate(r.frequency)
     const days = daysUntil(nextDue)
-    const cat = allCategories[r.category] ?? BUILTIN_CATEGORIES[r.category]
+    const cat = resolveCategory(r.category, allCategories)
     const label = cat?.label ?? r.category
     const desc = r.description || label
 
@@ -228,7 +229,7 @@ export function generateWeeklySummary(
     }
   }
   const topCatId = Object.entries(catSpend).sort(([, a], [, b]) => b - a)[0]?.[0]
-  const topCatLabel = topCatId ? (allCategories[topCatId]?.label ?? BUILTIN_CATEGORIES[topCatId]?.label ?? topCatId) : '-'
+  const topCatLabel = topCatId ? (resolveCategory(topCatId, allCategories)?.label ?? topCatId) : '-'
   const topCatAmount = topCatId ? catSpend[topCatId] : 0
 
   const savingRate = income > 0 ? Math.round((surplus / income) * 100) : 0
@@ -284,7 +285,7 @@ export function detectUnusualSpending(
     if (tx.amount >= avg * 2 && avg > 0) {
       const key = dedupeKey('unusual_spending', tx.id)
       if (!existingKeys.has(key)) {
-        const catLabel = allCategories[tx.category]?.label ?? BUILTIN_CATEGORIES[tx.category]?.label ?? tx.category
+        const catLabel = resolveCategory(tx.category, allCategories)?.label ?? tx.category
         const multiplier = Math.round((tx.amount / avg) * 10) / 10
         results.push({
           id: generateId(),

@@ -27,6 +27,7 @@ import {
   summarize,
   CATEGORIES,
   EXPENSE_CATEGORIES,
+  resolveCategory,
   type Transaction,
   type TxType,
   type CategoryId,
@@ -57,7 +58,7 @@ function ExpensesContent() {
         const q = query.toLowerCase()
         return (
           t.description.toLowerCase().includes(q) ||
-          (allCategories[t.category]?.label ?? t.category).toLowerCase().includes(q)
+          (resolveCategory(t.category, allCategories)?.label ?? t.category).toLowerCase().includes(q)
         )
       }
       return true

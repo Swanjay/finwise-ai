@@ -3,7 +3,7 @@
 import { useState, useCallback } from 'react'
 import { motion, useMotionValue, useTransform, PanInfo, AnimatePresence } from 'framer-motion'
 import { Trash2, Pencil, MapPin, Camera, X, Eye } from 'lucide-react'
-import { formatIDR, type Transaction } from '@/lib/finwise'
+import { formatIDR, type Transaction, resolveCategory } from '@/lib/finwise'
 import { useFinwise } from '@/components/finwise-store'
 import { cn } from '@/lib/utils'
 import { haptic } from '@/lib/haptics'
@@ -21,7 +21,7 @@ export function TransactionRow({
   onEdit?: (tx: Transaction) => void
 }) {
   const { allCategories } = useFinwise()
-  const cat = allCategories[tx.category] ?? { label: tx.category, color: '#64748B', icon: null }
+  const cat = resolveCategory(tx.category, allCategories) ?? { label: tx.category, color: '#64748B', icon: null }
   const Icon = cat.icon
   const income = tx.type === 'income'
   const date = new Date(tx.date).toLocaleDateString('id-ID', {

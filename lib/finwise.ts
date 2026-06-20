@@ -88,6 +88,28 @@ export interface RecurringItem {
   active: boolean
 }
 
+// ─── Indonesian → English Category Alias ───
+// Fix: old demo data and user-created transactions may use Indonesian IDs.
+// This mapping ensures they resolve to the correct built-in colors.
+export const CATEGORY_ALIASES: Record<string, string> = {
+  makanan: 'food',
+  'makan & minum': 'food',
+  transportasi: 'transport',
+  belanja: 'shopping',
+  hiburan: 'entertainment',
+  tagihan: 'bills',
+  kesehatan: 'health',
+  pendidikan: 'education',
+  'internet & pulsa': 'internet',
+  gaji: 'income',
+  pemasukan: 'income',
+}
+
+/** Resolve a category ID, accounting for Indonesian aliases and custom cats. */
+export function resolveCategory(id: string, allCategories: Record<string, Category>): Category | undefined {
+  return allCategories[id] ?? BUILTIN_CATEGORIES[id] ?? BUILTIN_CATEGORIES[CATEGORY_ALIASES[id]]
+}
+
 // ─── Built-in Categories ───
 export const BUILTIN_CATEGORIES: Record<string, Category> = {
   food: { id: 'food', label: 'Makan & Minum', icon: Utensils, color: '#F59E0B', type: 'expense' },          // amber — hangat, lapar
@@ -227,7 +249,7 @@ export function getWalletStatsList(
       }
     }
     const sorted = Array.from(catMap.entries()).sort((a, b) => b[1] - a[1])
-    const topCat = sorted[0] ? allCategories[sorted[0][0]]?.label ?? sorted[0][0] : null
+    const topCat = sorted[0] ? (resolveCategory(sorted[0][0], allCategories)?.label ?? sorted[0][0]) : null
 
     return {
       walletId: w.id,
@@ -364,7 +386,7 @@ export function spendingByCategory(transactions: Transaction[], allCategories: R
     map.set(t.category, (map.get(t.category) ?? 0) + t.amount)
   }
   return Array.from(map.entries())
-    .map(([id, value]) => ({ category: allCategories[id] ?? BUILTIN_CATEGORIES[id] ?? { id, label: id, icon: ReceiptText, color: '#64748B', type: 'expense' as TxType }, value }))
+    .map(([id, value]) => ({ category: resolveCategory(id, allCategories) ?? { id, label: id, icon: ReceiptText, color: '#64748B', type: 'expense' as TxType }, value }))
     .sort((a, b) => b.value - a.value)
 }
 

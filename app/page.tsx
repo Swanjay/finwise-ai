@@ -39,7 +39,7 @@ import {
   formatIDR, formatIDRShort, summarize, spendingByCategory,
   filterByMonth, getMonthKey, getMonthLabel,
   EXPENSE_CATEGORIES, BENCHMARK, COLOR_PRESETS, ICON_OPTIONS,
-  autoCategory, generateId,
+  autoCategory, generateId, resolveCategory,
   type CategoryId, type Transaction, type Category, type TxType,
   type Wallet as WalletType, type Goal, type RecurringItem,
   WALLET_ICON_OPTIONS, WALLET_COLOR_PRESETS,
@@ -902,7 +902,7 @@ function RecurringSheet({ onClose }: { onClose: () => void }) {
       {recurring.length === 0 ? (
         <p className="text-sm text-muted-foreground text-center py-6">Belum ada transaksi berulang</p>
       ) : recurring.map((item) => {
-        const cat = allCategories[item.category]
+        const cat = resolveCategory(item.category, allCategories)
         const Icon = cat?.icon ?? ReceiptText
         return (
           <div key={item.id} className={cn('flex items-center gap-3 p-2 rounded-lg', !item.active && 'opacity-50')}>
@@ -1046,14 +1046,14 @@ function AppShell() {
     if (demoFlag && transactions.length === 0) {
       const today = new Date()
       const demoTransactions = [
-        { date: new Date(today.getFullYear(), today.getMonth(), today.getDate() - 1).toISOString().split('T')[0], type: 'income' as const, amount: 8500000, category: 'gaji' as const, description: 'Gaji bulanan Juni' },
-        { date: new Date(today.getFullYear(), today.getMonth(), today.getDate() - 2).toISOString().split('T')[0], type: 'expense' as const, amount: 1200000, category: 'makanan' as const, description: 'Grocery mingguan' },
-        { date: new Date(today.getFullYear(), today.getMonth(), today.getDate() - 3).toISOString().split('T')[0], type: 'expense' as const, amount: 500000, category: 'transportasi' as const, description: 'Grab bulanan' },
-        { date: new Date(today.getFullYear(), today.getMonth(), today.getDate() - 4).toISOString().split('T')[0], type: 'expense' as const, amount: 350000, category: 'hiburan' as const, description: 'Netflix + Spotify' },
-        { date: new Date(today.getFullYear(), today.getMonth(), today.getDate() - 5).toISOString().split('T')[0], type: 'expense' as const, amount: 750000, category: 'belanja' as const, description: 'Baju baru' },
-        { date: new Date(today.getFullYear(), today.getMonth(), today.getDate() - 7).toISOString().split('T')[0], type: 'expense' as const, amount: 2500000, category: 'tagihan' as const, description: 'Kos bulanan' },
-        { date: new Date(today.getFullYear(), today.getMonth(), today.getDate() - 8).toISOString().split('T')[0], type: 'income' as const, amount: 500000, category: 'lainnya' as const, description: 'Freelance design' },
-        { date: new Date(today.getFullYear(), today.getMonth(), today.getDate() - 10).toISOString().split('T')[0], type: 'expense' as const, amount: 200000, category: 'kesehatan' as const, description: 'Vitamin & obat' },
+        { date: new Date(today.getFullYear(), today.getMonth(), today.getDate() - 1).toISOString().split('T')[0], type: 'income' as const, amount: 8500000, category: 'income' as const, description: 'Gaji bulanan Juni' },
+        { date: new Date(today.getFullYear(), today.getMonth(), today.getDate() - 2).toISOString().split('T')[0], type: 'expense' as const, amount: 1200000, category: 'food' as const, description: 'Grocery mingguan' },
+        { date: new Date(today.getFullYear(), today.getMonth(), today.getDate() - 3).toISOString().split('T')[0], type: 'expense' as const, amount: 500000, category: 'transport' as const, description: 'Grab bulanan' },
+        { date: new Date(today.getFullYear(), today.getMonth(), today.getDate() - 4).toISOString().split('T')[0], type: 'expense' as const, amount: 350000, category: 'entertainment' as const, description: 'Netflix + Spotify' },
+        { date: new Date(today.getFullYear(), today.getMonth(), today.getDate() - 5).toISOString().split('T')[0], type: 'expense' as const, amount: 750000, category: 'shopping' as const, description: 'Baju baru' },
+        { date: new Date(today.getFullYear(), today.getMonth(), today.getDate() - 7).toISOString().split('T')[0], type: 'expense' as const, amount: 2500000, category: 'bills' as const, description: 'Kos bulanan' },
+        { date: new Date(today.getFullYear(), today.getMonth(), today.getDate() - 8).toISOString().split('T')[0], type: 'income' as const, amount: 500000, category: 'income' as const, description: 'Freelance design' },
+        { date: new Date(today.getFullYear(), today.getMonth(), today.getDate() - 10).toISOString().split('T')[0], type: 'expense' as const, amount: 200000, category: 'health' as const, description: 'Vitamin & obat' },
       ]
       demoTransactions.forEach(tx => addTransaction(tx))
     }
