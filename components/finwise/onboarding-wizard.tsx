@@ -324,103 +324,111 @@ export function OnboardingWizard({ onComplete }: { onComplete: (data: {
     )
   }
 
-  // ─── Wallet Step ───
-  function WalletStep() {
-    return (
-      <div className="flex flex-col gap-5 py-2">
-        <div className="text-center space-y-1">
-          <motion.div
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            className="text-3xl mx-auto w-fit"
-          >
-            💰
-          </motion.div>
-          <h2 className="font-heading text-lg font-bold">Atur Dompet Pertama</h2>
-          <p className="text-xs text-muted-foreground">
-            Pilih dompet yang sudah ada atau buat sendiri
-          </p>
+// ─── Wallet Step (extracted to prevent unmount/remount on parent re-render) ───
+function WalletStepContent({
+  walletName, setWalletName, walletBalance, setWalletBalance, selectPreset,
+}: {
+  walletName: string
+  setWalletName: (v: string) => void
+  walletBalance: string
+  setWalletBalance: (v: string) => void
+  selectPreset: (preset: typeof WALLET_PRESETS[number]) => void
+}) {
+  return (
+    <div className="flex flex-col gap-5 py-2">
+      <div className="text-center space-y-1">
+        <motion.div
+          initial={{ scale: 0 }}
+          animate={{ scale: 1 }}
+          className="text-3xl mx-auto w-fit"
+        >
+          💰
+        </motion.div>
+        <h2 className="font-heading text-lg font-bold">Atur Dompet Pertama</h2>
+        <p className="text-xs text-muted-foreground">
+          Pilih dompet yang sudah ada atau buat sendiri
+        </p>
+      </div>
+
+      {/* Preset wallets */}
+      <div className="grid grid-cols-3 gap-2">
+        {WALLET_PRESETS.map((preset, i) => {
+          const active = walletName === preset.name
+          return (
+            <motion.button
+              key={preset.name}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: i * 0.1 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => selectPreset(preset)}
+              className={cn(
+                'flex flex-col items-center gap-2 rounded-2xl p-4 transition-all border-2',
+                active
+                  ? 'border-primary bg-primary/10 shadow-md shadow-primary/10'
+                  : 'border-transparent bg-secondary/80 hover:bg-secondary'
+              )}
+            >
+              <span className="text-2xl">{preset.icon}</span>
+              <span className={cn(
+                'text-xs font-semibold',
+                active ? 'text-primary' : 'text-muted-foreground'
+              )}>
+                {preset.name}
+              </span>
+            </motion.button>
+          )
+        })}
+      </div>
+
+      {/* Custom wallet name */}
+      <div className="space-y-3 p-4 rounded-2xl bg-secondary/50 border border-border/50">
+        <p className="text-xs font-medium text-muted-foreground">Atau custom:</p>
+        <div className="space-y-2">
+          <div>
+            <Label className="text-xs">Nama Dompet</Label>
+            <Input
+              value={walletName}
+              onChange={(e) => setWalletName(e.target.value)}
+              placeholder="Contoh: BCA, GoPay, Cash"
+              className="h-10 rounded-xl mt-1"
+            />
+          </div>
+          <div>
+            <Label className="text-xs">Saldo Awal (Rp) — opsional</Label>
+            <Input
+              inputMode="numeric"
+              value={walletBalance}
+              onChange={(e) => setWalletBalance(e.target.value.replace(/\D/g, ''))}
+              placeholder="0"
+              className="h-10 rounded-xl mt-1 tabular-nums"
+            />
+          </div>
         </div>
 
-        {/* Preset wallets */}
-        <div className="grid grid-cols-3 gap-2">
-          {WALLET_PRESETS.map((preset, i) => {
-            const active = walletName === preset.name
-            return (
-              <motion.button
-                key={preset.name}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.1 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={() => selectPreset(preset)}
-                className={cn(
-                  'flex flex-col items-center gap-2 rounded-2xl p-4 transition-all border-2',
-                  active
-                    ? 'border-primary bg-primary/10 shadow-md shadow-primary/10'
-                    : 'border-transparent bg-secondary/80 hover:bg-secondary'
-                )}
-              >
-                <span className="text-2xl">{preset.icon}</span>
-                <span className={cn(
-                  'text-xs font-semibold',
-                  active ? 'text-primary' : 'text-muted-foreground'
-                )}>
-                  {preset.name}
-                </span>
-              </motion.button>
-            )
-          })}
-        </div>
-
-        {/* Custom wallet name */}
-        <div className="space-y-3 p-4 rounded-2xl bg-secondary/50 border border-border/50">
-          <p className="text-xs font-medium text-muted-foreground">Atau custom:</p>
-          <div className="space-y-2">
-            <div>
-              <Label className="text-xs">Nama Dompet</Label>
-              <Input
-                value={walletName}
-                onChange={(e) => setWalletName(e.target.value)}
-                placeholder="Contoh: BCA, GoPay, Cash"
-                className="h-10 rounded-xl mt-1"
-              />
-            </div>
-            <div>
-              <Label className="text-xs">Saldo Awal (Rp) — opsional</Label>
-              <Input
-                inputMode="numeric"
-                value={walletBalance}
-                onChange={(e) => setWalletBalance(e.target.value.replace(/\D/g, ''))}
-                placeholder="0"
-                className="h-10 rounded-xl mt-1 tabular-nums"
-              />
-            </div>
-          </div>
-
-          {/* Quick balance presets */}
-          <div className="flex flex-wrap gap-1.5">
-            {[100_000, 500_000, 1_000_000, 5_000_000].map((v) => (
-              <button
-                key={v}
-                type="button"
-                onClick={() => setWalletBalance(String(v))}
-                className={cn(
-                  'rounded-full px-2.5 py-1 text-[10px] font-medium transition',
-                  walletBalance === String(v)
-                    ? 'bg-primary text-white'
-                    : 'bg-white text-muted-foreground hover:bg-primary/10'
-                )}
-                style={{ boxShadow: '0 2px 8px rgba(138,110,207,0.1)' }}
-              >
-                {v >= 1_000_000 ? `${v / 1_000_000}jt` : `${v / 1_000}rb`}
-              </button>
-            ))}
-          </div>
+        {/* Quick balance presets */}
+        <div className="flex flex-wrap gap-1.5">
+          {[100_000, 500_000, 1_000_000, 5_000_000].map((v) => (
+            <button
+              key={v}
+              type="button"
+              onClick={() => setWalletBalance(String(v))}
+              className={cn(
+                'rounded-full px-2.5 py-1 text-[10px] font-medium transition',
+                walletBalance === String(v)
+                  ? 'bg-primary text-white'
+                  : 'bg-white text-muted-foreground hover:bg-primary/10'
+              )}
+              style={{ boxShadow: '0 2px 8px rgba(138,110,207,0.1)' }}
+            >
+              {v >= 1_000_000 ? `${v / 1_000_000}jt` : `${v / 1_000}rb`}
+            </button>
+          ))}
         </div>
       </div>
-    )
-  }
+    </div>
+  )
+}
 
   // ─── Income Step ───
   function IncomeStep() {
@@ -566,10 +574,11 @@ export function OnboardingWizard({ onComplete }: { onComplete: (data: {
     )
   }
 
+  const walletStepProps = { walletName, setWalletName, walletBalance, setWalletBalance, selectPreset }
   const steps = [
     <WelcomeStep key="welcome" />,
     <CategoriesStep key="categories" />,
-    <WalletStep key="wallet" />,
+    <WalletStepContent key="wallet" {...walletStepProps} />,
     <IncomeStep key="income" />,
     <CelebrationStep key="celebration" />,
   ]
