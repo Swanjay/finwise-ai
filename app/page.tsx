@@ -1252,22 +1252,27 @@ function OnboardingGate() {
 
   const handleComplete = useCallback((data: {
     selectedCategories: string[]
-    wallet: { name: string; icon: string; balance: number; color: string; type: 'bank' | 'ewallet' | 'cash' | 'credit' }
-    monthlyIncome: number
+    wallets: Array<{ id: string; name: string; icon: string; balance: string; color: string; type: 'bank' | 'ewallet' | 'cash' | 'credit' }>
+    salaryAmount: number
+    salaryDay: number
   }) => {
-    // Set up wallet
-    const firstWallet = data.wallet
-    // Check if this wallet already exists (from defaults)
-    const existing = wallets.find(w => w.name.toLowerCase() === firstWallet.name.toLowerCase())
-    if (existing) {
-      updateWallet(existing.id, { balance: firstWallet.balance })
-    } else {
-      addWallet({ ...firstWallet, id: generateId() })
+    // Set up all wallets
+    for (const w of data.wallets) {
+      const balance = Number(w.balance.replace(/\D/g, '')) || 0
+      const existing = wallets.find(e => e.name.toLowerCase() === w.name.toLowerCase())
+      if (existing) {
+        updateWallet(existing.id, { balance })
+      } else {
+        addWallet({ id: generateId(), name: w.name, icon: w.icon, balance, color: w.color, type: w.type })
+      }
     }
 
-    // Set monthly income
-    if (data.monthlyIncome > 0) {
-      updateMonthlyIncome(data.monthlyIncome)
+    // Set salary config
+    if (data.salaryAmount > 0) {
+      updateMonthlyIncome(data.salaryAmount)
+      try {
+        localStorage.setItem('fw.salary', JSON.stringify({ amount: data.salaryAmount, day: data.salaryDay }))
+      } catch {}
     }
 
     // Mark setup done

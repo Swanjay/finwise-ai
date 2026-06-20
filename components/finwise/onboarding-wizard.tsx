@@ -1,9 +1,9 @@
 'use client'
 
-import { useState, useEffect, useCallback, useRef, forwardRef, useImperativeHandle } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
-  ChevronLeft, ChevronRight, Check,
+  ChevronLeft, ChevronRight, Check, Plus, Trash2,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { EXPENSE_CATEGORIES } from '@/lib/finwise'
@@ -11,8 +11,10 @@ import { FinWiseMascot } from '@/components/finwise/mascot'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 
-// ─── Storage key ───
+// ─── Storage keys ───
 const SETUP_KEY = 'fw.setupDone.v1'
+const SELECTED_CATS_KEY = 'fw.onboarding.cats'
+const INCOME_KEY = 'fw.onboarding.income'
 
 // Format number with Indonesian dots: 15000 → "15.000"
 function formatIDR(val: string): string {
@@ -21,9 +23,16 @@ function formatIDR(val: string): string {
   if (!clean) return ''
   return clean.replace(/\B(?=(\d{3})+(?!\d))/g, '.')
 }
-const SELECTED_CATS_KEY = 'fw.onboarding.cats'
-const FIRST_WALLET_KEY = 'fw.onboarding.wallet'
-const INCOME_KEY = 'fw.onboarding.income'
+
+// ─── Types ───
+interface WalletData {
+  id: string
+  name: string
+  icon: string
+  balance: string
+  color: string
+  type: 'bank' | 'ewallet' | 'cash' | 'credit'
+}
 
 // ─── Confetti Component ───
 function Confetti() {
@@ -121,67 +130,350 @@ function StepSlide({
 }
 
 // ─── Pre-set wallet options ───
-const WALLET_PRESETS = [
-  { name: 'Tunai', icon: '💵', color: '#4CAF50', type: 'cash' as const },
-  { name: 'BCA', icon: '🔴', color: '#3B82F6', type: 'bank' as const },
-  { name: 'GoPay', icon: '💜', color: '#8A6ECF', type: 'ewallet' as const },
+const WALLET_PRESETS: Omit<WalletData, 'id' | 'balance'>[] = [
+  { name: 'Tunai', icon: '💵', color: '#4CAF50', type: 'cash' },
+  { name: 'BCA', icon: '🔴', color: '#3B82F6', type: 'bank' },
+  { name: 'GoPay', icon: '💜', color: '#8A6ECF', type: 'ewallet' },
+  { name: 'Mandiri', icon: '🟡', color: '#F59E0B', type: 'bank' },
+  { name: 'OVO', icon: '🟣', color: '#7C3AED', type: 'ewallet' },
+  { name: 'Dana', icon: '🔵', color: '#2563EB', type: 'ewallet' },
 ]
 
-const INCOME_PRESETS = [
-  3_000_000, 5_000_000, 8_000_000, 10_000_000, 15_000_000, 20_000_000,
-]
+// ─── Wallet Step Content (extracted outside parent) ───
+function WalletStepContent({
+  wallets, setWallets,
+}: {
+  wallets: WalletData[]
+  setWallets: (w: WalletData[]) => void
+}) {
+  const [activeIdx, setActiveIdx] = useState(0)
+  // Local state for the active wallet input (avoids parent re-render)
+  const [localName, setLocalName] = useState(wallets[0]?.name || '')
+  const [localBalance, setLocalBalance] = useState(wallets[0]?.balance || '')
+
+  // Sync local state when active wallet changes
+  useEffect(() => {
+    setLocalName(wallets[activeIdx]?.name || '')
+    setLocalBalance(wallets[activeIdx]?.balance || '')
+  }, [activeIdx, wallets])
+
+  // Sync local changes back to wallets array (on blur)
+  const syncToWallets = useCallback(() => {
+    const updated = [...wallets]
+    if (updated[activeIdx]) {
+      updated[activeIdx] = { ...updated[activeIdx], name: localName, balance: localBalance }
+      setWallets(updated)
+    }
+  }, [wallets, activeIdx, localName, localBalance, setWallets])
+
+  // Add new wallet
+  const addWallet = () => {
+    syncToWallets()
+    const newWallet: WalletData = {
+      id: `wallet-${Date.now()}`,
+      name: '',
+      icon: '💳',
+      balance: '',
+      color: '#8A6ECF',
+      type: 'bank',
+    }
+    const updated = [...wallets, newWallet]
+    setWallets(updated)
+    setActiveIdx(updated.length - 1)
+  }
+
+  // Remove wallet
+  const removeWallet = (idx: number) => {
+    if (wallets.length <= 1) return
+    const updated = wallets.filter((_, i) => i !== idx)
+    setWallets(updated)
+    if (activeIdx >= updated.length) setActiveIdx(updated.length - 1)
+    else if (activeIdx === idx) setActiveIdx(0)
+  }
+
+  // Select preset for active wallet
+  const selectPreset = (preset: Omit<WalletData, 'id' | 'balance'>) => {
+    const updated = [...wallets]
+    if (updated[activeIdx]) {
+      updated[activeIdx] = {
+        ...updated[activeIdx],
+        name: preset.name,
+        icon: preset.icon,
+        color: preset.color,
+        type: preset.type,
+      }
+      setWallets(updated)
+    }
+  }
+
+  return (
+    <div className="flex flex-col gap-4 py-2">
+      <div className="text-center space-y-1">
+        <motion.div
+          initial={{ scale: 0 }}
+          animate={{ scale: 1 }}
+          className="text-3xl mx-auto w-fit"
+        >
+          💰
+        </motion.div>
+        <h2 className="font-heading text-lg font-bold">Atur Dompetmu</h2>
+        <p className="text-xs text-muted-foreground">
+          Tambahkan dompet yang kamu punya (bisa diubah nanti)
+        </p>
+      </div>
+
+      {/* Wallet tabs */}
+      <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
+        {wallets.map((w, i) => (
+          <motion.button
+            key={w.id}
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={() => { syncToWallets(); setActiveIdx(i) }}
+            className={cn(
+              'relative flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium transition-all shrink-0 border-2',
+              i === activeIdx
+                ? 'border-primary bg-primary/10 text-primary'
+                : 'border-transparent bg-secondary/80 text-muted-foreground'
+            )}
+          >
+            <span>{w.icon || '💳'}</span>
+            <span>{w.name || 'Baru'}</span>
+            {wallets.length > 1 && i === activeIdx && (
+              <button
+                onClick={(e) => { e.stopPropagation(); removeWallet(i) }}
+                className="ml-1 text-muted-foreground hover:text-destructive transition"
+              >
+                <Trash2 className="size-3" />
+              </button>
+            )}
+          </motion.button>
+        ))}
+        <motion.button
+          whileTap={{ scale: 0.9 }}
+          onClick={addWallet}
+          className="flex items-center gap-1 px-3 py-2 rounded-xl text-xs font-medium text-primary bg-primary/5 border-2 border-dashed border-primary/30 hover:bg-primary/10 transition shrink-0"
+        >
+          <Plus className="size-3.5" />
+          Tambah
+        </motion.button>
+      </div>
+
+      {/* Preset wallets */}
+      <div className="grid grid-cols-3 gap-2">
+        {WALLET_PRESETS.map((preset, i) => {
+          const active = wallets[activeIdx]?.name === preset.name
+          return (
+            <motion.button
+              key={preset.name}
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: i * 0.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => selectPreset(preset)}
+              className={cn(
+                'flex flex-col items-center gap-1.5 rounded-xl p-2.5 transition-all border-2',
+                active
+                  ? 'border-primary bg-primary/10 shadow-md shadow-primary/10'
+                  : 'border-transparent bg-secondary/80 hover:bg-secondary'
+              )}
+            >
+              <span className="text-xl">{preset.icon}</span>
+              <span className={cn(
+                'text-[10px] font-semibold',
+                active ? 'text-primary' : 'text-muted-foreground'
+              )}>
+                {preset.name}
+              </span>
+            </motion.button>
+          )
+        })}
+      </div>
+
+      {/* Custom wallet fields */}
+      <div className="space-y-2 p-3 rounded-2xl bg-secondary/50 border border-border/50">
+        <p className="text-xs font-medium text-muted-foreground">Detail dompet:</p>
+        <div className="grid grid-cols-2 gap-2">
+          <div>
+            <Label className="text-[10px]">Nama Dompet</Label>
+            <Input
+              value={localName}
+              onChange={(e) => setLocalName(e.target.value)}
+              onBlur={syncToWallets}
+              placeholder="BCA"
+              className="h-9 rounded-xl mt-0.5 text-xs"
+            />
+          </div>
+          <div>
+            <Label className="text-[10px]">Saldo Awal (Rp)</Label>
+            <Input
+              inputMode="numeric"
+              value={formatIDR(localBalance)}
+              onChange={(e) => setLocalBalance(e.target.value.replace(/\D/g, ''))}
+              onBlur={syncToWallets}
+              placeholder="0"
+              className="h-9 rounded-xl mt-0.5 text-xs tabular-nums"
+            />
+          </div>
+        </div>
+        <div className="flex flex-wrap gap-1.5">
+          {[100_000, 500_000, 1_000_000, 5_000_000].map((v) => (
+            <button
+              key={v}
+              type="button"
+              onClick={() => {
+                setLocalBalance(String(v))
+                const updated = [...wallets]
+                if (updated[activeIdx]) {
+                  updated[activeIdx] = { ...updated[activeIdx], balance: String(v) }
+                  setWallets(updated)
+                }
+              }}
+              className={cn(
+                'rounded-full px-2 py-0.5 text-[9px] font-medium transition',
+                localBalance === String(v)
+                  ? 'bg-primary text-white'
+                  : 'bg-white text-muted-foreground hover:bg-primary/10'
+              )}
+            >
+              {v >= 1_000_000 ? `${v / 1_000_000}jt` : `${v / 1_000}rb`}
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ─── Salary Step Content (extracted outside parent) ───
+function SalaryStepContent({
+  salaryAmount, setSalaryAmount,
+  salaryDay, setSalaryDay,
+}: {
+  salaryAmount: string
+  setSalaryAmount: (v: string) => void
+  salaryDay: number
+  setSalaryDay: (d: number) => void
+}) {
+  const [localAmount, setLocalAmount] = useState(salaryAmount)
+
+  useEffect(() => {
+    setLocalAmount(salaryAmount)
+  }, [salaryAmount])
+
+  return (
+    <div className="flex flex-col gap-5 py-2">
+      <div className="text-center space-y-1">
+        <motion.div
+          initial={{ scale: 0 }}
+          animate={{ scale: 1 }}
+          className="text-3xl mx-auto w-fit"
+        >
+          💸
+        </motion.div>
+        <h2 className="font-heading text-lg font-bold">Gaji Otomatis</h2>
+        <p className="text-xs text-muted-foreground">
+          Atur gaji bulanan supaya saldo otomatis bertambah setiap bulan
+        </p>
+      </div>
+
+      {/* Explanation */}
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.2 }}
+        className="flex items-start gap-2.5 p-3 rounded-xl bg-primary/5 border border-primary/10"
+      >
+        <span className="text-base mt-0.5">💡</span>
+        <p className="text-[11px] text-muted-foreground leading-relaxed">
+          Gaji kamu akan otomatis masuk ke dompet setiap bulan di tanggal yang dipilih.
+          Tercatat sebagai pemasukan otomatis. Kamu bisa skip dan atur nanti di Pengaturan.
+        </p>
+      </motion.div>
+
+      {/* Salary amount */}
+      <div className="space-y-2">
+        <Label className="text-xs">Nominal Gaji (Rp)</Label>
+        <Input
+          inputMode="numeric"
+          value={formatIDR(localAmount)}
+          onChange={(e) => {
+            const v = e.target.value.replace(/\D/g, '')
+            setLocalAmount(v)
+            setSalaryAmount(v)
+          }}
+          placeholder="5.000.000"
+          className="h-12 text-lg tabular-nums rounded-xl mt-1"
+        />
+      </div>
+
+      {/* Day picker */}
+      <div className="space-y-2">
+        <Label className="text-xs">Tanggal Masuk Setiap Bulan</Label>
+        <div className="grid grid-cols-7 gap-1.5">
+          {Array.from({ length: 31 }, (_, i) => i + 1).map((day) => (
+            <motion.button
+              key={day}
+              whileTap={{ scale: 0.9 }}
+              onClick={() => setSalaryDay(day)}
+              className={cn(
+                'h-9 rounded-lg text-xs font-medium transition-all',
+                salaryDay === day
+                  ? 'bg-primary text-white shadow-md shadow-primary/25'
+                  : 'bg-secondary/80 text-muted-foreground hover:bg-secondary'
+              )}
+            >
+              {day}
+            </motion.button>
+          ))}
+        </div>
+        <p className="text-[10px] text-muted-foreground text-center">
+          Dipilih: tanggal <span className="font-semibold text-primary">{salaryDay}</span> setiap bulan
+        </p>
+      </div>
+    </div>
+  )
+}
 
 // ─── Main Onboarding Wizard ───
 export function OnboardingWizard({ onComplete }: { onComplete: (data: {
   selectedCategories: string[]
-  wallet: { name: string; icon: string; balance: number; color: string; type: 'bank' | 'ewallet' | 'cash' | 'credit' }
-  monthlyIncome: number
+  wallets: WalletData[]
+  salaryAmount: number
+  salaryDay: number
 }) => void }) {
   const [step, setStep] = useState(0)
   const [direction, setDirection] = useState<'left' | 'right'>('right')
   const [selectedCats, setSelectedCats] = useState<string[]>(['food', 'transport', 'shopping'])
-  const [walletName, setWalletName] = useState('Tunai')
-  const [walletIcon, setWalletIcon] = useState('💵')
-  const [walletColor, setWalletColor] = useState('#4CAF50')
-  const [walletType, setWalletType] = useState<'bank' | 'ewallet' | 'cash' | 'credit'>('cash')
-  const [walletBalance, setWalletBalance] = useState('')
-  const [monthlyIncome, setMonthlyIncome] = useState('')
-  // Refs to always have latest values without triggering re-renders
-  const walletNameRef = useRef('Tunai')
-  const walletBalanceRef = useRef('')
   const [showConfetti, setShowConfetti] = useState(false)
 
-  const TOTAL_STEPS = 5 // 0=welcome, 1=categories, 2=wallet, 3=income, 4=celebration
+  // Multi-wallet state
+  const [wallets, setWallets] = useState<WalletData[]>([{
+    id: 'wallet-1',
+    name: 'Tunai',
+    icon: '💵',
+    balance: '',
+    color: '#4CAF50',
+    type: 'cash',
+  }])
+
+  // Salary state
+  const [salaryAmount, setSalaryAmount] = useState('')
+  const [salaryDay, setSalaryDay] = useState(1)
+
+  const TOTAL_STEPS = 5 // 0=welcome, 1=categories, 2=wallet, 3=salary, 4=celebration
 
   const goNext = useCallback(() => {
-    if (step === 3) {
-      // Save income
-      const income = Number(monthlyIncome.replace(/\D/g, '')) || 0
-      try { localStorage.setItem(INCOME_KEY, JSON.stringify(income)) } catch {}
-    }
     if (step === 4) {
-      // Final step — complete (read from refs for latest values)
-      const finalName = walletNameRef.current || walletName
-      const finalBalance = walletBalanceRef.current || walletBalance
-      const wallet = {
-        id: finalName.toLowerCase().replace(/\s+/g, '-') || 'cash',
-        name: finalName,
-        icon: walletIcon,
-        balance: Number(finalBalance.replace(/\D/g, '')) || 0,
-        color: walletColor,
-        type: walletType as 'bank' | 'ewallet' | 'cash' | 'credit',
-      }
+      // Final step — complete
       onComplete({
         selectedCategories: selectedCats,
-        wallet,
-        monthlyIncome: Number(monthlyIncome.replace(/\D/g, '')) || 0,
+        wallets: wallets.filter(w => w.name.trim().length > 0),
+        salaryAmount: Number(salaryAmount.replace(/\D/g, '')) || 0,
+        salaryDay,
       })
       return
-    }
-    // Also sync refs to state when moving to next step
-    if (step === 2) {
-      setWalletName(walletNameRef.current)
-      setWalletBalance(walletBalanceRef.current)
     }
     setDirection('right')
     setStep((s) => Math.min(s + 1, TOTAL_STEPS - 1))
@@ -189,7 +481,7 @@ export function OnboardingWizard({ onComplete }: { onComplete: (data: {
       setShowConfetti(true)
       setTimeout(() => setShowConfetti(false), 3500)
     }
-  }, [step, selectedCats, walletName, walletIcon, walletColor, walletType, walletBalance, monthlyIncome, onComplete])
+  }, [step, selectedCats, wallets, salaryAmount, salaryDay, onComplete])
 
   const goBack = useCallback(() => {
     setDirection('left')
@@ -202,13 +494,6 @@ export function OnboardingWizard({ onComplete }: { onComplete: (data: {
       if (prev.length >= 7) return prev
       return [...prev, id]
     })
-  }
-
-  const selectPreset = (preset: typeof WALLET_PRESETS[number]) => {
-    setWalletName(preset.name)
-    setWalletIcon(preset.icon)
-    setWalletColor(preset.color)
-    setWalletType(preset.type)
   }
 
   // ─── Welcome Step ───
@@ -247,8 +532,8 @@ export function OnboardingWizard({ onComplete }: { onComplete: (data: {
         >
           {[
             { emoji: '📂', text: 'Pilih kategori favorit' },
-            { emoji: '💰', text: 'Atur dompet pertama' },
-            { emoji: '📊', text: 'Set target pengeluaran' },
+            { emoji: '💰', text: 'Atur dompet & saldo' },
+            { emoji: '💸', text: 'Set gaji otomatis' },
           ].map((item, i) => (
             <motion.div
               key={i}
@@ -342,196 +627,6 @@ export function OnboardingWizard({ onComplete }: { onComplete: (data: {
     )
   }
 
-// ─── Wallet Step (extracted to prevent unmount/remount on parent re-render) ───
-function WalletStepContent({
-  walletName, setWalletName, walletBalance, setWalletBalance, selectPreset,
-  onNameChange, onBalanceChange,
-}: {
-  walletName: string
-  setWalletName: (v: string) => void
-  walletBalance: string
-  setWalletBalance: (v: string) => void
-  selectPreset: (preset: typeof WALLET_PRESETS[number]) => void
-  onNameChange: (v: string) => void  // Updates ref without re-render
-  onBalanceChange: (v: string) => void  // Updates ref without re-render
-}) {
-  // Local state to avoid parent re-renders on every keystroke (causes mobile keyboard to close)
-  const [localName, setLocalName] = useState(walletName)
-  const [localBalance, setLocalBalance] = useState(walletBalance)
-
-  // Sync from parent when preset is selected
-  useEffect(() => {
-    setLocalName(walletName)
-  }, [walletName])
-
-  useEffect(() => {
-    setLocalBalance(walletBalance)
-  }, [walletBalance])
-  return (
-    <div className="flex flex-col gap-5 py-2">
-      <div className="text-center space-y-1">
-        <motion.div
-          initial={{ scale: 0 }}
-          animate={{ scale: 1 }}
-          className="text-3xl mx-auto w-fit"
-        >
-          💰
-        </motion.div>
-        <h2 className="font-heading text-lg font-bold">Atur Dompet Pertama</h2>
-        <p className="text-xs text-muted-foreground">
-          Pilih dompet yang sudah ada atau buat sendiri
-        </p>
-      </div>
-
-      {/* Preset wallets */}
-      <div className="grid grid-cols-3 gap-2">
-        {WALLET_PRESETS.map((preset, i) => {
-          const active = walletName === preset.name
-          return (
-            <motion.button
-              key={preset.name}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.1 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={() => selectPreset(preset)}
-              className={cn(
-                'flex flex-col items-center gap-2 rounded-2xl p-4 transition-all border-2',
-                active
-                  ? 'border-primary bg-primary/10 shadow-md shadow-primary/10'
-                  : 'border-transparent bg-secondary/80 hover:bg-secondary'
-              )}
-            >
-              <span className="text-2xl">{preset.icon}</span>
-              <span className={cn(
-                'text-xs font-semibold',
-                active ? 'text-primary' : 'text-muted-foreground'
-              )}>
-                {preset.name}
-              </span>
-            </motion.button>
-          )
-        })}
-      </div>
-
-      {/* Custom wallet name */}
-      <div className="space-y-3 p-4 rounded-2xl bg-secondary/50 border border-border/50">
-        <p className="text-xs font-medium text-muted-foreground">Atau custom:</p>
-        <div className="space-y-2">
-          <div>
-            <Label className="text-xs">Nama Dompet</Label>
-            <Input
-              value={localName}
-              onChange={(e) => { setLocalName(e.target.value); onNameChange(e.target.value) }}
-              placeholder="Contoh: BCA, GoPay, Cash"
-              className="h-10 rounded-xl mt-1"
-            />
-          </div>
-          <div>
-            <Label className="text-xs">Saldo Awal (Rp) — opsional</Label>
-            <Input
-              inputMode="numeric"
-              value={formatIDR(localBalance)}
-              onChange={(e) => { const v = e.target.value.replace(/\D/g, ''); setLocalBalance(v); onBalanceChange(v) }}
-              placeholder="0"
-              className="h-10 rounded-xl mt-1 tabular-nums"
-            />
-          </div>
-        </div>
-
-        {/* Quick balance presets */}
-        <div className="flex flex-wrap gap-1.5">
-          {[100_000, 500_000, 1_000_000, 5_000_000].map((v) => (
-            <button
-              key={v}
-              type="button"
-              onClick={() => { setLocalBalance(String(v)); setWalletBalance(String(v)); onBalanceChange(String(v)) }}
-              className={cn(
-                'rounded-full px-2.5 py-1 text-[10px] font-medium transition',
-                localBalance === String(v)
-                  ? 'bg-primary text-white'
-                  : 'bg-white text-muted-foreground hover:bg-primary/10'
-              )}
-              style={{ boxShadow: '0 2px 8px rgba(138,110,207,0.1)' }}
-            >
-              {v >= 1_000_000 ? `${v / 1_000_000}jt` : `${v / 1_000}rb`}
-            </button>
-          ))}
-        </div>
-      </div>
-    </div>
-  )
-}
-
-  // ─── Income Step ───
-  function IncomeStep() {
-    return (
-      <div className="flex flex-col gap-5 py-2">
-        <div className="text-center space-y-1">
-          <motion.div
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            className="text-3xl mx-auto w-fit"
-          >
-            📊
-          </motion.div>
-          <h2 className="font-heading text-lg font-bold">Penghasilan Bulanan</h2>
-          <p className="text-xs text-muted-foreground">
-            Opsional — bantu FinWise hitung budget otomatis
-          </p>
-        </div>
-
-        <div className="space-y-3">
-          <div>
-            <Label className="text-xs">Jumlah Penghasilan (Rp)</Label>
-            <Input
-              inputMode="numeric"
-              value={formatIDR(monthlyIncome)}
-              onChange={(e) => setMonthlyIncome(e.target.value.replace(/\D/g, ''))}
-              placeholder="0"
-              className="h-12 text-lg tabular-nums rounded-xl mt-1"
-              autoFocus={false}
-            />
-          </div>
-
-          {/* Quick presets */}
-          <div className="grid grid-cols-3 gap-2">
-            {INCOME_PRESETS.map((v, i) => (
-              <motion.button
-                key={v}
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: i * 0.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={() => setMonthlyIncome(String(v))}
-                className={cn(
-                  'rounded-2xl p-3 text-xs font-semibold transition-all border-2',
-                  monthlyIncome === String(v)
-                    ? 'border-primary bg-primary/10 text-primary'
-                    : 'border-transparent bg-secondary/80 text-muted-foreground hover:bg-secondary'
-                )}
-              >
-                {v >= 1_000_000 ? `Rp${v / 1_000_000}jt` : `Rp${v / 1_000}rb`}
-              </motion.button>
-            ))}
-          </div>
-        </div>
-
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.5 }}
-          className="flex items-center gap-2 p-3 rounded-xl bg-primary/5 border border-primary/10"
-        >
-          <span className="text-lg">💡</span>
-          <p className="text-[11px] text-muted-foreground leading-relaxed">
-            Kamu bisa skip langkah ini dan mengaturnya nanti di Pengaturan
-          </p>
-        </motion.div>
-      </div>
-    )
-  }
-
   // ─── Celebration Step ───
   function CelebrationStep() {
     return (
@@ -584,20 +679,25 @@ function WalletStepContent({
               <p className="text-xs font-semibold">{selectedCats.length} dipilih</p>
             </div>
           </div>
-          <div className="flex items-center gap-3 p-3 rounded-2xl bg-primary/5 border border-primary/10">
-            <span className="text-lg">{walletIcon}</span>
-            <div className="text-left">
-              <p className="text-[10px] text-muted-foreground">Dompet</p>
-              <p className="text-xs font-semibold">{walletName}</p>
-            </div>
-          </div>
-          {Number(monthlyIncome.replace(/\D/g, '')) > 0 && (
-            <div className="flex items-center gap-3 p-3 rounded-2xl bg-primary/5 border border-primary/10">
-              <span className="text-lg">💰</span>
+          {wallets.filter(w => w.name.trim()).map((w) => (
+            <div key={w.id} className="flex items-center gap-3 p-3 rounded-2xl bg-primary/5 border border-primary/10">
+              <span className="text-lg">{w.icon}</span>
               <div className="text-left">
-                <p className="text-[10px] text-muted-foreground">Penghasilan</p>
+                <p className="text-[10px] text-muted-foreground">Dompet</p>
                 <p className="text-xs font-semibold">
-                  Rp{Number(monthlyIncome.replace(/\D/g, '')).toLocaleString('id-ID')}/bulan
+                  {w.name}
+                  {w.balance && ` — Rp${Number(w.balance).toLocaleString('id-ID')}`}
+                </p>
+              </div>
+            </div>
+          ))}
+          {Number(salaryAmount.replace(/\D/g, '')) > 0 && (
+            <div className="flex items-center gap-3 p-3 rounded-2xl bg-primary/5 border border-primary/10">
+              <span className="text-lg">💸</span>
+              <div className="text-left">
+                <p className="text-[10px] text-muted-foreground">Gaji Otomatis</p>
+                <p className="text-xs font-semibold">
+                  Rp{Number(salaryAmount.replace(/\D/g, '')).toLocaleString('id-ID')} — tgl {salaryDay}
                 </p>
               </div>
             </div>
@@ -607,16 +707,12 @@ function WalletStepContent({
     )
   }
 
-  const walletStepProps = {
-    walletName, setWalletName, walletBalance, setWalletBalance, selectPreset,
-    onNameChange: (v: string) => { walletNameRef.current = v },
-    onBalanceChange: (v: string) => { walletBalanceRef.current = v },
-  }
+  // ─── Steps array ───
   const steps = [
     <WelcomeStep key="welcome" />,
     <CategoriesStep key="categories" />,
-    <WalletStepContent key="wallet" {...walletStepProps} />,
-    <IncomeStep key="income" />,
+    <WalletStepContent key="wallet" wallets={wallets} setWallets={setWallets} />,
+    <SalaryStepContent key="salary" salaryAmount={salaryAmount} setSalaryAmount={setSalaryAmount} salaryDay={salaryDay} setSalaryDay={setSalaryDay} />,
     <CelebrationStep key="celebration" />,
   ]
 
@@ -624,15 +720,17 @@ function WalletStepContent({
     'Mulai Yuk!',
     'Lanjut',
     'Lanjut',
-    monthlyIncome ? 'Selesai' : 'Skip',
+    salaryAmount ? 'Lanjut' : 'Skip',
     'Masuk ke FinWise 🚀',
   ]
+
+  const hasValidWallet = wallets.some(w => w.name.trim().length > 0)
 
   const canProceed = [
     true, // welcome
     selectedCats.length >= 3, // categories (min 3)
-    (walletNameRef.current || walletName).trim().length > 0, // wallet (read from ref for latest)
-    true, // income (optional)
+    hasValidWallet, // wallet
+    true, // salary (optional)
     true, // celebration
   ]
 
@@ -695,7 +793,7 @@ function WalletStepContent({
         {step === 3 && (
           <button
             onClick={() => {
-              setMonthlyIncome('')
+              setSalaryAmount('')
               goNext()
             }}
             className="mt-3 w-full text-center text-xs text-muted-foreground hover:text-foreground transition py-1"
