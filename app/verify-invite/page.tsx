@@ -169,7 +169,7 @@ export default function VerifyInvitePage() {
             Belum punya kode? Hubungi admin untuk mendapatkan kode invitasi:
           </p>
           <a
-            href="https://t.me/swanjay"
+            href="https://t.me/Furaney"
             target="_blank"
             rel="noopener noreferrer"
             className="flex w-full items-center justify-center gap-2 rounded-lg bg-[#229ED9] px-4 py-2.5 text-sm font-medium text-white transition active:scale-[0.98]"
@@ -178,7 +178,7 @@ export default function VerifyInvitePage() {
             Hubungi Admin
           </a>
           <p className="text-xs text-muted-foreground text-center">
-            <span className="opacity-70">@swanjay</span>
+            <span className="opacity-70">@Furaney</span>
           </p>
         </div>
 
