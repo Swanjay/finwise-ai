@@ -323,10 +323,10 @@ export const BENCHMARK: Record<string, { label: string; avgPct: number }> = {
 // ─── Default Wallets ───
 export const DEFAULT_WALLETS: Wallet[] = [
   { id: 'cash', name: 'Cash', icon: '💵', balance: 0, color: '#4CAF50', type: 'cash' },
-  { id: 'bca', name: 'BCA', icon: '🔴', balance: 0, color: '#3B82F6', type: 'bank' },
-  { id: 'gopay', name: 'GoPay', icon: '💜', balance: 0, color: '#8A6ECF', type: 'ewallet' },
-  { id: 'ovo', name: 'OVO', icon: '💙', balance: 0, color: '#6366F1', type: 'ewallet' },
-  { id: 'dana', name: 'DANA', icon: '🔷', balance: 0, color: '#5B9BD5', type: 'ewallet' },
+  { id: 'bca', name: 'BCA', icon: '🔴', balance: 0, color: '#3B82F6', type: 'bank', logo: '/logos/bank/BCA.svg' },
+  { id: 'gopay', name: 'GoPay', icon: '💜', balance: 0, color: '#8A6ECF', type: 'ewallet', logo: '/logos/ewallet/Gopay.svg' },
+  { id: 'ovo', name: 'OVO', icon: '💙', balance: 0, color: '#6366F1', type: 'ewallet', logo: '/logos/ewallet/OVO.svg' },
+  { id: 'dana', name: 'DANA', icon: '🔷', balance: 0, color: '#5B9BD5', type: 'ewallet', logo: '/logos/ewallet/DANA.svg' },
 ]
 
 // ─── Helpers ───

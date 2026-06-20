@@ -15,6 +15,7 @@ import { useFinwise } from '@/components/finwise-store'
 import { LocationPicker, type LocationData } from '@/components/finwise/location-picker'
 import { cn } from '@/lib/utils'
 import { CustomKeypad } from '@/components/finwise/custom-keypad'
+import { detectLogo } from '@/lib/brand-logos'
 
 export function AddTransactionForm({ onDone }: { onDone: () => void }) {
   const { addTransaction, tags: savedTags, addTag: saveTag, wallets } = useFinwise()
@@ -165,7 +166,7 @@ export function AddTransactionForm({ onDone }: { onDone: () => void }) {
                     : 'border-border text-muted-foreground hover:bg-secondary',
                 )}
               >
-                <span className="text-base">{w.logo ? <img src={w.logo} alt="" className="w-5 h-5 object-contain" /> : w.icon}</span>
+                <span className="text-base">{w.logo || detectLogo(w.name) ? <img src={w.logo || detectLogo(w.name)} alt="" className="w-5 h-5 object-contain" /> : w.icon}</span>
                 <span className="truncate font-medium">{w.name}</span>
               </button>
             )

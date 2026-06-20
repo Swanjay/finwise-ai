@@ -327,7 +327,7 @@ function WalletsSheet({ onClose }: { onClose: () => void }) {
         <Card key={w.id} style={{ borderLeft: `3px solid ${w.color}` }}>
           <CardContent className="p-3 flex items-center gap-3">
             <div className="flex items-center justify-center size-10 rounded-xl text-lg shrink-0" style={{ backgroundColor: `${w.color}20`, color: w.color }}>
-              {w.logo ? <img src={w.logo} alt="" className="w-7 h-7 object-contain" /> : w.icon}
+              {w.logo || detectLogo(w.name) ? <img src={w.logo || detectLogo(w.name)} alt="" className="w-7 h-7 object-contain" /> : w.icon}
             </div>
             <div className="flex-1 min-w-0">
               <p className="font-medium text-sm truncate">{w.name}</p>
@@ -403,7 +403,7 @@ function TransferSheet({ onClose }: { onClose: () => void }) {
                     : 'border-border text-muted-foreground hover:bg-secondary',
                 )}
               >
-                <span className="text-lg">{w.logo ? <img src={w.logo} alt="" className="w-6 h-6 object-contain" /> : w.icon}</span>
+                <span className="text-lg">{w.logo || detectLogo(w.name) ? <img src={w.logo || detectLogo(w.name)} alt="" className="w-6 h-6 object-contain" /> : w.icon}</span>
                 <span className="truncate">{w.name}</span>
                 <span className="text-[10px] text-muted-foreground">{formatIDR(bal)}</span>
               </button>
@@ -437,7 +437,7 @@ function TransferSheet({ onClose }: { onClose: () => void }) {
                     : 'border-border text-muted-foreground hover:bg-secondary',
                 )}
               >
-                <span className="text-lg">{w.logo ? <img src={w.logo} alt="" className="w-6 h-6 object-contain" /> : w.icon}</span>
+                <span className="text-lg">{w.logo || detectLogo(w.name) ? <img src={w.logo || detectLogo(w.name)} alt="" className="w-6 h-6 object-contain" /> : w.icon}</span>
                 <span className="truncate">{w.name}</span>
                 <span className="text-[10px] text-muted-foreground">{formatIDR(bal)}</span>
               </button>

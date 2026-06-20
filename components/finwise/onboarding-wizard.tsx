@@ -241,7 +241,7 @@ function WalletStepContent({
       <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
         {wallets.map((w, i) => {
           const preset = WALLET_PRESETS.find(p => p.name === w.name)
-          const logoSrc = preset?.logo || w.logo
+          const logoSrc = preset?.logo || w.logo || detectLogo(w.name)
           return (
           <motion.button
             key={w.id}
@@ -710,7 +710,7 @@ export function OnboardingWizard({ onComplete }: { onComplete: (data: {
           </div>
           {wallets.filter(w => w.name.trim()).map((w) => {
             const preset = WALLET_PRESETS.find(p => p.name === w.name)
-            const logoSrc = preset?.logo || w.logo
+            const logoSrc = preset?.logo || w.logo || detectLogo(w.name)
             return (
               <div key={w.id} className="flex items-center gap-3 p-3 rounded-2xl bg-primary/5 border border-primary/10">
                 {logoSrc ? (
