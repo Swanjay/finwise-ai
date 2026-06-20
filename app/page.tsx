@@ -103,6 +103,7 @@ function MonthNavigator({ monthKey, onChange }: { monthKey: string; onChange: (k
 import { ExportSheet as ExportSheetNew } from '@/components/finwise/export-sheet'
 import { ErrorBoundary } from '@/components/error-boundary'
 import { OnboardingWizard } from '@/components/finwise/onboarding-wizard'
+import { detectLogo } from '@/lib/brand-logos'
 
 // ─── Backup/Restore Sheet ───
 function BackupSheet({ onClose }: { onClose: () => void }) {
@@ -246,12 +247,13 @@ function WalletsSheet({ onClose }: { onClose: () => void }) {
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!name) return
-    const balance = Number(initBalance.replace(/\\D/g, '')) || 0
+    const balance = Number(initBalance.replace(/\D/g, '')) || 0
+    const detectedLogo = detectLogo(name)
     if (editingId) {
-      updateWallet(editingId, { name, icon, balance, color: walletColor, type: walletType })
+      updateWallet(editingId, { name, icon, balance, color: walletColor, type: walletType, logo: detectedLogo })
       setEditingId(null)
     } else {
-      addWallet({ id: generateId(), name, icon, balance, color: walletColor, type: walletType })
+      addWallet({ id: generateId(), name, icon, balance, color: walletColor, type: walletType, logo: detectedLogo })
     }
     setName(''); setInitBalance(''); setIcon('💵'); setWalletColor(WALLET_COLOR_PRESETS[0]); setWalletType('cash'); setShowForm(false)
   }

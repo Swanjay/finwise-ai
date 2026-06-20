@@ -7,6 +7,7 @@ import {
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { EXPENSE_CATEGORIES } from '@/lib/finwise'
+import { detectLogo } from '@/lib/brand-logos'
 import { FinWiseMascot } from '@/components/finwise/mascot'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -168,7 +169,13 @@ function WalletStepContent({
   const syncToWallets = useCallback(() => {
     const updated = [...wallets]
     if (updated[activeIdx]) {
-      updated[activeIdx] = { ...updated[activeIdx], name: localName, balance: localBalance }
+      const detectedLogo = detectLogo(localName)
+      updated[activeIdx] = {
+        ...updated[activeIdx],
+        name: localName,
+        balance: localBalance,
+        logo: detectedLogo || updated[activeIdx].logo,
+      }
       setWallets(updated)
     }
   }, [wallets, activeIdx, localName, localBalance, setWallets])
@@ -234,6 +241,7 @@ function WalletStepContent({
       <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
         {wallets.map((w, i) => {
           const preset = WALLET_PRESETS.find(p => p.name === w.name)
+          const logoSrc = preset?.logo || w.logo
           return (
           <motion.button
             key={w.id}
@@ -248,8 +256,8 @@ function WalletStepContent({
                 : 'border-transparent bg-secondary/80 text-muted-foreground'
             )}
           >
-            {preset?.logo ? (
-              <img src={preset.logo} alt="" className="w-4 h-4 object-contain rounded-sm" />
+            {logoSrc ? (
+              <img src={logoSrc} alt="" className="w-4 h-4 object-contain rounded-sm" />
             ) : (
               <span>{w.icon || '💳'}</span>
             )}
@@ -702,10 +710,11 @@ export function OnboardingWizard({ onComplete }: { onComplete: (data: {
           </div>
           {wallets.filter(w => w.name.trim()).map((w) => {
             const preset = WALLET_PRESETS.find(p => p.name === w.name)
+            const logoSrc = preset?.logo || w.logo
             return (
               <div key={w.id} className="flex items-center gap-3 p-3 rounded-2xl bg-primary/5 border border-primary/10">
-                {preset?.logo ? (
-                  <img src={preset.logo} alt="" className="w-7 h-7 object-contain rounded-md" />
+                {logoSrc ? (
+                  <img src={logoSrc} alt="" className="w-7 h-7 object-contain rounded-md" />
                 ) : (
                   <span className="text-lg">{w.icon}</span>
                 )}
