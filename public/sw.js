@@ -1,7 +1,7 @@
 // Service Worker for FinWise
 // Network-first for HTML pages, cache-first for static assets
 
-const CACHE_NAME = 'finwise-v2'
+const CACHE_NAME = 'finwise-v3'
 
 // Install - skip waiting immediately
 self.addEventListener('install', (event) => {
