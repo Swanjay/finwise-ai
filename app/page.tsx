@@ -324,18 +324,35 @@ function WalletsSheet({ onClose }: { onClose: () => void }) {
         const walletTx = transactions.filter(t => t.walletId === w.id)
         const txCount = walletTx.length
         return (
-        <Card key={w.id} style={{ borderLeft: `3px solid ${w.color}` }}>
-          <CardContent className="p-3 flex items-center gap-3">
-            <div className="flex items-center justify-center size-10 rounded-xl text-lg shrink-0" style={{ backgroundColor: `${w.color}20`, color: w.color }}>
-              {w.logo || detectLogo(w.name) ? <img src={w.logo || detectLogo(w.name)} alt="" className="w-7 h-7 object-contain" /> : w.icon}
+        <Card key={w.id} className="overflow-visible shadow-sm border-l-4" style={{ borderLeftColor: w.color }}>
+          <CardContent className="p-3">
+            <div className="flex items-center justify-between gap-2">
+              {/* Sisi Kiri: Logo + Detail */}
+              <div className="flex items-center gap-3 min-w-0 flex-1">
+                <div className="flex items-center justify-center size-10 rounded-xl text-lg shrink-0" style={{ backgroundColor: `${w.color}20`, color: w.color }}>
+                  {w.logo || detectLogo(w.name) ? (
+                    <img src={w.logo || detectLogo(w.name)} alt="" className="w-7 h-7 object-contain" />
+                  ) : (
+                    w.icon
+                  )}
+                </div>
+                <div className="min-w-0">
+                  <p className="font-semibold text-sm text-foreground truncate">{w.name}</p>
+                  <p className="text-[11px] text-muted-foreground mt-0.5">{txCount} transaksi · {w.type || 'cash'}</p>
+                </div>
+              </div>
+              
+              {/* Sisi Kanan: Saldo + Aksi */}
+              <div className="flex items-center gap-2 shrink-0">
+                <div className="text-right mr-1">
+                  <p className="text-sm font-bold text-primary tabular-nums">{formatIDR(computed)}</p>
+                </div>
+                <div className="flex items-center gap-1 border-l pl-2 border-border">
+                  <button onClick={() => startEdit(w)} aria-label={`Edit ${w.name}`} className="text-muted-foreground hover:text-primary p-1.5 rounded-lg hover:bg-muted transition-colors"><Settings className="size-4" /></button>
+                  <button onClick={() => deleteWallet(w.id)} aria-label={`Hapus dompet ${w.name}`} className="text-muted-foreground hover:text-destructive p-1.5 rounded-lg hover:bg-muted transition-colors"><Trash2 className="size-4" /></button>
+                </div>
+              </div>
             </div>
-            <div className="flex-1 min-w-0">
-              <p className="font-medium text-sm truncate">{w.name}</p>
-              <p className="text-xs text-muted-foreground tabular-nums">{formatIDR(computed)}</p>
-              <p className="text-[10px] text-muted-foreground/60">{txCount} transaksi · {w.type || 'cash'}</p>
-            </div>
-            <button onClick={() => startEdit(w)} aria-label={`Edit ${w.name}`} className="text-muted-foreground hover:text-primary p-1"><Settings className="size-3.5" /></button>
-            <button onClick={() => deleteWallet(w.id)} aria-label={`Hapus dompet ${w.name}`} className="text-muted-foreground hover:text-destructive p-1"><Trash2 className="size-3.5" /></button>
           </CardContent>
         </Card>
         )
