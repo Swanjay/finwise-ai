@@ -1,55 +1,40 @@
-// Service Worker for FinWise
-// Network-first for HTML pages, cache-first for static assets
+// Service Worker for FinWise — v4
+// Network-first for EVERYTHING. No cache-first static assets.
+// This prevents stale JS bundles causing hydration failures.
 
-const CACHE_NAME = 'finwise-v3'
+const CACHE_NAME = 'finwise-v4'
 
-// Install - skip waiting immediately
+// Install — clear ALL old caches, then take over
 self.addEventListener('install', (event) => {
-  self.skipWaiting()
+  event.waitUntil(
+    caches.keys().then((names) => Promise.all(names.map((n) => caches.delete(n))))
+      .then(() => self.skipWaiting())
+  )
 })
 
-// Activate - clean ALL old caches
+// Activate — claim all clients immediately
 self.addEventListener('activate', (event) => {
   event.waitUntil(
-    caches.keys().then((cacheNames) => {
-      return Promise.all(
-        cacheNames.map((name) => caches.delete(name))
-      )
-    })
+    caches.keys().then((names) => Promise.all(names.map((n) => caches.delete(n))))
+      .then(() => self.clients.claim())
   )
-  self.clients.claim()
 })
 
-// Fetch - network first for HTML, cache first for static
+// Fetch — ALWAYS go to network first, only use cache as offline fallback
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return
   if (event.request.url.includes('/api/')) return
 
-  // Network-first for HTML/navigation requests
-  if (event.request.mode === 'navigate' || event.request.headers.get('accept')?.includes('text/html')) {
-    event.respondWith(
-      fetch(event.request)
-        .then((response) => {
-          const clone = response.clone()
-          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone))
-          return response
-        })
-        .catch(() => caches.match(event.request).then((r) => r || caches.match('/')))
-    )
-    return
-  }
-
-  // Cache-first for static assets (JS, CSS, images)
+  // Network-first for ALL requests
   event.respondWith(
-    caches.match(event.request).then((cached) => {
-      if (cached) return cached
-      return fetch(event.request).then((response) => {
-        if (response && response.status === 200) {
+    fetch(event.request)
+      .then((response) => {
+        if (response && response.status === 200 && response.type === 'basic') {
           const clone = response.clone()
           caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone))
         }
         return response
       })
-    })
+      .catch(() => caches.match(event.request))
   )
 })
