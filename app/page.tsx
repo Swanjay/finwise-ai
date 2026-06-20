@@ -190,7 +190,7 @@ function GoalsSheet({ onClose }: { onClose: () => void }) {
   }
 
   return (
-    <div className="flex flex-col gap-4 max-h-[60vh] overflow-y-auto">
+    <div className="flex flex-col gap-4 ">
       <Button size="sm" onClick={() => setShowForm(!showForm)} className="gap-1 self-end"><Plus className="size-4" /> Baru</Button>
       {showForm && (
         <form onSubmit={handleSubmit} className="flex flex-col gap-2 p-3 rounded-xl border border-primary/30">
@@ -269,7 +269,7 @@ function WalletsSheet({ onClose }: { onClose: () => void }) {
   }
 
   return (
-    <div className="flex flex-col gap-4 max-h-[60vh] overflow-y-auto">
+    <div className="flex flex-col gap-4 ">
       {/* Total saldo */}
       <div className="rounded-xl bg-primary/10 p-3 text-center">
         <p className="text-xs text-muted-foreground">Total Saldo</p>
@@ -506,7 +506,7 @@ function CategoriesSheet({ onClose }: { onClose: () => void }) {
   const customCats = Object.values(allCategories).filter((c) => c.isCustom)
 
   return (
-    <div className="flex flex-col gap-4 max-h-[60vh] overflow-y-auto">
+    <div className="flex flex-col gap-4 ">
       <Button size="sm" onClick={() => setShowForm(!showForm)} className="gap-1 self-end"><Plus className="size-4" /> Kategori Baru</Button>
       {showForm && (
         <form onSubmit={handleSubmit} className="flex flex-col gap-2 p-3 rounded-xl border border-primary/30">
@@ -579,7 +579,7 @@ function BenchmarkSheet({ onClose }: { onClose: () => void }) {
   const byCat = spendingByCategory(transactions, allCategories)
 
   return (
-    <div className="flex flex-col gap-4 max-h-[60vh] overflow-y-auto">
+    <div className="flex flex-col gap-4 ">
       <p className="text-xs text-muted-foreground">Perbandingan pengeluaranmu dengan rata-rata Indonesia</p>
       {Object.entries(BENCHMARK).map(([catId, bench]) => {
         const spent = byCat.find((c) => c.category.id === catId)?.value ?? 0
@@ -631,7 +631,7 @@ function SettingsSheet({ onClose, onOpenSheet }: { onClose: () => void; onOpenSh
   ]
 
   return (
-    <div className="flex flex-col gap-5 max-h-[60vh] overflow-y-auto">
+    <div className="flex flex-col gap-5 ">
       {/* Theme */}
       <div className="flex items-center justify-between">
         <span className="text-sm">Tema</span>
@@ -882,7 +882,7 @@ function RecurringSheet({ onClose }: { onClose: () => void }) {
   const freqLabels: Record<string, string> = { harian: 'Harian', mingguan: 'Mingguan', bulanan: 'Bulanan' }
 
   return (
-    <div className="flex flex-col gap-4 max-h-[60vh] overflow-y-auto">
+    <div className="flex flex-col gap-4 ">
       <Button size="sm" onClick={() => setShowForm(!showForm)} className="gap-1 self-end"><Plus className="size-4" /> Baru</Button>
       {showForm && (
         <form onSubmit={handleSubmit} className="flex flex-col gap-2 p-3 rounded-xl border border-primary/30">
