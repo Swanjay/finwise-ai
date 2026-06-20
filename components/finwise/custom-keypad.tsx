@@ -175,9 +175,15 @@ export const CustomKeypad = memo(function CustomKeypad({ value, onChange, onConf
         {/* Row 5 */}
         <Key
           label="📅"
-          onClick={() => onDateToday?.()}
+          onClick={() => {
+            onDateToday?.()
+            // Visual feedback: flash
+            if (navigator.vibrate) navigator.vibrate(15)
+          }}
           variant="special"
           sublabel="Hari ini"
+          flashOnPress
+          flashLabel={new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })}
         />
         <Key
           label="⌫"
@@ -210,13 +216,18 @@ function Key({
   variant = 'default',
   active = false,
   sublabel,
+  flashOnPress,
+  flashLabel,
 }: {
   label: string
   onClick: () => void
   variant?: 'default' | 'operator' | 'delete' | 'confirm' | 'result' | 'special'
   active?: boolean
   sublabel?: string
+  flashOnPress?: boolean
+  flashLabel?: string
 }) {
+  const [flashing, setFlashing] = useState(false)
   const baseClasses = 'flex items-center justify-center h-14 rounded-2xl font-semibold text-lg transition-all active:scale-95 select-none'
   const variantClasses = {
     default: 'bg-secondary text-foreground hover:bg-secondary/80',
@@ -229,16 +240,24 @@ function Key({
     special: 'bg-secondary text-muted-foreground hover:bg-secondary/80',
   }
 
+  function handleClick() {
+    onClick()
+    if (flashOnPress) {
+      setFlashing(true)
+      setTimeout(() => setFlashing(false), 1200)
+    }
+  }
+
   return (
     <button
       type="button"
-      onClick={onClick}
-      className={`${baseClasses} ${variantClasses[variant]}`}
+      onClick={handleClick}
+      className={`${baseClasses} ${variantClasses[variant]} ${flashing ? '!bg-emerald-100 !text-emerald-600 scale-95' : ''}`}
     >
       {sublabel ? (
         <div className="flex flex-col items-center leading-tight">
           <span className="text-base">{label}</span>
-          <span className="text-[9px] opacity-60">{sublabel}</span>
+          <span className="text-[9px] opacity-60">{flashing && flashLabel ? flashLabel : sublabel}</span>
         </div>
       ) : (
         <span>{label}</span>
