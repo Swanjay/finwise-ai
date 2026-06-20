@@ -757,7 +757,7 @@ export function OnboardingWizard({ onComplete }: { onComplete: (data: {
     'Mulai Yuk!',
     'Lanjut',
     'Lanjut',
-    salaryAmount ? 'Lanjut' : 'Skip',
+    'Lanjut',
     'Masuk ke FinWise 🚀',
   ]
 
