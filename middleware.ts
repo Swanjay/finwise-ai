@@ -19,12 +19,6 @@ export async function middleware(req: NextRequest) {
     return NextResponse.next()
   }
 
-  // Demo mode — allow access with demo cookie
-  const demoCookie = req.cookies.get('finwise-demo')
-  if (demoCookie?.value === 'true') {
-    return NextResponse.next()
-  }
-
   // Page routes — check auth token
   const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET })
 

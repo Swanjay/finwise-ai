@@ -1035,29 +1035,6 @@ function AppShell() {
   const [sheet, setSheet] = useState<Sheet>(null)
   const [monthKey, setMonthKey] = useState(getMonthKey(new Date()))
   const [isLoading, setIsLoading] = useState(true)
-  const [isDemoMode, setIsDemoMode] = useState(false)
-
-  // Check demo mode on mount + load sample data
-  useEffect(() => {
-    const demoFlag = localStorage.getItem('finwise-demo') === 'true'
-    setIsDemoMode(demoFlag)
-
-    // Load demo data if no transactions exist
-    if (demoFlag && transactions.length === 0) {
-      const today = new Date()
-      const demoTransactions = [
-        { date: new Date(today.getFullYear(), today.getMonth(), today.getDate() - 1).toISOString().split('T')[0], type: 'income' as const, amount: 8500000, category: 'income' as const, description: 'Gaji bulanan Juni' },
-        { date: new Date(today.getFullYear(), today.getMonth(), today.getDate() - 2).toISOString().split('T')[0], type: 'expense' as const, amount: 1200000, category: 'food' as const, description: 'Grocery mingguan' },
-        { date: new Date(today.getFullYear(), today.getMonth(), today.getDate() - 3).toISOString().split('T')[0], type: 'expense' as const, amount: 500000, category: 'transport' as const, description: 'Grab bulanan' },
-        { date: new Date(today.getFullYear(), today.getMonth(), today.getDate() - 4).toISOString().split('T')[0], type: 'expense' as const, amount: 350000, category: 'entertainment' as const, description: 'Netflix + Spotify' },
-        { date: new Date(today.getFullYear(), today.getMonth(), today.getDate() - 5).toISOString().split('T')[0], type: 'expense' as const, amount: 750000, category: 'shopping' as const, description: 'Baju baru' },
-        { date: new Date(today.getFullYear(), today.getMonth(), today.getDate() - 7).toISOString().split('T')[0], type: 'expense' as const, amount: 2500000, category: 'bills' as const, description: 'Kos bulanan' },
-        { date: new Date(today.getFullYear(), today.getMonth(), today.getDate() - 8).toISOString().split('T')[0], type: 'income' as const, amount: 500000, category: 'income' as const, description: 'Freelance design' },
-        { date: new Date(today.getFullYear(), today.getMonth(), today.getDate() - 10).toISOString().split('T')[0], type: 'expense' as const, amount: 200000, category: 'health' as const, description: 'Vitamin & obat' },
-      ]
-      demoTransactions.forEach(tx => addTransaction(tx))
-    }
-  }, [isDemoMode, transactions.length, addTransaction])
 
   // Simulate loading on mount
   useEffect(() => {
@@ -1077,7 +1054,7 @@ function AppShell() {
 
   const monthTx = useMemo(() => filterByMonth(transactions, monthKey), [transactions, monthKey])
 
-  if (isLocked && pin && !isDemoMode) return <PinLock />
+  if (isLocked && pin) return <PinLock />
   if (isLoading) return <LoadingScreen message="Menyiapkan dashboard..." />
 
   const navItems: { id: Tab; label: string; icon: typeof Home }[] = [
@@ -1125,26 +1102,6 @@ function AppShell() {
           <UserAvatar />
         </div>
       </header>
-
-      {/* Demo Mode Banner */}
-      {isDemoMode && (
-        <div className="mx-5 mb-3 flex items-center justify-between rounded-xl bg-amber-500/10 border border-amber-500/30 px-4 py-2.5">
-          <div className="flex items-center gap-2">
-            <span className="text-base">🎮</span>
-            <p className="text-xs font-medium text-amber-700">Mode Demo — Data tidak tersimpan</p>
-          </div>
-          <button
-            onClick={() => {
-              document.cookie = "finwise-demo=; path=/; max-age=0"
-              localStorage.removeItem("finwise-demo")
-              window.location.href = "/login"
-            }}
-            className="rounded-lg bg-amber-500/20 px-3 py-1 text-xs font-bold text-amber-700 transition hover:bg-amber-500/30"
-          >
-            Keluar
-          </button>
-        </div>
-      )}
 
       {/* Quick Actions Bar */}
       <div className="px-5 pb-3 flex gap-2 overflow-x-auto no-scrollbar">

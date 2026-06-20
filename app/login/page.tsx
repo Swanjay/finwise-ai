@@ -269,25 +269,6 @@ export default function LoginPage() {
           </div>
         )}
 
-        {/* Demo Mode */}
-        <div className="flex items-center gap-3">
-          <div className="h-px flex-1 bg-border" />
-          <span className="text-xs text-muted-foreground">atau</span>
-          <div className="h-px flex-1 bg-border" />
-        </div>
-
-        <button
-          onClick={() => {
-            document.cookie = "finwise-demo=true; path=/; max-age=86400"
-            localStorage.setItem("finwise-demo", "true")
-            window.location.href = "/"
-          }}
-          disabled={loading !== null}
-          className="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-dashed border-primary/40 bg-primary/5 px-4 py-3 text-sm font-bold text-primary transition hover:bg-primary/10 active:scale-[0.98] disabled:opacity-50"
-        >
-          🎮 Coba Demo (Tanpa Login)
-        </button>
-
         <p className="text-center text-xs text-muted-foreground">
           Data kamu aman & tersimpan lokal di perangkat 🔒
         </p>
