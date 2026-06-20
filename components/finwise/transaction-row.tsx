@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback, useRef } from 'react'
+import { useState, useCallback, useRef, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Trash2, Pencil, MapPin, Camera, X } from 'lucide-react'
 import { formatIDR, type Transaction, resolveCategory } from '@/lib/finwise'
@@ -32,182 +32,150 @@ export function TransactionRow({
   const [isDeleting, setIsDeleting] = useState(false)
   const [showReceipt, setShowReceipt] = useState(false)
   const [offsetX, setOffsetX] = useState(0)
-  const [action, setAction] = useState<'edit' | 'delete' | null>(null)
-  const rowRef = useRef<HTMLDivElement>(null)
-  const touchStartRef = useRef<{ x: number; y: number; time: number } | null>(null)
-  const rafRef = useRef<number | null>(null)
-
-  // Use receiptUrl (thumbnail) if available, fallback to receiptPhoto
   const receiptThumb = tx.receiptUrl || tx.receiptPhoto
 
-  const applyOffset = useCallback((x: number) => {
-    if (rafRef.current) cancelAnimationFrame(rafRef.current)
-    rafRef.current = requestAnimationFrame(() => {
-      if (rowRef.current) {
-        const clamped = Math.max(-ACTION_WIDTH, Math.min(ACTION_WIDTH, x))
-        rowRef.current.style.transform = `translateX(${clamped}px)`
-        setOffsetX(clamped)
-      }
-    })
-  }, [])
+  // Refs for touch handling — MUST use native events for passive:false
+  const rowRef = useRef<HTMLDivElement>(null)
+  const containerRef = useRef<HTMLDivElement>(null)
+  const touchRef = useRef<{ startX: number; startY: number; time: number; active: boolean } | null>(null)
+  const currentOffsetRef = useRef(0)
 
-  const snapBack = useCallback(() => {
+  // Attach native touch listeners with { passive: false }
+  useEffect(() => {
+    const container = containerRef.current
+    if (!container) return
+
+    let isDragging = false
+    let hasMovedEnough = false
+
+    const onTouchStart = (e: TouchEvent) => {
+      if (isDeleting) return
+      const touch = e.touches[0]
+      touchRef.current = { startX: touch.clientX, startY: touch.clientY, time: Date.now(), active: true }
+      isDragging = false
+      hasMovedEnough = false
+    }
+
+    const onTouchMove = (e: TouchEvent) => {
+      if (!touchRef.current?.active) return
+
+      const touch = e.touches[0]
+      const dx = touch.clientX - touchRef.current.startX
+      const dy = touch.clientY - touchRef.current.startY
+
+      // Decide direction on first significant movement
+      if (!hasMovedEnough && Math.abs(dx) < 8 && Math.abs(dy) < 8) return
+      if (!hasMovedEnough) {
+        hasMovedEnough = true
+        // If vertical is dominant, let scroll happen
+        if (Math.abs(dy) > Math.abs(dx)) {
+          touchRef.current.active = false
+          return
+        }
+        isDragging = true
+      }
+
+      if (!isDragging) return
+
+      // CRITICAL: prevent scroll while swiping horizontally
+      e.preventDefault()
+
+      const clamped = Math.max(-ACTION_WIDTH, Math.min(ACTION_WIDTH, dx))
+      currentOffsetRef.current = clamped
+      setOffsetX(clamped)
+
+      if (rowRef.current) {
+        rowRef.current.style.transform = `translateX(${clamped}px)`
+      }
+    }
+
+    const onTouchEnd = () => {
+      if (!touchRef.current?.active || !isDragging) {
+        touchRef.current = null
+        return
+      }
+      const dx = currentOffsetRef.current
+      const duration = Date.now() - touchRef.current.time
+      const velocity = Math.abs(dx) / Math.max(duration, 1)
+      const absDx = Math.abs(dx)
+      touchRef.current = null
+
+      // Fast swipe → immediate action
+      if (velocity > 0.5 && absDx > SWIPE_THRESHOLD) {
+        if (dx < 0) {
+          haptic.heavy()
+          setIsDeleting(true)
+          return
+        } else {
+          haptic.medium()
+          onEdit?.(tx)
+          animateBack()
+          return
+        }
+      }
+
+      // Slow swipe past threshold → reveal action
+      if (absDx > SWIPE_THRESHOLD) {
+        haptic.light()
+        const target = dx < 0 ? -ACTION_WIDTH : ACTION_WIDTH
+        animateTo(target)
+        return
+      }
+
+      // Not enough → snap back
+      animateBack()
+    }
+
+    container.addEventListener('touchstart', onTouchStart, { passive: true })
+    container.addEventListener('touchmove', onTouchMove, { passive: false }) // ← CRITICAL: passive:false
+    container.addEventListener('touchend', onTouchEnd, { passive: true })
+
+    return () => {
+      container.removeEventListener('touchstart', onTouchStart)
+      container.removeEventListener('touchmove', onTouchMove)
+      container.removeEventListener('touchend', onTouchEnd)
+    }
+  }, [isDeleting, onEdit, tx])
+
+  const animateBack = useCallback(() => {
     if (rowRef.current) {
       rowRef.current.style.transition = 'transform 0.25s cubic-bezier(0.4, 0, 0.2, 1)'
       rowRef.current.style.transform = 'translateX(0px)'
+      currentOffsetRef.current = 0
+      setOffsetX(0)
       setTimeout(() => {
         if (rowRef.current) rowRef.current.style.transition = ''
       }, 300)
     }
-    setOffsetX(0)
-    setAction(null)
   }, [])
 
-  const snapToAction = useCallback((side: 'edit' | 'delete') => {
-    const target = side === 'edit' ? ACTION_WIDTH : -ACTION_WIDTH
+  const animateTo = useCallback((target: number) => {
     if (rowRef.current) {
       rowRef.current.style.transition = 'transform 0.2s cubic-bezier(0.4, 0, 0.2, 1)'
       rowRef.current.style.transform = `translateX(${target}px)`
+      currentOffsetRef.current = target
+      setOffsetX(target)
+      setTimeout(() => {
+        if (rowRef.current) rowRef.current.style.transition = ''
+      }, 250)
     }
-    setOffsetX(target)
-    setAction(side)
   }, [])
 
-  const handleTouchStart = useCallback((e: React.TouchEvent) => {
-    if (isDeleting) return
-    // If already in an action state, closing it
-    if (action) {
-      snapBack()
-      return
-    }
-    const touch = e.touches[0]
-    touchStartRef.current = { x: touch.clientX, y: touch.clientY, time: Date.now() }
-  }, [isDeleting, action, snapBack])
-
-  const handleTouchMove = useCallback((e: React.TouchEvent) => {
-    if (!touchStartRef.current || isDeleting) return
-    e.preventDefault() // prevent scroll while swiping
-
-    const touch = e.touches[0]
-    const dx = touch.clientX - touchStartRef.current.x
-    const dy = touch.clientY - touchStartRef.current.y
-
-    // If vertical movement is dominant, allow scroll
-    if (Math.abs(dy) > Math.abs(dx) * 1.5 && Math.abs(dy) > 10) {
-      return // Let parent handle vertical scroll
-    }
-
-    applyOffset(dx)
-  }, [isDeleting, applyOffset])
-
-  const handleTouchEnd = useCallback((e: React.TouchEvent) => {
-    if (!touchStartRef.current || isDeleting) return
-    const dx = offsetX
-    const absDx = Math.abs(dx)
-    const duration = Date.now() - touchStartRef.current.time
-    const velocity = absDx / Math.max(duration, 1)
-    touchStartRef.current = null
-
-    // Fast swipe (velocity > 0.5 px/ms) → trigger action immediately
-    if (velocity > 0.5 && absDx > SWIPE_THRESHOLD) {
-      if (dx < 0) {
-        // Swipe left → delete
-        haptic.heavy()
-        setIsDeleting(true)
-        return
-      } else {
-        // Swipe right → edit
-        haptic.medium()
-        onEdit?.(tx)
-        snapBack()
-        return
+  // Click outside any revealed row to close it
+  useEffect(() => {
+    if (offsetX === 0) return
+    const handleClick = (e: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        animateBack()
       }
     }
+    document.addEventListener('click', handleClick)
+    return () => document.removeEventListener('click', handleClick)
+  }, [offsetX, animateBack])
 
-    // Slow swipe → reveal action button
-    if (absDx > SWIPE_THRESHOLD) {
-      if (dx < 0) {
-        haptic.light()
-        snapToAction('delete')
-      } else {
-        haptic.light()
-        snapToAction('edit')
-      }
-      return
-    }
-
-    // Not enough swipe → snap back
-    if (absDx < SWIPE_THRESHOLD) {
-      snapBack()
-    }
-  }, [isDeleting, offsetX, onEdit, tx, snapBack, snapToAction])
-
-  // Handle delete animation complete
   const handleDeleteComplete = useCallback(() => {
-    if (isDeleting) {
-      onDelete?.(tx.id)
-    }
+    if (isDeleting) onDelete?.(tx.id)
   }, [isDeleting, onDelete, tx.id])
-
-  // Mouse drag support (for desktop testing)
-  const mouseStartRef = useRef<{ x: number; time: number } | null>(null)
-  const isDraggingRef = useRef(false)
-
-  const handleMouseDown = useCallback((e: React.MouseEvent) => {
-    if (isDeleting) return
-    if (action) {
-      snapBack()
-      return
-    }
-    mouseStartRef.current = { x: e.clientX, time: Date.now() }
-    isDraggingRef.current = false
-  }, [isDeleting, action, snapBack])
-
-  const handleMouseMove = useCallback((e: React.MouseEvent) => {
-    if (!mouseStartRef.current || isDeleting) return
-    const dx = e.clientX - mouseStartRef.current.x
-    if (Math.abs(dx) > 5) {
-      isDraggingRef.current = true
-      applyOffset(dx)
-    }
-  }, [isDeleting, applyOffset])
-
-  const handleMouseUp = useCallback(() => {
-    if (!mouseStartRef.current || isDeleting) return
-    const dx = offsetX
-    const absDx = Math.abs(dx)
-    const duration = Date.now() - mouseStartRef.current.time
-    const velocity = absDx / Math.max(duration, 1)
-    mouseStartRef.current = null
-
-    if (!isDraggingRef.current) {
-      // This was a click, not a drag — let default click handlers work
-      return
-    }
-    isDraggingRef.current = false
-
-    if (velocity > 0.5 && absDx > SWIPE_THRESHOLD) {
-      if (dx < 0) {
-        haptic.heavy()
-        setIsDeleting(true)
-        return
-      } else {
-        haptic.medium()
-        onEdit?.(tx)
-        snapBack()
-        return
-      }
-    }
-
-    if (absDx > SWIPE_THRESHOLD) {
-      haptic.light()
-      if (dx < 0) snapToAction('delete')
-      else snapToAction('edit')
-      return
-    }
-
-    snapBack()
-  }, [isDeleting, offsetX, onEdit, tx, snapBack, snapToAction])
 
   return (
     <AnimatePresence>
@@ -244,11 +212,12 @@ export function TransactionRow({
 
       {!isDeleting ? (
         <div
-          className="relative overflow-hidden touch-pan-y"
+          ref={containerRef}
+          className="relative overflow-hidden"
           style={{ borderRadius: 12 }}
         >
           {/* Action buttons behind the row */}
-          <div className="absolute inset-0 flex" style={{ pointerEvents: 'none' }}>
+          <div className="absolute inset-0 flex">
             <div
               className="flex w-[72px] items-center justify-center bg-blue-500"
               style={{ opacity: offsetX > 10 ? Math.min(offsetX / ACTION_WIDTH, 1) : 0 }}
@@ -275,13 +244,6 @@ export function TransactionRow({
             ref={rowRef}
             className="relative z-10 flex items-center gap-3 bg-card px-2 py-2.5 select-none"
             style={{ touchAction: 'pan-y', userSelect: 'none', WebkitUserSelect: 'none' }}
-            onTouchStart={handleTouchStart}
-            onTouchMove={handleTouchMove}
-            onTouchEnd={handleTouchEnd}
-            onMouseDown={handleMouseDown}
-            onMouseMove={handleMouseMove}
-            onMouseUp={handleMouseUp}
-            onMouseLeave={handleMouseUp}
           >
             {/* Receipt thumbnail or category icon */}
             <span
@@ -290,11 +252,7 @@ export function TransactionRow({
               aria-hidden
             >
               {receiptThumb ? (
-                <img
-                  src={receiptThumb}
-                  alt="Struk"
-                  className="size-10 rounded-full object-cover"
-                />
+                <img src={receiptThumb} alt="Struk" className="size-10 rounded-full object-cover" />
               ) : Icon ? (
                 <Icon className="size-5" style={{ color: cat.color }} />
               ) : (
@@ -320,7 +278,6 @@ export function TransactionRow({
                     {tx.location.name.length > 15 ? tx.location.name.slice(0, 15) + '...' : tx.location.name}
                   </span>
                 )}
-                {/* Receipt camera badge */}
                 {receiptThumb && (
                   <button
                     type="button"
@@ -338,7 +295,7 @@ export function TransactionRow({
             {/* Amount */}
             <span
               className={cn(
-                'tabular-nums text-sm font-semibold',
+                'tabular-nums text-sm font-semibold shrink-0',
                 income ? 'text-emerald-500 dark:text-emerald-400' : 'text-red-500 dark:text-red-400',
               )}
             >
@@ -346,28 +303,21 @@ export function TransactionRow({
               {formatIDR(tx.amount)}
             </span>
 
-            {/* Quick action buttons (visible on hover / long-press) */}
+            {/* Quick action buttons — always visible for easy access */}
             {onDelete && (
-              <div className="flex items-center gap-1 shrink-0">
+              <div className="flex items-center gap-0.5 shrink-0">
                 <button
                   type="button"
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    onEdit?.(tx)
-                  }}
-                  className="rounded-md p-1.5 text-blue-500 hover:bg-blue-100 transition"
+                  onClick={(e) => { e.stopPropagation(); onEdit?.(tx) }}
+                  className="rounded-md p-1.5 text-blue-500 hover:bg-blue-100 active:bg-blue-200 transition"
                   aria-label={`Edit ${tx.description}`}
                 >
                   <Pencil className="size-3.5" />
                 </button>
                 <button
                   type="button"
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    haptic.heavy()
-                    setIsDeleting(true)
-                  }}
-                  className="rounded-md p-1.5 text-red-500 hover:bg-red-100 transition"
+                  onClick={(e) => { e.stopPropagation(); haptic.heavy(); setIsDeleting(true) }}
+                  className="rounded-md p-1.5 text-red-500 hover:bg-red-100 active:bg-red-200 transition"
                   aria-label={`Hapus ${tx.description}`}
                 >
                   <Trash2 className="size-3.5" />
