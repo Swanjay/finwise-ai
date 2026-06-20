@@ -325,7 +325,7 @@ function WalletsSheet({ onClose }: { onClose: () => void }) {
         <Card key={w.id} style={{ borderLeft: `3px solid ${w.color}` }}>
           <CardContent className="p-3 flex items-center gap-3">
             <div className="flex items-center justify-center size-10 rounded-xl text-lg shrink-0" style={{ backgroundColor: `${w.color}20`, color: w.color }}>
-              {w.icon}
+              {w.logo ? <img src={w.logo} alt="" className="w-7 h-7 object-contain" /> : w.icon}
             </div>
             <div className="flex-1 min-w-0">
               <p className="font-medium text-sm truncate">{w.name}</p>
@@ -401,7 +401,7 @@ function TransferSheet({ onClose }: { onClose: () => void }) {
                     : 'border-border text-muted-foreground hover:bg-secondary',
                 )}
               >
-                <span className="text-lg">{w.icon}</span>
+                <span className="text-lg">{w.logo ? <img src={w.logo} alt="" className="w-6 h-6 object-contain" /> : w.icon}</span>
                 <span className="truncate">{w.name}</span>
                 <span className="text-[10px] text-muted-foreground">{formatIDR(bal)}</span>
               </button>
@@ -435,7 +435,7 @@ function TransferSheet({ onClose }: { onClose: () => void }) {
                     : 'border-border text-muted-foreground hover:bg-secondary',
                 )}
               >
-                <span className="text-lg">{w.icon}</span>
+                <span className="text-lg">{w.logo ? <img src={w.logo} alt="" className="w-6 h-6 object-contain" /> : w.icon}</span>
                 <span className="truncate">{w.name}</span>
                 <span className="text-[10px] text-muted-foreground">{formatIDR(bal)}</span>
               </button>
@@ -1252,7 +1252,7 @@ function OnboardingGate() {
 
   const handleComplete = useCallback((data: {
     selectedCategories: string[]
-    wallets: Array<{ id: string; name: string; icon: string; balance: string; color: string; type: 'bank' | 'ewallet' | 'cash' | 'credit' }>
+    wallets: Array<{ id: string; name: string; icon: string; balance: string; color: string; type: 'bank' | 'ewallet' | 'cash' | 'credit'; logo?: string }>
     salaryAmount: number
     salaryDay: number
   }) => {
@@ -1261,9 +1261,9 @@ function OnboardingGate() {
       const balance = Number(w.balance.replace(/\D/g, '')) || 0
       const existing = wallets.find(e => e.name.toLowerCase() === w.name.toLowerCase())
       if (existing) {
-        updateWallet(existing.id, { balance })
+        updateWallet(existing.id, { balance, logo: w.logo })
       } else {
-        addWallet({ id: generateId(), name: w.name, icon: w.icon, balance, color: w.color, type: w.type })
+        addWallet({ id: generateId(), name: w.name, icon: w.icon, balance, color: w.color, type: w.type, logo: w.logo })
       }
     }
 

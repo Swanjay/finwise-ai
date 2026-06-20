@@ -32,6 +32,7 @@ interface WalletData {
   balance: string
   color: string
   type: 'bank' | 'ewallet' | 'cash' | 'credit'
+  logo?: string
 }
 
 // ─── Confetti Component ───
@@ -130,13 +131,19 @@ function StepSlide({
 }
 
 // ─── Pre-set wallet options ───
-const WALLET_PRESETS: Omit<WalletData, 'id' | 'balance'>[] = [
+const WALLET_PRESETS: (Omit<WalletData, 'id' | 'balance'> & { logo?: string })[] = [
+  { name: 'BCA', icon: '🏦', color: '#003d79', type: 'bank', logo: '/logos/bank/BCA.svg' },
+  { name: 'Mandiri', icon: '🏦', color: '#003366', type: 'bank', logo: '/logos/bank/Mandiri.svg' },
+  { name: 'BRI', icon: '🏦', color: '#003d79', type: 'bank', logo: '/logos/bank/BRI.svg' },
+  { name: 'BNI', icon: '🏦', color: '#f57c00', type: 'bank', logo: '/logos/bank/BNI.svg' },
+  { name: 'BSI', icon: '🏦', color: '#1a5632', type: 'bank', logo: '/logos/bank/BSI.svg' },
+  { name: 'SeaBank', icon: '🏦', color: '#e74c3c', type: 'bank', logo: '/logos/bank/SeaBank.svg' },
+  { name: 'GoPay', icon: '📱', color: '#00aa13', type: 'ewallet', logo: '/logos/ewallet/Gopay.svg' },
+  { name: 'OVO', icon: '📱', color: '#4c3085', type: 'ewallet', logo: '/logos/ewallet/OVO.svg' },
+  { name: 'DANA', icon: '📱', color: '#108ee9', type: 'ewallet', logo: '/logos/ewallet/DANA.svg' },
+  { name: 'ShopeePay', icon: '📱', color: '#ee4d2d', type: 'ewallet', logo: '/logos/ewallet/Shopee_Pay.svg' },
+  { name: 'LinkAja', icon: '📱', color: '#e74c3c', type: 'ewallet', logo: '/logos/ewallet/LinkAja.svg' },
   { name: 'Tunai', icon: '💵', color: '#4CAF50', type: 'cash' },
-  { name: 'BCA', icon: '🔴', color: '#3B82F6', type: 'bank' },
-  { name: 'GoPay', icon: '💜', color: '#8A6ECF', type: 'ewallet' },
-  { name: 'Mandiri', icon: '🟡', color: '#F59E0B', type: 'bank' },
-  { name: 'OVO', icon: '🟣', color: '#7C3AED', type: 'ewallet' },
-  { name: 'Dana', icon: '🔵', color: '#2563EB', type: 'ewallet' },
 ]
 
 // ─── Wallet Step Content (extracted outside parent) ───
@@ -192,7 +199,7 @@ function WalletStepContent({
   }
 
   // Select preset for active wallet
-  const selectPreset = (preset: Omit<WalletData, 'id' | 'balance'>) => {
+  const selectPreset = (preset: Omit<WalletData, 'id' | 'balance'> & { logo?: string }) => {
     const updated = [...wallets]
     if (updated[activeIdx]) {
       updated[activeIdx] = {
@@ -201,6 +208,7 @@ function WalletStepContent({
         icon: preset.icon,
         color: preset.color,
         type: preset.type,
+        logo: preset.logo,
       }
       setWallets(updated)
     }
@@ -224,7 +232,9 @@ function WalletStepContent({
 
       {/* Wallet tabs */}
       <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
-        {wallets.map((w, i) => (
+        {wallets.map((w, i) => {
+          const preset = WALLET_PRESETS.find(p => p.name === w.name)
+          return (
           <motion.button
             key={w.id}
             initial={{ opacity: 0, scale: 0.8 }}
@@ -238,7 +248,11 @@ function WalletStepContent({
                 : 'border-transparent bg-secondary/80 text-muted-foreground'
             )}
           >
-            <span>{w.icon || '💳'}</span>
+            {preset?.logo ? (
+              <img src={preset.logo} alt="" className="w-4 h-4 object-contain rounded-sm" />
+            ) : (
+              <span>{w.icon || '💳'}</span>
+            )}
             <span>{w.name || 'Baru'}</span>
             {wallets.length > 1 && i === activeIdx && (
               <button
@@ -249,7 +263,8 @@ function WalletStepContent({
               </button>
             )}
           </motion.button>
-        ))}
+          )
+        })}
         <motion.button
           whileTap={{ scale: 0.9 }}
           onClick={addWallet}
@@ -279,7 +294,13 @@ function WalletStepContent({
                   : 'border-transparent bg-secondary/80 hover:bg-secondary'
               )}
             >
-              <span className="text-xl">{preset.icon}</span>
+              {preset.logo ? (
+                <div className="size-10 rounded-lg overflow-hidden bg-white/10 flex items-center justify-center">
+                  <img src={preset.logo} alt={preset.name} className="w-8 h-8 object-contain" />
+                </div>
+              ) : (
+                <span className="text-xl">{preset.icon}</span>
+              )}
               <span className={cn(
                 'text-[10px] font-semibold',
                 active ? 'text-primary' : 'text-muted-foreground'
@@ -679,18 +700,25 @@ export function OnboardingWizard({ onComplete }: { onComplete: (data: {
               <p className="text-xs font-semibold">{selectedCats.length} dipilih</p>
             </div>
           </div>
-          {wallets.filter(w => w.name.trim()).map((w) => (
-            <div key={w.id} className="flex items-center gap-3 p-3 rounded-2xl bg-primary/5 border border-primary/10">
-              <span className="text-lg">{w.icon}</span>
-              <div className="text-left">
-                <p className="text-[10px] text-muted-foreground">Dompet</p>
-                <p className="text-xs font-semibold">
-                  {w.name}
-                  {w.balance && ` — Rp${Number(w.balance).toLocaleString('id-ID')}`}
-                </p>
+          {wallets.filter(w => w.name.trim()).map((w) => {
+            const preset = WALLET_PRESETS.find(p => p.name === w.name)
+            return (
+              <div key={w.id} className="flex items-center gap-3 p-3 rounded-2xl bg-primary/5 border border-primary/10">
+                {preset?.logo ? (
+                  <img src={preset.logo} alt="" className="w-7 h-7 object-contain rounded-md" />
+                ) : (
+                  <span className="text-lg">{w.icon}</span>
+                )}
+                <div className="text-left">
+                  <p className="text-[10px] text-muted-foreground">Dompet</p>
+                  <p className="text-xs font-semibold">
+                    {w.name}
+                    {w.balance && ` — Rp${Number(w.balance).toLocaleString('id-ID')}`}
+                  </p>
+                </div>
               </div>
-            </div>
-          ))}
+            )
+          })}
           {Number(salaryAmount.replace(/\D/g, '')) > 0 && (
             <div className="flex items-center gap-3 p-3 rounded-2xl bg-primary/5 border border-primary/10">
               <span className="text-lg">💸</span>

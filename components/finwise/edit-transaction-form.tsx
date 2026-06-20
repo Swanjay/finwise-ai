@@ -172,7 +172,7 @@ export function EditTransactionForm({
                     : 'border-border text-muted-foreground hover:bg-secondary',
                 )}
               >
-                <span className="text-base">{w.icon}</span>
+                <span className="text-base">{w.logo ? <img src={w.logo} alt="" className="w-5 h-5 object-contain" /> : w.icon}</span>
                 <span className="truncate font-medium">{w.name}</span>
               </button>
             )

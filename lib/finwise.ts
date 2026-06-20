@@ -65,6 +65,7 @@ export interface Wallet {
   balance: number // initial balance (set by user, used as starting point)
   color: string
   type?: 'bank' | 'ewallet' | 'cash' | 'credit' // wallet type for auto-categorize
+  logo?: string // path to logo SVG (e.g. '/logos/bank/BCA.svg')
 }
 
 export interface Goal {
