@@ -10,7 +10,7 @@ import {
   TabsList,
   TabsTrigger,
 } from '@/components/ui/tabs'
-import { EXPENSE_CATEGORIES, walletAutoCategory, type CategoryId, type TxType } from '@/lib/finwise'
+import { EXPENSE_CATEGORIES, walletAutoCategory, formatIDRShort, type CategoryId, type TxType } from '@/lib/finwise'
 import { useFinwise } from '@/components/finwise-store'
 import { LocationPicker, type LocationData } from '@/components/finwise/location-picker'
 import { cn } from '@/lib/utils'
@@ -18,7 +18,7 @@ import { CustomKeypad } from '@/components/finwise/custom-keypad'
 import { detectLogo } from '@/lib/brand-logos'
 
 export function AddTransactionForm({ onDone }: { onDone: () => void }) {
-  const { addTransaction, tags: savedTags, addTag: saveTag, wallets } = useFinwise()
+  const { addTransaction, tags: savedTags, addTag: saveTag, wallets, getWalletBalance, hideBalance } = useFinwise()
   const [type, setType] = useState<TxType>('expense')
   const [amount, setAmount] = useState('')
   const [category, setCategory] = useState<CategoryId>('food')
@@ -86,6 +86,10 @@ export function AddTransactionForm({ onDone }: { onDone: () => void }) {
     saveTransaction()
   }
 
+  function setDateToday() {
+    setDate(new Date().toISOString().slice(0, 10))
+  }
+
   return (
     <form onSubmit={submit} className="flex flex-col gap-4">
       <Tabs value={type} onValueChange={(v) => setType(v as TxType)}>
@@ -100,6 +104,7 @@ export function AddTransactionForm({ onDone }: { onDone: () => void }) {
         value={amount}
         onChange={setAmount}
         onConfirm={saveTransaction}
+        onDateToday={setDateToday}
         type={type}
       />
 
@@ -147,6 +152,7 @@ export function AddTransactionForm({ onDone }: { onDone: () => void }) {
         <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
           {wallets.map((w) => {
             const active = walletId === w.id
+            const walletBalance = getWalletBalance(w.id)
             return (
               <button
                 key={w.id}
@@ -168,6 +174,9 @@ export function AddTransactionForm({ onDone }: { onDone: () => void }) {
               >
                 <span className="text-base">{w.logo || detectLogo(w.name) ? <img src={w.logo || detectLogo(w.name)} alt="" className="w-5 h-5 object-contain" /> : w.icon}</span>
                 <span className="truncate font-medium">{w.name}</span>
+                <span className={cn('text-[10px] font-bold tabular-nums', walletBalance > 0 ? 'text-emerald-600' : walletBalance < 0 ? 'text-destructive' : 'text-muted-foreground')}>
+                  {hideBalance ? '••••' : formatIDRShort(walletBalance)}
+                </span>
               </button>
             )
           })}

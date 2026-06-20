@@ -6,6 +6,7 @@ interface CustomKeypadProps {
   value: string
   onChange: (value: string) => void
   onConfirm: () => void
+  onDateToday?: () => void
   type: 'expense' | 'income'
 }
 
@@ -21,7 +22,7 @@ function formatAmount(val: string): string {
   return intPart + decPart
 }
 
-export const CustomKeypad = memo(function CustomKeypad({ value, onChange, onConfirm, type }: CustomKeypadProps) {
+export const CustomKeypad = memo(function CustomKeypad({ value, onChange, onConfirm, onDateToday, type }: CustomKeypadProps) {
   const [displayValue, setDisplayValue] = useState(value)
   const [calcBuffer, setCalcBuffer] = useState<string | null>(null)
   const [calcOp, setCalcOp] = useState<string | null>(null)
@@ -174,7 +175,7 @@ export const CustomKeypad = memo(function CustomKeypad({ value, onChange, onConf
         {/* Row 5 */}
         <Key
           label="📅"
-          onClick={() => {}} // Date picker handled externally
+          onClick={() => onDateToday?.()}
           variant="special"
           sublabel="Hari ini"
         />
