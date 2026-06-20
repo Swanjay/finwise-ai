@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef, forwardRef, useImperativeHandle } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   ChevronLeft, ChevronRight, Check,
@@ -138,6 +138,9 @@ export function OnboardingWizard({ onComplete }: { onComplete: (data: {
   const [walletType, setWalletType] = useState<'bank' | 'ewallet' | 'cash' | 'credit'>('cash')
   const [walletBalance, setWalletBalance] = useState('')
   const [monthlyIncome, setMonthlyIncome] = useState('')
+  // Refs to always have latest values without triggering re-renders
+  const walletNameRef = useRef('Tunai')
+  const walletBalanceRef = useRef('')
   const [showConfetti, setShowConfetti] = useState(false)
 
   const TOTAL_STEPS = 5 // 0=welcome, 1=categories, 2=wallet, 3=income, 4=celebration
@@ -149,12 +152,14 @@ export function OnboardingWizard({ onComplete }: { onComplete: (data: {
       try { localStorage.setItem(INCOME_KEY, JSON.stringify(income)) } catch {}
     }
     if (step === 4) {
-      // Final step — complete
+      // Final step — complete (read from refs for latest values)
+      const finalName = walletNameRef.current || walletName
+      const finalBalance = walletBalanceRef.current || walletBalance
       const wallet = {
-        id: walletName.toLowerCase().replace(/\s+/g, '-') || 'cash',
-        name: walletName,
+        id: finalName.toLowerCase().replace(/\s+/g, '-') || 'cash',
+        name: finalName,
         icon: walletIcon,
-        balance: Number(walletBalance.replace(/\D/g, '')) || 0,
+        balance: Number(finalBalance.replace(/\D/g, '')) || 0,
         color: walletColor,
         type: walletType as 'bank' | 'ewallet' | 'cash' | 'credit',
       }
@@ -164,6 +169,11 @@ export function OnboardingWizard({ onComplete }: { onComplete: (data: {
         monthlyIncome: Number(monthlyIncome.replace(/\D/g, '')) || 0,
       })
       return
+    }
+    // Also sync refs to state when moving to next step
+    if (step === 2) {
+      setWalletName(walletNameRef.current)
+      setWalletBalance(walletBalanceRef.current)
     }
     setDirection('right')
     setStep((s) => Math.min(s + 1, TOTAL_STEPS - 1))
@@ -327,13 +337,28 @@ export function OnboardingWizard({ onComplete }: { onComplete: (data: {
 // ─── Wallet Step (extracted to prevent unmount/remount on parent re-render) ───
 function WalletStepContent({
   walletName, setWalletName, walletBalance, setWalletBalance, selectPreset,
+  onNameChange, onBalanceChange,
 }: {
   walletName: string
   setWalletName: (v: string) => void
   walletBalance: string
   setWalletBalance: (v: string) => void
   selectPreset: (preset: typeof WALLET_PRESETS[number]) => void
+  onNameChange: (v: string) => void  // Updates ref without re-render
+  onBalanceChange: (v: string) => void  // Updates ref without re-render
 }) {
+  // Local state to avoid parent re-renders on every keystroke (causes mobile keyboard to close)
+  const [localName, setLocalName] = useState(walletName)
+  const [localBalance, setLocalBalance] = useState(walletBalance)
+
+  // Sync from parent when preset is selected
+  useEffect(() => {
+    setLocalName(walletName)
+  }, [walletName])
+
+  useEffect(() => {
+    setLocalBalance(walletBalance)
+  }, [walletBalance])
   return (
     <div className="flex flex-col gap-5 py-2">
       <div className="text-center space-y-1">
@@ -388,8 +413,8 @@ function WalletStepContent({
           <div>
             <Label className="text-xs">Nama Dompet</Label>
             <Input
-              value={walletName}
-              onChange={(e) => setWalletName(e.target.value)}
+              value={localName}
+              onChange={(e) => { setLocalName(e.target.value); onNameChange(e.target.value) }}
               placeholder="Contoh: BCA, GoPay, Cash"
               className="h-10 rounded-xl mt-1"
             />
@@ -398,8 +423,8 @@ function WalletStepContent({
             <Label className="text-xs">Saldo Awal (Rp) — opsional</Label>
             <Input
               inputMode="numeric"
-              value={walletBalance}
-              onChange={(e) => setWalletBalance(e.target.value.replace(/\D/g, ''))}
+              value={localBalance}
+              onChange={(e) => { const v = e.target.value.replace(/\D/g, ''); setLocalBalance(v); onBalanceChange(v) }}
               placeholder="0"
               className="h-10 rounded-xl mt-1 tabular-nums"
             />
@@ -412,10 +437,10 @@ function WalletStepContent({
             <button
               key={v}
               type="button"
-              onClick={() => setWalletBalance(String(v))}
+              onClick={() => { setLocalBalance(String(v)); setWalletBalance(String(v)); onBalanceChange(String(v)) }}
               className={cn(
                 'rounded-full px-2.5 py-1 text-[10px] font-medium transition',
-                walletBalance === String(v)
+                localBalance === String(v)
                   ? 'bg-primary text-white'
                   : 'bg-white text-muted-foreground hover:bg-primary/10'
               )}
@@ -574,7 +599,11 @@ function WalletStepContent({
     )
   }
 
-  const walletStepProps = { walletName, setWalletName, walletBalance, setWalletBalance, selectPreset }
+  const walletStepProps = {
+    walletName, setWalletName, walletBalance, setWalletBalance, selectPreset,
+    onNameChange: (v: string) => { walletNameRef.current = v },
+    onBalanceChange: (v: string) => { walletBalanceRef.current = v },
+  }
   const steps = [
     <WelcomeStep key="welcome" />,
     <CategoriesStep key="categories" />,
@@ -594,7 +623,7 @@ function WalletStepContent({
   const canProceed = [
     true, // welcome
     selectedCats.length >= 3, // categories (min 3)
-    walletName.trim().length > 0, // wallet
+    (walletNameRef.current || walletName).trim().length > 0, // wallet (read from ref for latest)
     true, // income (optional)
     true, // celebration
   ]
