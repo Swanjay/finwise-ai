@@ -13,6 +13,14 @@ import { Label } from '@/components/ui/label'
 
 // ─── Storage key ───
 const SETUP_KEY = 'fw.setupDone.v1'
+
+// Format number with Indonesian dots: 15000 → "15.000"
+function formatIDR(val: string): string {
+  if (!val) return ''
+  const clean = val.replace(/\D/g, '')
+  if (!clean) return ''
+  return clean.replace(/\B(?=(\d{3})+(?!\d))/g, '.')
+}
 const SELECTED_CATS_KEY = 'fw.onboarding.cats'
 const FIRST_WALLET_KEY = 'fw.onboarding.wallet'
 const INCOME_KEY = 'fw.onboarding.income'
@@ -423,7 +431,7 @@ function WalletStepContent({
             <Label className="text-xs">Saldo Awal (Rp) — opsional</Label>
             <Input
               inputMode="numeric"
-              value={localBalance}
+              value={formatIDR(localBalance)}
               onChange={(e) => { const v = e.target.value.replace(/\D/g, ''); setLocalBalance(v); onBalanceChange(v) }}
               placeholder="0"
               className="h-10 rounded-xl mt-1 tabular-nums"
@@ -478,7 +486,7 @@ function WalletStepContent({
             <Label className="text-xs">Jumlah Penghasilan (Rp)</Label>
             <Input
               inputMode="numeric"
-              value={monthlyIncome}
+              value={formatIDR(monthlyIncome)}
               onChange={(e) => setMonthlyIncome(e.target.value.replace(/\D/g, ''))}
               placeholder="0"
               className="h-12 text-lg tabular-nums rounded-xl mt-1"

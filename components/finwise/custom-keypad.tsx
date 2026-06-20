@@ -14,9 +14,10 @@ function formatAmount(val: string): string {
   let clean = val.replace(/^0+(?=\d)/, '')
   if (clean.startsWith('.')) clean = '0' + clean
   if (clean === '') clean = '0'
+  // Indonesian format: dot for thousands, comma for decimal
   const parts = clean.split('.')
-  const intPart = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',')
-  const decPart = parts.length > 1 ? '.' + parts[1] : ''
+  const intPart = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, '.')
+  const decPart = parts.length > 1 ? ',' + parts[1] : ''
   return intPart + decPart
 }
 
