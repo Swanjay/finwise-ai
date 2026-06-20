@@ -13,8 +13,6 @@ import { Label } from '@/components/ui/label'
 
 // ─── Storage key ───
 const SETUP_KEY = 'fw.setupDone.v1'
-import { CustomKeypad } from '@/components/finwise/custom-keypad'
-
 const SELECTED_CATS_KEY = 'fw.onboarding.cats'
 const FIRST_WALLET_KEY = 'fw.onboarding.wallet'
 const INCOME_KEY = 'fw.onboarding.income'
@@ -131,7 +129,6 @@ export function OnboardingWizard({ onComplete }: { onComplete: (data: {
   wallet: { name: string; icon: string; balance: number; color: string; type: 'bank' | 'ewallet' | 'cash' | 'credit' }
   monthlyIncome: number
 }) => void }) {
-  const noop = useCallback(() => {}, [])
   const [step, setStep] = useState(0)
   const [direction, setDirection] = useState<'left' | 'right'>('right')
   const [selectedCats, setSelectedCats] = useState<string[]>(['food', 'transport', 'shopping'])
@@ -391,14 +388,13 @@ export function OnboardingWizard({ onComplete }: { onComplete: (data: {
             </div>
             <div>
               <Label className="text-xs">Saldo Awal (Rp) — opsional</Label>
-              <div className="mt-1">
-                <CustomKeypad
-                  value={walletBalance}
-                  onChange={setWalletBalance}
-                  onConfirm={noop}
-                  type="income"
-                />
-              </div>
+              <Input
+                inputMode="numeric"
+                value={walletBalance}
+                onChange={(e) => setWalletBalance(e.target.value.replace(/\D/g, ''))}
+                placeholder="0"
+                className="h-10 rounded-xl mt-1 tabular-nums"
+              />
             </div>
           </div>
 
@@ -445,13 +441,39 @@ export function OnboardingWizard({ onComplete }: { onComplete: (data: {
         </div>
 
         <div className="space-y-3">
-          <Label className="text-xs">Jumlah Penghasilan (Rp)</Label>
-          <CustomKeypad
-            value={monthlyIncome}
-            onChange={setMonthlyIncome}
-            onConfirm={noop}
-            type="income"
-          />
+          <div>
+            <Label className="text-xs">Jumlah Penghasilan (Rp)</Label>
+            <Input
+              inputMode="numeric"
+              value={monthlyIncome}
+              onChange={(e) => setMonthlyIncome(e.target.value.replace(/\D/g, ''))}
+              placeholder="0"
+              className="h-12 text-lg tabular-nums rounded-xl mt-1"
+              autoFocus={false}
+            />
+          </div>
+
+          {/* Quick presets */}
+          <div className="grid grid-cols-3 gap-2">
+            {INCOME_PRESETS.map((v, i) => (
+              <motion.button
+                key={v}
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: i * 0.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => setMonthlyIncome(String(v))}
+                className={cn(
+                  'rounded-2xl p-3 text-xs font-semibold transition-all border-2',
+                  monthlyIncome === String(v)
+                    ? 'border-primary bg-primary/10 text-primary'
+                    : 'border-transparent bg-secondary/80 text-muted-foreground hover:bg-secondary'
+                )}
+              >
+                {v >= 1_000_000 ? `Rp${v / 1_000_000}jt` : `Rp${v / 1_000}rb`}
+              </motion.button>
+            ))}
+          </div>
         </div>
 
         <motion.div
