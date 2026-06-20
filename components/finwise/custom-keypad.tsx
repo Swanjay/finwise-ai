@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useCallback, useEffect, memo } from 'react'
 
 interface CustomKeypadProps {
   value: string
@@ -20,7 +20,7 @@ function formatAmount(val: string): string {
   return intPart + decPart
 }
 
-export function CustomKeypad({ value, onChange, onConfirm, type }: CustomKeypadProps) {
+export const CustomKeypad = memo(function CustomKeypad({ value, onChange, onConfirm, type }: CustomKeypadProps) {
   const [displayValue, setDisplayValue] = useState(value)
   const [calcBuffer, setCalcBuffer] = useState<string | null>(null)
   const [calcOp, setCalcOp] = useState<string | null>(null)
@@ -199,7 +199,7 @@ export function CustomKeypad({ value, onChange, onConfirm, type }: CustomKeypadP
     pressOp(op)
     if (navigator.vibrate) navigator.vibrate(10)
   }
-}
+})
 
 // Individual key component
 function Key({

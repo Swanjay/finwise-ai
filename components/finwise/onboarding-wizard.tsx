@@ -131,6 +131,7 @@ export function OnboardingWizard({ onComplete }: { onComplete: (data: {
   wallet: { name: string; icon: string; balance: number; color: string; type: 'bank' | 'ewallet' | 'cash' | 'credit' }
   monthlyIncome: number
 }) => void }) {
+  const noop = useCallback(() => {}, [])
   const [step, setStep] = useState(0)
   const [direction, setDirection] = useState<'left' | 'right'>('right')
   const [selectedCats, setSelectedCats] = useState<string[]>(['food', 'transport', 'shopping'])
@@ -394,7 +395,7 @@ export function OnboardingWizard({ onComplete }: { onComplete: (data: {
                 <CustomKeypad
                   value={walletBalance}
                   onChange={setWalletBalance}
-                  onConfirm={() => {}}
+                  onConfirm={noop}
                   type="income"
                 />
               </div>
@@ -448,7 +449,7 @@ export function OnboardingWizard({ onComplete }: { onComplete: (data: {
           <CustomKeypad
             value={monthlyIncome}
             onChange={setMonthlyIncome}
-            onConfirm={() => {}}
+            onConfirm={noop}
             type="income"
           />
         </div>
