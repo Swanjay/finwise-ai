@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { KeyRound, Loader2, CheckCircle, XCircle, ArrowLeft, MessageCircle } from "lucide-react"
 import { signOut } from "next-auth/react"
@@ -12,6 +12,30 @@ export default function VerifyInvitePage() {
   const [loading, setLoading] = useState(false)
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle")
   const [error, setError] = useState("")
+  const [checking, setChecking] = useState(true)
+
+  // Cek pas halaman dimuat: user udah aktivasi? langsung redirect
+  useEffect(() => {
+    async function checkActivation() {
+      try {
+        const res = await fetch("/api/invite-codes/validate", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ code: "" }),
+        })
+        const data = await res.json()
+        if (data.ok && data.alreadyActivated) {
+          setStatus("success")
+          setTimeout(() => router.push("/"), 500)
+          return
+        }
+      } catch {
+        // silent — user belum aktivasi, lanjut ke form
+      }
+      setChecking(false)
+    }
+    checkActivation()
+  }, [router])
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -41,6 +65,15 @@ export default function VerifyInvitePage() {
       setError("Koneksi gagal. Coba lagi.")
     }
     setLoading(false)
+  }
+
+  // Loading screen pas cek aktivasi
+  if (checking) {
+    return (
+      <div className="flex min-h-dvh items-center justify-center bg-background p-6">
+        <Loader2 className="size-8 animate-spin text-primary" />
+      </div>
+    )
   }
 
   return (
@@ -123,7 +156,7 @@ export default function VerifyInvitePage() {
               ) : (
                 <>
                   <KeyRound className="size-5" />
-                  Aktifkan Akun
+                  Aktivasi Akun
                 </>
               )}
             </button>
