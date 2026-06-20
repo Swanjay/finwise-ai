@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { KeyRound, Loader2, CheckCircle, XCircle, ArrowLeft } from "lucide-react"
+import { KeyRound, Loader2, CheckCircle, XCircle, ArrowLeft, MessageCircle } from "lucide-react"
 import { signOut } from "next-auth/react"
 import FinWiseLogo from "@/components/finwise-logo"
 
@@ -31,7 +31,6 @@ export default function VerifyInvitePage() {
 
       if (data.ok) {
         setStatus("success")
-        // Redirect to dashboard after short delay
         setTimeout(() => router.push("/"), 1200)
       } else {
         setStatus("error")
@@ -130,6 +129,25 @@ export default function VerifyInvitePage() {
             </button>
           </form>
         )}
+
+        {/* ===== KONTAK ===== */}
+        <div className="rounded-xl border border-border bg-card p-4 space-y-3">
+          <p className="text-xs text-muted-foreground text-center">
+            Belum punya kode? Hubungi admin untuk mendapatkan kode invitasi:
+          </p>
+          <a
+            href="https://t.me/swanjay"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex w-full items-center justify-center gap-2 rounded-lg bg-[#229ED9] px-4 py-2.5 text-sm font-medium text-white transition active:scale-[0.98]"
+          >
+            <MessageCircle className="size-4" />
+            Hubungi Admin
+          </a>
+          <p className="text-xs text-muted-foreground text-center">
+            <span className="opacity-70">@swanjay</span>
+          </p>
+        </div>
 
         {/* Logout */}
         <div className="text-center">
