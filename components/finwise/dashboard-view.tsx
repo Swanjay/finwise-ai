@@ -122,11 +122,11 @@ export function DashboardView({ transactions, month }: { transactions: Transacti
               }}
               className="flex flex-col gap-1"
             >
-              <div className="flex items-center gap-1 text-[10px] font-semibold text-green-700">
+              <div className="flex items-center gap-1 text-[10px] font-semibold text-emerald-600">
                 <ArrowUpRight className="size-3.5" />
                 Masuk
               </div>
-              <p className="font-bold text-sm text-[#2D2057] tabular-nums leading-tight">
+              <p className="font-bold text-sm text-emerald-600 tabular-nums leading-tight">
                 {hideBalance ? '••••' : <AnimatedIDRShort value={income} className="inline" />}
               </p>
             </motion.div>
@@ -145,7 +145,7 @@ export function DashboardView({ transactions, month }: { transactions: Transacti
                 <ArrowDownRight className="size-3.5" />
                 Keluar
               </div>
-              <p className="font-bold text-sm text-[#2D2057] tabular-nums leading-tight">
+              <p className="font-bold text-sm text-red-500 tabular-nums leading-tight">
                 {hideBalance ? '••••' : <AnimatedIDRShort value={expense} className="inline" />}
               </p>
             </motion.div>
@@ -167,7 +167,7 @@ export function DashboardView({ transactions, month }: { transactions: Transacti
                 <TrendingUp className="size-3.5" />
                 Surplus
               </div>
-              <p className="font-bold text-sm text-[#2D2057] tabular-nums leading-tight">
+              <p className={`font-bold text-sm tabular-nums leading-tight ${surplus >= 0 ? 'text-emerald-600' : 'text-red-500'}`}>
                 {hideBalance ? '••••' : <AnimatedIDRShort value={surplus} className="inline" />}
               </p>
             </motion.div>

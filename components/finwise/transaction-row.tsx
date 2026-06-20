@@ -21,7 +21,7 @@ export function TransactionRow({
   onEdit?: (tx: Transaction) => void
 }) {
   const { allCategories } = useFinwise()
-  const cat = allCategories[tx.category] ?? { label: tx.category, color: 'oklch(0.5 0.1 285)', icon: null }
+  const cat = allCategories[tx.category] ?? { label: tx.category, color: '#64748B', icon: null }
   const Icon = cat.icon
   const income = tx.type === 'income'
   const date = new Date(tx.date).toLocaleDateString('id-ID', {
@@ -220,7 +220,7 @@ export function TransactionRow({
             <span
               className={cn(
                 'tabular-nums text-sm font-semibold',
-                income ? 'text-success' : 'text-foreground',
+                income ? 'text-emerald-500 dark:text-emerald-400' : 'text-red-500 dark:text-red-400',
               )}
             >
               {income ? '+' : '-'}
@@ -266,7 +266,7 @@ export function TransactionRow({
             <span
               className={cn(
                 'tabular-nums text-sm font-semibold',
-                income ? 'text-success' : 'text-foreground',
+                income ? 'text-emerald-500 dark:text-emerald-400' : 'text-red-500 dark:text-red-400',
               )}
             >
               {income ? '+' : '-'}

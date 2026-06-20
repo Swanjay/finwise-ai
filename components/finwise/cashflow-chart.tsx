@@ -63,24 +63,24 @@ export function CashflowChart({ transactions, month }: { transactions: Transacti
         <AreaChart data={data} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
           <defs>
             <linearGradient id="gradIncome" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#4CAF50" stopOpacity={0.4} />
-              <stop offset="100%" stopColor="#4CAF50" stopOpacity={0.05} />
+              <stop offset="0%" stopColor="#22C55E" stopOpacity={0.4} />
+              <stop offset="100%" stopColor="#22C55E" stopOpacity={0.05} />
             </linearGradient>
             <linearGradient id="gradExpense" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#EC4899" stopOpacity={0.4} />
-              <stop offset="100%" stopColor="#EC4899" stopOpacity={0.05} />
+              <stop offset="0%" stopColor="#EF4444" stopOpacity={0.4} />
+              <stop offset="100%" stopColor="#EF4444" stopOpacity={0.05} />
             </linearGradient>
           </defs>
-          <CartesianGrid strokeDasharray="3 3" stroke="oklch(0.85 0.02 285)" />
+          <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
           <XAxis
             dataKey="day"
-            tick={{ fontSize: 10, fill: 'oklch(0.55 0.05 285)' }}
+            tick={{ fontSize: 10, fill: '#94A3B8' }}
             tickLine={false}
             axisLine={false}
             interval={Math.ceil(data.length / 7) - 1}
           />
           <YAxis
-            tick={{ fontSize: 9, fill: 'oklch(0.55 0.05 285)' }}
+            tick={{ fontSize: 9, fill: '#94A3B8' }}
             tickLine={false}
             axisLine={false}
             tickFormatter={(v: number) => {
@@ -93,7 +93,7 @@ export function CashflowChart({ transactions, month }: { transactions: Transacti
             contentStyle={{
               borderRadius: 12,
               border: 'none',
-              boxShadow: '0 4px 16px oklch(0.5 0.1 285 / 0.15)',
+              boxShadow: '0 4px 16px rgba(0,0,0,0.15)',
               fontSize: 12,
             }}
             formatter={(value, name) => [
@@ -105,7 +105,7 @@ export function CashflowChart({ transactions, month }: { transactions: Transacti
           <Area
             type="monotone"
             dataKey="income"
-            stroke="#4CAF50"
+            stroke="#22C55E"
             strokeWidth={2}
             fill="url(#gradIncome)"
             dot={false}
@@ -114,7 +114,7 @@ export function CashflowChart({ transactions, month }: { transactions: Transacti
           <Area
             type="monotone"
             dataKey="expense"
-            stroke="#EC4899"
+            stroke="#EF4444"
             strokeWidth={2}
             fill="url(#gradExpense)"
             dot={false}

@@ -90,16 +90,16 @@ export interface RecurringItem {
 
 // ─── Built-in Categories ───
 export const BUILTIN_CATEGORIES: Record<string, Category> = {
-  food: { id: 'food', label: 'Makan & Minum', icon: Utensils, color: 'oklch(0.7 0.18 295)', type: 'expense' },
-  transport: { id: 'transport', label: 'Transport', icon: Bus, color: 'oklch(0.78 0.14 200)', type: 'expense' },
-  shopping: { id: 'shopping', label: 'Belanja', icon: ShoppingBag, color: 'oklch(0.75 0.16 160)', type: 'expense' },
-  entertainment: { id: 'entertainment', label: 'Hiburan', icon: Gamepad2, color: 'oklch(0.8 0.15 75)', type: 'expense' },
-  bills: { id: 'bills', label: 'Tagihan', icon: ReceiptText, color: 'oklch(0.68 0.2 18)', type: 'expense' },
-  health: { id: 'health', label: 'Kesehatan', icon: HeartPulse, color: 'oklch(0.72 0.15 350)', type: 'expense' },
-  education: { id: 'education', label: 'Pendidikan', icon: GraduationCap, color: 'oklch(0.74 0.13 240)', type: 'expense' },
-  internet: { id: 'internet', label: 'Internet & Pulsa', icon: Wifi, color: 'oklch(0.78 0.13 180)', type: 'expense' },
-  transfer: { id: 'transfer', label: 'Transfer', icon: ArrowLeftRight, color: 'oklch(0.7 0.1 250)', type: 'expense' },
-  income: { id: 'income', label: 'Pemasukan', icon: Briefcase, color: 'oklch(0.75 0.16 160)', type: 'income' },
+  food: { id: 'food', label: 'Makan & Minum', icon: Utensils, color: '#F59E0B', type: 'expense' },          // amber — hangat, lapar
+  transport: { id: 'transport', label: 'Transport', icon: Bus, color: '#2563EB', type: 'expense' },            // biru solid — pergerakan
+  shopping: { id: 'shopping', label: 'Belanja', icon: ShoppingBag, color: '#EC4899', type: 'expense' },        // pink — impulsif, kesenangan
+  entertainment: { id: 'entertainment', label: 'Hiburan', icon: Gamepad2, color: '#8B5CF6', type: 'expense' }, // violet — rekreasi, imajinasi
+  bills: { id: 'bills', label: 'Tagihan', icon: ReceiptText, color: '#EF4444', type: 'expense' },             // merah — urgensi
+  health: { id: 'health', label: 'Kesehatan', icon: HeartPulse, color: '#10B981', type: 'expense' },           // emerald — vitalitas
+  education: { id: 'education', label: 'Pendidikan', icon: GraduationCap, color: '#6366F1', type: 'expense' }, // indigo — pengetahuan
+  internet: { id: 'internet', label: 'Internet & Pulsa', icon: Wifi, color: '#06B6D4', type: 'expense' },      // cyan — digital
+  transfer: { id: 'transfer', label: 'Transfer', icon: ArrowLeftRight, color: '#64748B', type: 'expense' },    // slate — netral
+  income: { id: 'income', label: 'Pemasukan', icon: Briefcase, color: '#22C55E', type: 'income' },             // hijau terang — growth
 }
 
 export const EXPENSE_CATEGORIES = Object.values(BUILTIN_CATEGORIES).filter(
@@ -266,16 +266,16 @@ export function spendingByWallet(
 }
 
 export const COLOR_PRESETS = [
-  'oklch(0.7 0.18 295)',
-  'oklch(0.78 0.14 200)',
-  'oklch(0.75 0.16 160)',
-  'oklch(0.8 0.15 75)',
-  'oklch(0.68 0.2 18)',
-  'oklch(0.72 0.15 350)',
-  'oklch(0.74 0.13 240)',
-  'oklch(0.78 0.13 180)',
-  'oklch(0.65 0.22 310)',
-  'oklch(0.82 0.12 100)',
+  '#8B5CF6', // violet
+  '#2563EB', // biru
+  '#10B981', // emerald
+  '#F59E0B', // amber
+  '#EF4444', // merah
+  '#EC4899', // pink
+  '#6366F1', // indigo
+  '#06B6D4', // cyan
+  '#D946EF', // fuchsia
+  '#F97316', // orange
 ]
 
 // ─── Auto-Categorize Keywords ───
@@ -364,7 +364,7 @@ export function spendingByCategory(transactions: Transaction[], allCategories: R
     map.set(t.category, (map.get(t.category) ?? 0) + t.amount)
   }
   return Array.from(map.entries())
-    .map(([id, value]) => ({ category: allCategories[id] ?? BUILTIN_CATEGORIES[id] ?? { id, label: id, icon: ReceiptText, color: 'oklch(0.5 0.1 285)', type: 'expense' as TxType }, value }))
+    .map(([id, value]) => ({ category: allCategories[id] ?? BUILTIN_CATEGORIES[id] ?? { id, label: id, icon: ReceiptText, color: '#64748B', type: 'expense' as TxType }, value }))
     .sort((a, b) => b.value - a.value)
 }
 

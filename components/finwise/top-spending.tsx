@@ -18,7 +18,7 @@ export function TopSpending({
     }
     return Array.from(map.entries())
       .map(([id, value]) => {
-        const cat = allCategories[id] ?? BUILTIN_CATEGORIES[id] ?? { id, label: id, color: 'oklch(0.5 0.1 285)', type: 'expense' as const, icon: null }
+        const cat = allCategories[id] ?? BUILTIN_CATEGORIES[id] ?? { id, label: id, color: '#64748B', type: 'expense' as const, icon: null }
         return { id, label: cat.label, color: cat.color, value }
       })
       .sort((a, b) => b.value - a.value)
