@@ -227,36 +227,12 @@ export function FinwiseProvider({ children }: { children: ReactNode }) {
     root.classList.toggle('compact', compactMode)
   }, [fontSize, compactMode, loaded])
 
-  // Apply accent color CSS variables
-  const ACCENT_COLORS: Record<string, { 
-    primary: string; accent: string; ring: string;
-    clayPurple: string; clayPurpleDeep: string;
-    sidebar: string; sidebarPrimary: string;
-  }> = {
-    purple: { primary: '#8A6ECF', accent: '#F9A8D4', ring: '#8A6ECF', clayPurple: '#D0BFF5', clayPurpleDeep: '#8A6ECF', sidebar: '#D0BFF5', sidebarPrimary: '#8A6ECF' },
-    blue: { primary: '#5B9BD5', accent: '#93C5FD', ring: '#5B9BD5', clayPurple: '#B8D4F0', clayPurpleDeep: '#5B9BD5', sidebar: '#B8D4F0', sidebarPrimary: '#5B9BD5' },
-    green: { primary: '#4CAF50', accent: '#86EFAC', ring: '#4CAF50', clayPurple: '#A8D5BA', clayPurpleDeep: '#4CAF50', sidebar: '#A8D5BA', sidebarPrimary: '#4CAF50' },
-    pink: { primary: '#EC4899', accent: '#F9A8D4', ring: '#EC4899', clayPurple: '#F5B8D8', clayPurpleDeep: '#EC4899', sidebar: '#F5B8D8', sidebarPrimary: '#EC4899' },
-    orange: { primary: '#F97316', accent: '#FDBA74', ring: '#F97316', clayPurple: '#FDD8B5', clayPurpleDeep: '#F97316', sidebar: '#FDD8B5', sidebarPrimary: '#F97316' },
-    teal: { primary: '#14B8A6', accent: '#5EEAD4', ring: '#14B8A6', clayPurple: '#A0D8D0', clayPurpleDeep: '#14B8A6', sidebar: '#A0D8D0', sidebarPrimary: '#14B8A6' },
-  }
-
-  useEffect(() => {
-    if (!loaded) return
-    const colors = ACCENT_COLORS[accentColor] || ACCENT_COLORS.purple
-    const root = document.documentElement
-    root.style.setProperty('--primary', colors.primary)
-    root.style.setProperty('--accent', colors.accent)
-    root.style.setProperty('--ring', colors.ring)
-    root.style.setProperty('--color-clay-purple', colors.clayPurple)
-    root.style.setProperty('--color-clay-purple-deep', colors.clayPurpleDeep)
-    root.style.setProperty('--sidebar', colors.sidebar)
-    root.style.setProperty('--sidebar-primary', colors.sidebarPrimary)
-    // Also update secondary/muted to match
-    root.style.setProperty('--secondary', colors.clayPurple)
-    root.style.setProperty('--muted-foreground', colors.clayPurpleDeep)
-    root.style.setProperty('--sidebar-ring', colors.sidebarPrimary)
-  }, [accentColor, loaded])
+  // Apply accent color CSS variables — DISABLED: handled by ThemePicker system (lib/themes.ts)
+  // The ThemePicker in Settings handles all theme CSS variables now.
+  // useEffect(() => {
+  //   if (!loaded) return
+  //   ... (old override removed to prevent conflict with theme system)
+  // }, [accentColor, loaded])
 
   const setAccentColor = useCallback((color: string) => {
     setAccentColorState(color)

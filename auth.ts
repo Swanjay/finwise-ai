@@ -20,6 +20,30 @@ export const authOptions: NextAuthOptions = {
           }),
         ]
       : []),
+    // Email OTP login
+    CredentialsProvider({
+      id: "email",
+      name: "Email",
+      credentials: {
+        id: { type: "text" },
+        name: { type: "text" },
+        email: { type: "text" },
+        sig: { type: "text" },
+      },
+      async authorize(credentials) {
+        if (!credentials?.id || !credentials?.email || !credentials?.sig) return null
+
+        // Verify HMAC signature — same pattern as Telegram
+        const expectedSig = createTelegramSignature(credentials.id, credentials.email)
+        if (credentials.sig !== expectedSig) return null
+
+        return {
+          id: credentials.id,
+          name: credentials.name || credentials.email.split("@")[0],
+          image: null,
+        }
+      },
+    }),
     // Telegram login
     CredentialsProvider({
       id: "telegram",

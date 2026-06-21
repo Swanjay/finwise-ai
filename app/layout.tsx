@@ -89,7 +89,7 @@ const THEME_MAP: Record<string, { dark: Record<string, string>; light: Record<st
 const themeScript = `
 (function(){
   try {
-    var id = localStorage.getItem('fw.theme.v1') || 'purple';
+    var id = localStorage.getItem('fw.colorTheme.v1') || 'purple';
     var dark = document.documentElement.classList.contains('dark');
     var m = ${JSON.stringify(THEME_MAP)};
     var t = m[id] || m.purple;

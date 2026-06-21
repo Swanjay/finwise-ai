@@ -210,7 +210,7 @@ function GoalsSheet({ onClose }: { onClose: () => void }) {
             <CardContent className="p-4 flex flex-col gap-2">
               <div className="flex items-center justify-between">
                 <span className="font-medium text-sm">{g.icon} {g.name}</span>
-                <button onClick={() => deleteGoal(g.id)} aria-label={`Hapus target ${g.name}`} className="text-muted-foreground hover:text-destructive"><Trash2 className="size-4" /></button>
+                <button onClick={() => { if (window.confirm(`Hapus target "${g.name}"?`)) deleteGoal(g.id) }} aria-label={`Hapus target ${g.name}`} className="text-muted-foreground hover:text-destructive"><Trash2 className="size-4" /></button>
               </div>
               <div className="h-2 w-full rounded-full bg-secondary overflow-hidden"><div className="h-full rounded-full bg-primary transition-all" style={{ width: `${pct}%` }} /></div>
               <div className="flex justify-between text-xs text-muted-foreground">
@@ -350,7 +350,7 @@ function WalletsSheet({ onClose }: { onClose: () => void }) {
                 </div>
                 <div className="flex items-center gap-1 border-l pl-2 border-border">
                   <button onClick={() => startEdit(w)} aria-label={`Edit ${w.name}`} className="text-muted-foreground hover:text-primary p-1.5 rounded-lg hover:bg-muted transition-colors"><Settings className="size-4" /></button>
-                  <button onClick={() => deleteWallet(w.id)} aria-label={`Hapus dompet ${w.name}`} className="text-muted-foreground hover:text-destructive p-1.5 rounded-lg hover:bg-muted transition-colors"><Trash2 className="size-4" /></button>
+                  <button onClick={() => { if (window.confirm(`Hapus dompet "${w.name}"? Saldo akan hilang.`)) deleteWallet(w.id) }} aria-label={`Hapus dompet ${w.name}`} className="text-muted-foreground hover:text-destructive p-1.5 rounded-lg hover:bg-muted transition-colors"><Trash2 className="size-4" /></button>
                 </div>
               </div>
             </div>
@@ -532,7 +532,7 @@ function CategoriesSheet({ onClose }: { onClose: () => void }) {
             <div className="size-8 rounded-full flex items-center justify-center" style={{ backgroundColor: `color-mix(in oklch, ${c.color} 22%, transparent)` }}><Icon className="size-4" style={{ color: c.color }} /></div>
             <span className="flex-1 text-sm">{c.label}</span>
             <span className="text-xs text-muted-foreground">{c.type === 'income' ? 'Pemasukan' : 'Pengeluaran'}</span>
-            <button onClick={() => deleteCustomCategory(c.id)} aria-label={`Hapus kategori ${c.label}`} className="text-muted-foreground hover:text-destructive"><Trash2 className="size-3" /></button>
+            <button onClick={() => { if (window.confirm(`Hapus kategori "${c.label}"?`)) deleteCustomCategory(c.id) }} aria-label={`Hapus kategori ${c.label}`} className="text-muted-foreground hover:text-destructive"><Trash2 className="size-3" /></button>
           </div>
         )
       })}
@@ -885,7 +885,7 @@ function RecurringSheet({ onClose }: { onClose: () => void }) {
             </div>
             <span className={cn('text-sm font-semibold tabular-nums', item.type === 'income' ? 'text-success' : '')}>{item.type === 'income' ? '+' : '-'}{formatIDR(item.amount)}</span>
             <button onClick={() => toggleRecurring(item.id)} aria-label={item.active ? `Nonaktifkan ${item.description}` : `Aktifkan ${item.description}`} className="text-muted-foreground">{item.active ? <ToggleRight className="size-5 text-success" /> : <ToggleLeft className="size-5" />}</button>
-            <button onClick={() => deleteRecurring(item.id)} aria-label={`Hapus ${item.description}`} className="text-muted-foreground hover:text-destructive"><Trash2 className="size-4" /></button>
+            <button onClick={() => { if (window.confirm(`Hapus "${item.description}"?`)) deleteRecurring(item.id) }} aria-label={`Hapus ${item.description}`} className="text-muted-foreground hover:text-destructive"><Trash2 className="size-4" /></button>
           </div>
         )
       })}

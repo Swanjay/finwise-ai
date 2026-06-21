@@ -227,9 +227,9 @@ html, html * {
 .dark .clay-card {
   background: var(--clay-card-dark, var(--card));
   box-shadow:
-    0 4px 20px rgba(0, 0, 0, 0.2),
-    0 1px 4px rgba(0, 0, 0, 0.15),
-    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    0 8px 32px rgba(0, 0, 0, 0.35),
+    0 2px 8px rgba(0, 0, 0, 0.25),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
 }
 
 .clay-card-purple {
@@ -322,7 +322,9 @@ html, html * {
     0 2px 6px rgba(138, 110, 207, 0.3),
     inset 0 1px 0 rgba(255, 255, 255, 0.25);
   font-weight: 600;
-  transition: all 0.2s ease;
+  transition-property: transform, box-shadow, background-color, opacity;
+  transition-duration: 0.2s;
+  transition-timing-function: ease;
 }
 
 .clay-btn:hover {
@@ -350,7 +352,9 @@ html, html * {
 /* ─── Nav Item ─── */
 .clay-nav-item {
   border-radius: 16px;
-  transition: all 0.2s ease;
+  transition-property: background-color, color, box-shadow;
+  transition-duration: 0.2s;
+  transition-timing-function: ease;
   color: var(--primary, #6B4EBF);
   font-weight: 500;
 }
@@ -409,6 +413,22 @@ html, html * {
 @keyframes float {
   0%, 100% { transform: translateY(0px); }
   50% { transform: translateY(-8px); }
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes gradient {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
 }
 
 .animate-float {
