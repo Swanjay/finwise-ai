@@ -1,7 +1,7 @@
 "use client"
 import { useState, useRef, useEffect } from "react"
 import { signIn } from "next-auth/react"
-import { Loader2, MessageCircle, CheckCircle, Mail, ArrowLeft, Send, HelpCircle } from "lucide-react"
+import { Loader2, MessageCircle, CheckCircle, Mail, ArrowLeft, Send, HelpCircle, Sun, Moon } from "lucide-react"
 import { useRouter } from "next/navigation"
 import FinWiseLogo from "@/components/finwise-logo"
 
@@ -32,6 +32,7 @@ export default function LoginPage() {
   const [emailCode, setEmailCode] = useState("")
   const [botUrl, setBotUrl] = useState("")
   const [channelUrl, setChannelUrl] = useState("")
+  const [darkMode, setDarkMode] = useState(true)
   const otpRef = useRef<HTMLInputElement>(null)
   const emailOtpRef = useRef<HTMLInputElement>(null)
   const tgInputRef = useRef<HTMLInputElement>(null)
@@ -44,6 +45,20 @@ export default function LoginPage() {
   useEffect(() => {
     if (emailStep === "sent") emailOtpRef.current?.focus()
   }, [emailStep])
+
+  // Detect initial dark mode
+  useEffect(() => {
+    setDarkMode(document.documentElement.classList.contains('dark'))
+  }, [])
+
+  function toggleDarkMode() {
+    const root = document.documentElement
+    const isDark = !root.classList.contains('dark')
+    root.classList.toggle('dark', isDark)
+    setDarkMode(isDark)
+    // Trigger theme re-apply
+    window.dispatchEvent(new CustomEvent('theme-change'))
+  }
 
   // ─── Google Login ───
   async function handleGoogleLogin() {
@@ -245,7 +260,16 @@ export default function LoginPage() {
 
   return (
     <div className="flex min-h-dvh items-center justify-center bg-background p-6">
-      <div className="w-full max-w-sm space-y-6">
+      <div className="w-full max-w-sm space-y-6 relative">
+        {/* ─── Dark mode toggle ─── */}
+        <button
+          onClick={toggleDarkMode}
+          aria-label={darkMode ? "Mode terang" : "Mode gelap"}
+          className="absolute top-0 right-0 p-2 text-muted-foreground hover:text-foreground transition rounded-xl hover:bg-muted/50 focus-visible:ring-2 focus-visible:ring-primary"
+        >
+          {darkMode ? <Sun className="size-5" /> : <Moon className="size-5" />}
+        </button>
+
         {/* ─── Logo + Title ─── */}
         <div className="space-y-3 text-center">
           <div className="mx-auto w-fit">
@@ -254,9 +278,7 @@ export default function LoginPage() {
           <div>
             <h1 className="font-heading text-2xl font-bold tracking-tight">
               Masuk ke{" "}
-              <span className="bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent bg-[length:200%_auto] animate-[gradient_3s_ease-in-out_infinite]">
-                FinWise
-              </span>
+              <span className="text-primary">FinWise</span>
             </h1>
             <p className="mt-1.5 text-sm text-muted-foreground">
               Kelola keuanganmu dengan lebih pintar 💰
@@ -308,7 +330,7 @@ export default function LoginPage() {
             >
               <Mail className="size-5 shrink-0 text-primary" />
               Masuk dengan Email
-              <span className="absolute -top-2 -right-2 rounded-full bg-destructive px-2 py-0.5 text-[10px] font-bold text-white">BARU</span>
+              <span className="absolute -top-1.5 -right-1.5 rounded-full bg-destructive px-1.5 py-0.5 text-[9px] font-bold text-white leading-none shadow-sm">BARU</span>
             </button>
 
             {/* Divider */}
@@ -568,7 +590,7 @@ export default function LoginPage() {
         {/* ─── Footer ─── [P0/P1] */}
         <div className="space-y-2 text-center">
           <p className="flex items-center justify-center gap-1.5 text-xs text-muted-foreground">
-            🔒 Data kamu aman & tersimpan lokal di perangkat
+            🔒 Data kamu aman & tersimpan di server terenkripsi
           </p>
           <p className="text-xs text-muted-foreground/60">
             Akun dibuat otomatis saat pertama login ·{" "}
