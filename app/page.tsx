@@ -694,7 +694,7 @@ function SettingsSheet({ onClose, onOpenSheet }: { onClose: () => void; onOpenSh
           )}
         >
           <span className={cn(
-            'size-6 rounded-full bg-white shadow-md transition-transform',
+            'size-6 rounded-full bg-card shadow-md transition-transform',
             compactMode && 'translate-x-5'
           )} />
         </button>
@@ -1058,16 +1058,16 @@ function AppShell() {
           <button
             onClick={() => { haptic.light(); toggleTheme() }}
             aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
-            className="flex size-9 items-center justify-center rounded-full bg-white text-muted-foreground shadow-md hover:text-primary transition dark:bg-[#231e30]"
-            style={{ boxShadow: '0 4px 12px rgba(138,110,207,0.15)' }}
-          >
-            {theme === 'dark' ? <Sun className="size-4" /> : <Moon className="size-4" />}
+            className="flex size-9 items-center justify-center rounded-full bg-card text-muted-foreground shadow-md hover:text-primary transition"
+            style={{ boxShadow: '0 4px 12px var(--theme-shadow, rgba(138,110,207,0.15))' }}
+                        >
+                          {theme === 'dark' ? <Sun className="size-4" /> : <Moon className="size-4" />}
           </button>
           <button
             onClick={() => setSheet('settings')}
             aria-label="Pengaturan"
-            className="flex size-9 items-center justify-center rounded-full bg-white text-muted-foreground shadow-md hover:text-primary transition"
-            style={{ boxShadow: '0 4px 12px rgba(138,110,207,0.15)' }}
+            className="flex size-9 items-center justify-center rounded-full bg-card text-muted-foreground shadow-md hover:text-primary transition"
+            style={{ boxShadow: '0 4px 12px var(--theme-shadow, rgba(138,110,207,0.15))' }}
           >
             <Settings className="size-4" />
           </button>
@@ -1095,8 +1095,8 @@ function AppShell() {
             <button
               key={a.label}
               onClick={() => setSheet(a.sheet)}
-              className="flex shrink-0 items-center gap-1.5 rounded-full bg-white px-3 py-1.5 text-[11px] font-semibold text-primary hover:bg-[var(--color-clay-purple,#D0BFF5)] transition"
-              style={{ boxShadow: '0 3px 10px rgba(138,110,207,0.15)' }}
+              className="flex shrink-0 items-center gap-1.5 rounded-full bg-card px-3 py-1.5 text-[11px] font-semibold text-primary hover:bg-muted transition"
+              style={{ boxShadow: '0 3px 10px var(--theme-shadow, rgba(138,110,207,0.15))' }}
             >
               <Icon className="size-3.5" />{a.label}
             </button>

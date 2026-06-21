@@ -303,7 +303,7 @@ function WalletStepContent({
               )}
             >
               {preset.logo ? (
-                <div className="size-10 rounded-lg overflow-hidden bg-white/10 flex items-center justify-center">
+                <div className="size-10 rounded-lg overflow-hidden bg-card/10 flex items-center justify-center">
                   <img src={preset.logo} alt={preset.name} className="w-8 h-8 object-contain" />
                 </div>
               ) : (
@@ -363,7 +363,7 @@ function WalletStepContent({
                 'rounded-full px-2 py-0.5 text-[9px] font-medium transition',
                 localBalance === String(v)
                   ? 'bg-primary text-white'
-                  : 'bg-white text-muted-foreground hover:bg-primary/10'
+                  : 'bg-card text-muted-foreground hover:bg-primary/10'
               )}
             >
               {v >= 1_000_000 ? `${v / 1_000_000}jt` : `${v / 1_000}rb`}
@@ -820,7 +820,7 @@ export function OnboardingWizard({ onComplete }: { onComplete: (data: {
               : 'bg-secondary text-muted-foreground cursor-not-allowed'
           )}
           style={canProceed[step] ? {
-            boxShadow: '0 8px 24px rgba(138,110,207,0.3), inset 0 1px 0 rgba(255,255,255,0.2)',
+            boxShadow: '0 8px 24px var(--theme-shadow-strong, rgba(138,110,207,0.3)), inset 0 1px 0 rgba(255,255,255,0.2)',
           } : {}}
         >
           {buttonLabels[step]}

@@ -156,6 +156,11 @@
   --clay-card-dark: var(--card);
   --clay-greeting-dark: #3a2d5a;
   --clay-nav-dark: var(--card);
+  /* Theme dynamic vars (bottom nav, shadows) */
+  --color-clay-purple: #c4a0e8;
+  --color-clay-purple-deep: #9b7fd4;
+  --theme-shadow: rgba(155, 127, 212, 0.15);
+  --theme-shadow-strong: rgba(155, 127, 212, 0.3);
   --chart-1: #9b7fd4;
   --chart-2: #c4a0e8;
   --chart-3: #66BB6A;

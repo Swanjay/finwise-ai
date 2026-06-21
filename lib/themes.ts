@@ -182,6 +182,20 @@ export function applyTheme(themeId: string) {
   // Update light mode variables (for light mode)
   root.style.setProperty('--primary', theme.dark.primary)
 
+  // Update clay-purple variables (used by bottom nav active tab, box-shadows, etc.)
+  root.style.setProperty('--color-clay-purple', theme.dark.primaryLight)
+  root.style.setProperty('--color-clay-purple-deep', theme.dark.primary)
+
+  // Update box-shadow with theme color
+  const shadowR = parseInt(theme.dark.primary.slice(1, 3), 16)
+  const shadowG = parseInt(theme.dark.primary.slice(3, 5), 16)
+  const shadowB = parseInt(theme.dark.primary.slice(5, 7), 16)
+  root.style.setProperty('--theme-shadow', `rgba(${shadowR},${shadowG},${shadowB},0.15)`)
+  root.style.setProperty('--theme-shadow-strong', `rgba(${shadowR},${shadowG},${shadowB},0.3)`)
+
+  // Update card border color
+  root.style.setProperty('--card-border', theme.dark.border)
+
   // Update clay cards dark backgrounds
   root.style.setProperty('--clay-card-dark', theme.dark.card)
   root.style.setProperty('--clay-greeting-dark', theme.dark.greetingBg)
