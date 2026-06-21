@@ -147,7 +147,7 @@ export function LocationPicker({
 // ─── Location Display (for transaction rows) ───
 export function LocationBadge({ location }: { location: LocationData }) {
   return (
-    <span className="inline-flex items-center gap-0.5 rounded-full bg-blue-50 px-1.5 py-0 text-[10px] text-blue-600">
+    <span className="inline-flex items-center gap-0.5 rounded-full bg-blue-50 px-1.5 py-0 text-[10px] text-blue-600 dark:text-blue-400">
       <MapPin className="size-2.5" />
       {location.name.length > 20 ? location.name.slice(0, 20) + '...' : location.name}
     </span>

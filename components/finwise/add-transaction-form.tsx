@@ -174,7 +174,7 @@ export function AddTransactionForm({ onDone }: { onDone: () => void }) {
               >
                 <span className="text-base">{w.logo || detectLogo(w.name) ? <img src={w.logo || detectLogo(w.name)} alt="" className="w-5 h-5 object-contain" /> : w.icon}</span>
                 <span className="truncate font-medium">{w.name}</span>
-                <span className={cn('text-[10px] font-bold tabular-nums', walletBalance > 0 ? 'text-emerald-600' : walletBalance < 0 ? 'text-destructive' : 'text-muted-foreground')}>
+                <span className={cn('text-[10px] font-bold tabular-nums', walletBalance > 0 ? 'text-emerald-600 dark:text-emerald-400' : walletBalance < 0 ? 'text-destructive' : 'text-muted-foreground')}>
                   {hideBalance ? '••••' : formatIDRShort(walletBalance)}
                 </span>
               </button>

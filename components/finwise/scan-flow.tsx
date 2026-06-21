@@ -603,7 +603,7 @@ export function ScanFlow({ onDone }: { onDone: () => void }) {
       {step === 'scanning' && (
         <>
           {retryCount > 0 && (
-            <div className="flex items-center gap-2 rounded-xl bg-amber-500/10 p-2 text-xs text-amber-600">
+            <div className="flex items-center gap-2 rounded-xl bg-amber-500/10 p-2 text-xs text-amber-600 dark:text-amber-400">
               <RotateCcw className="size-3 animate-spin" />
               <span>Mencoba ulang ({retryCount}/{MAX_RETRIES})…</span>
             </div>

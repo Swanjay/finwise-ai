@@ -77,7 +77,7 @@ export function WalletStatsView({ transactions, wallets, allCategories, getWalle
       {/* Wallet Breakdown Pie Chart */}
       {walletBreakdown.length > 0 && (
         <div className="clay-card p-4">
-          <h3 className="font-heading text-sm font-bold text-[#2D2057] mb-3 flex items-center gap-2">
+          <h3 className="font-heading text-sm font-bold text-foreground mb-3 flex items-center gap-2">
             <WalletIcon className="size-4 text-primary" />
             Pengeluaran per Dompet
           </h3>
@@ -89,7 +89,7 @@ export function WalletStatsView({ transactions, wallets, allCategories, getWalle
                 <span className="text-muted-foreground truncate">
                   {d.walletIcon} {d.walletName}
                 </span>
-                <span className="ml-auto tabular-nums font-medium text-[#2D2057]">{formatIDR(d.value)}</span>
+                <span className="ml-auto tabular-nums font-medium text-foreground">{formatIDR(d.value)}</span>
               </li>
             ))}
           </ul>
@@ -108,7 +108,7 @@ export function WalletStatsView({ transactions, wallets, allCategories, getWalle
                 {s.walletIcon}
               </div>
               <div className="flex-1 min-w-0">
-                <h4 className="font-heading text-sm font-bold text-[#2D2057] truncate">{s.walletName}</h4>
+                <h4 className="font-heading text-sm font-bold text-foreground truncate">{s.walletName}</h4>
                 <p className="text-xs text-muted-foreground">
                   {s.transactionCount} transaksi
                   {s.topCategory && ` · Teratas: ${s.topCategory}`}
@@ -116,7 +116,7 @@ export function WalletStatsView({ transactions, wallets, allCategories, getWalle
               </div>
               <div className={cn(
                 'text-right font-heading text-lg font-bold tabular-nums',
-                s.balance >= 0 ? 'text-[#2D2057]' : 'text-destructive'
+                s.balance >= 0 ? 'text-foreground' : 'text-destructive'
               )}>
                 {formatIDR(s.balance)}
               </div>
@@ -132,9 +132,9 @@ export function WalletStatsView({ transactions, wallets, allCategories, getWalle
                 </div>
               </div>
               <div className="flex items-center gap-2 rounded-lg bg-red-50 dark:bg-red-950/30 px-3 py-2">
-                <ArrowDownRight className="size-3.5 text-red-500" />
+                <ArrowDownRight className="size-3.5 text-red-500 dark:text-red-400" />
                 <div>
-                  <p className="text-[10px] text-red-500 font-medium">Keluar</p>
+                  <p className="text-[10px] text-red-500 dark:text-red-400 font-medium">Keluar</p>
                   <p className="text-xs font-bold tabular-nums text-red-600 dark:text-red-400">
                     {formatIDR(s.totalExpense)}
                   </p>

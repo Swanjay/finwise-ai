@@ -87,11 +87,11 @@ export function UpcomingBills({
               <Icon className="size-4" style={{ color }} />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-xs font-semibold text-[#2D2057] truncate">{item.description || label}</p>
+              <p className="text-xs font-semibold text-foreground truncate">{item.description || label}</p>
               <p className="text-[10px] text-muted-foreground capitalize">{item.frequency}</p>
             </div>
             <div className="shrink-0 text-right">
-              <p className="text-xs font-bold tabular-nums text-[#2D2057]">{formatIDR(item.amount)}</p>
+              <p className="text-xs font-bold tabular-nums text-foreground">{formatIDR(item.amount)}</p>
               <p className={`text-[10px] font-semibold ${item.days <= 1 ? 'text-destructive' : item.days <= 3 ? 'text-warning' : 'text-muted-foreground'}`}>
                 {dueLabel}
               </p>

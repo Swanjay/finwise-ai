@@ -253,7 +253,7 @@ export function SmartBudgetSheet({ onClose }: { onClose: () => void }) {
                       {item.rolloverAmount > 0 ? (
                         <span className="text-xs font-medium text-green-500">+{formatIDR(item.rolloverAmount)} sisa</span>
                       ) : item.overBudget ? (
-                        <span className="text-xs font-medium text-red-500">Over {formatIDR(Math.abs(item.budget - item.prevSpent))}</span>
+                        <span className="text-xs font-medium text-red-500 dark:text-red-400">Over {formatIDR(Math.abs(item.budget - item.prevSpent))}</span>
                       ) : (
                         <span className="text-xs text-muted-foreground">Pas</span>
                       )}

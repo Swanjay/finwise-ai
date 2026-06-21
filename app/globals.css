@@ -210,6 +210,14 @@ html, html * {
     inset 0 1px 0 rgba(255, 255, 255, 0.9);
 }
 
+.dark .clay-card {
+  background: var(--card);
+  box-shadow:
+    0 4px 20px rgba(0, 0, 0, 0.2),
+    0 1px 4px rgba(0, 0, 0, 0.15),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
 .clay-card-purple {
   background: var(--color-clay-purple, #D0BFF5);
   box-shadow: 
@@ -217,6 +225,13 @@ html, html * {
     -4px -4px 12px rgba(255, 255, 255, 0.8),
     inset 0 2px 0 rgba(255, 255, 255, 0.4);
   border-radius: 24px;
+}
+
+.dark .clay-card-purple {
+  background: #3a2d5a;
+  box-shadow:
+    0 4px 20px rgba(0, 0, 0, 0.25),
+    inset 0 1px 0 rgba(155, 127, 212, 0.2);
 }
 
 .clay-card-pink {
@@ -228,6 +243,13 @@ html, html * {
     inset 0 1px 0 rgba(255, 255, 255, 0.6);
 }
 
+.dark .clay-card-pink {
+  background: #3d1e28;
+  box-shadow:
+    0 4px 20px rgba(0, 0, 0, 0.25),
+    inset 0 1px 0 rgba(239, 83, 80, 0.15);
+}
+
 .clay-card-yellow {
   background: #FFF8DC;
   border-radius: 24px;
@@ -235,6 +257,13 @@ html, html * {
     0 8px 32px rgba(253, 230, 138, 0.35),
     0 2px 8px rgba(253, 230, 138, 0.2),
     inset 0 1px 0 rgba(255, 255, 255, 0.7);
+}
+
+.dark .clay-card-yellow {
+  background: #3a3520;
+  box-shadow:
+    0 4px 20px rgba(0, 0, 0, 0.25),
+    inset 0 1px 0 rgba(255, 183, 77, 0.15);
 }
 
 .clay-card-blue {
@@ -246,6 +275,13 @@ html, html * {
     inset 0 1px 0 rgba(255, 255, 255, 0.7);
 }
 
+.dark .clay-card-blue {
+  background: #1a2a3d;
+  box-shadow:
+    0 4px 20px rgba(0, 0, 0, 0.25),
+    inset 0 1px 0 rgba(125, 211, 252, 0.15);
+}
+
 .clay-card-green {
   background: #C8E6C9;
   border-radius: 24px;
@@ -253,6 +289,13 @@ html, html * {
     0 8px 32px rgba(134, 239, 172, 0.3),
     0 2px 8px rgba(134, 239, 172, 0.2),
     inset 0 1px 0 rgba(255, 255, 255, 0.7);
+}
+
+.dark .clay-card-green {
+  background: #1a3322;
+  box-shadow:
+    0 4px 20px rgba(0, 0, 0, 0.25),
+    inset 0 1px 0 rgba(102, 187, 106, 0.15);
 }
 
 /* ─── Clay Button ─── */
@@ -319,6 +362,12 @@ html, html * {
     inset 0 2px 8px rgba(138, 110, 207, 0.15),
     inset 0 1px 3px rgba(138, 110, 207, 0.1);
 }
+.dark .clay-input {
+  background: var(--surface-2);
+  box-shadow:
+    inset 0 2px 8px rgba(0, 0, 0, 0.2),
+    inset 0 1px 3px rgba(0, 0, 0, 0.15);
+}
 
 /* ─── Neon glow (legacy compat) ─── */
 .neon-glow {
@@ -333,6 +382,13 @@ html, html * {
     0 -4px 24px rgba(138, 110, 207, 0.15),
     0 8px 32px rgba(138, 110, 207, 0.1),
     inset 0 1px 0 rgba(255, 255, 255, 0.9);
+}
+.dark .clay-bottom-nav {
+  background: var(--card);
+  box-shadow:
+    0 -4px 20px rgba(0, 0, 0, 0.25),
+    0 4px 16px rgba(0, 0, 0, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04);
 }
 
 /* ─── Animations ─── */

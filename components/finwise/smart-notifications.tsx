@@ -227,7 +227,7 @@ export function NotificationCenter({ onClose }: { onClose: () => void }) {
                 {/* Content */}
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-1.5 mb-0.5">
-                    <p className={cn('text-xs font-bold truncate', notif.read ? 'text-muted-foreground' : 'text-[#2D2057]')}>
+                    <p className={cn('text-xs font-bold truncate', notif.read ? 'text-muted-foreground' : 'text-foreground')}>
                       {notif.title}
                     </p>
                     {!notif.read && (

@@ -90,10 +90,10 @@ export function DashboardView({ transactions, month, onOpenGoals, onOpenWallets 
           />
           <div className="flex-1 min-w-0">
             <p className="text-xs font-semibold text-primary/70">Halo! 👋</p>
-            <h2 className="font-heading text-base font-bold text-[#2D2057]">Keuangan {month}</h2>
+            <h2 className="font-heading text-base font-bold text-foreground">Keuangan {month}</h2>
             <p className="text-xs text-primary/60 mt-0.5">Tetap semangat mengelola uang! 💪</p>
           </div>
-          <div className={`shrink-0 px-3 py-1.5 rounded-full text-xs font-bold ${positive ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-600'}`}>
+          <div className={`shrink-0 px-3 py-1.5 rounded-full text-xs font-bold ${positive ? 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400' : 'bg-red-100 text-red-600 dark:bg-red-900/40 dark:text-red-400'}`}>
             {positive ? '✓ Sehat' : '⚠ Defisit'}
           </div>
         </motion.div>
@@ -119,7 +119,7 @@ export function DashboardView({ transactions, month, onOpenGoals, onOpenWallets 
           <AnimatedIDR
             value={totalBalance}
             hidden={hideBalance}
-            className={`text-3xl font-bold font-heading ${positive ? 'text-[#2D2057]' : 'text-destructive'}`}
+            className={`text-3xl font-bold font-heading ${positive ? 'text-foreground' : 'text-destructive'}`}
           />
         </motion.div>
 
@@ -142,11 +142,11 @@ export function DashboardView({ transactions, month, onOpenGoals, onOpenWallets 
               }}
               className="flex flex-col gap-1"
             >
-              <div className="flex items-center gap-1 text-[10px] font-semibold text-emerald-600">
+              <div className="flex items-center gap-1 text-[10px] font-semibold text-emerald-600 dark:text-emerald-400">
                 <ArrowUpRight className="size-3.5" />
                 Masuk
               </div>
-              <p className="font-bold text-sm text-emerald-600 tabular-nums leading-tight">
+              <p className="font-bold text-sm text-emerald-600 dark:text-emerald-400 tabular-nums leading-tight">
                 {hideBalance ? '••••' : <AnimatedIDRShort value={income} className="inline" />}
               </p>
             </motion.div>
@@ -161,11 +161,11 @@ export function DashboardView({ transactions, month, onOpenGoals, onOpenWallets 
               }}
               className="flex flex-col gap-1"
             >
-              <div className="flex items-center gap-1 text-[10px] font-semibold text-red-500">
+              <div className="flex items-center gap-1 text-[10px] font-semibold text-red-500 dark:text-red-400">
                 <ArrowDownRight className="size-3.5" />
                 Keluar
               </div>
-              <p className="font-bold text-sm text-red-500 tabular-nums leading-tight">
+              <p className="font-bold text-sm text-red-500 dark:text-red-400 tabular-nums leading-tight">
                 {hideBalance ? '••••' : <AnimatedIDRShort value={expense} className="inline" />}
               </p>
             </motion.div>
@@ -183,11 +183,11 @@ export function DashboardView({ transactions, month, onOpenGoals, onOpenWallets 
               }}
               className="flex flex-col gap-1"
             >
-              <div className={`flex items-center gap-1 text-[10px] font-semibold ${positive ? 'text-blue-600' : 'text-red-500'}`}>
+              <div className={`flex items-center gap-1 text-[10px] font-semibold ${positive ? 'text-blue-600 dark:text-blue-400' : 'text-red-500 dark:text-red-400'}`}>
                 <Wallet className="size-3.5" />
                 Sisa Saldo
               </div>
-              <p className={`font-bold text-sm tabular-nums leading-tight ${positive ? 'text-blue-600' : 'text-red-500'}`}>
+              <p className={`font-bold text-sm tabular-nums leading-tight ${positive ? 'text-blue-600 dark:text-blue-400' : 'text-red-500 dark:text-red-400'}`}>
                 {hideBalance ? '••••' : <AnimatedIDRShort value={surplus} className="inline" />}
               </p>
             </motion.div>
@@ -206,11 +206,11 @@ export function DashboardView({ transactions, month, onOpenGoals, onOpenWallets 
                 }}
                 className="flex flex-col gap-1"
               >
-                <div className={cn('flex items-center gap-1 text-[10px] font-semibold', sisaBudget >= 0 ? 'text-amber-600' : 'text-red-500')}>
+                <div className={cn('flex items-center gap-1 text-[10px] font-semibold', sisaBudget >= 0 ? 'text-amber-600 dark:text-amber-400' : 'text-red-500 dark:text-red-400')}>
                   <ShieldCheck className="size-3.5" />
                   Sisa Budget
                 </div>
-                <p className={cn('font-bold text-sm tabular-nums leading-tight', sisaBudget >= 0 ? 'text-amber-600' : 'text-red-500')}>
+                <p className={cn('font-bold text-sm tabular-nums leading-tight', sisaBudget >= 0 ? 'text-amber-600 dark:text-amber-400' : 'text-red-500 dark:text-red-400')}>
                   {hideBalance ? '••••' : <AnimatedIDRShort value={sisaBudget} className="inline" />}
                 </p>
               </motion.div>
@@ -230,7 +230,7 @@ export function DashboardView({ transactions, month, onOpenGoals, onOpenWallets 
               pressScale={0.985}
               onClick={onOpenWallets}
             >
-              <h3 className="font-heading text-sm font-bold text-[#2D2057] mb-3 flex items-center gap-2">
+              <h3 className="font-heading text-sm font-bold text-foreground mb-3 flex items-center gap-2">
                 <Wallet className="size-4 text-primary" />
                 Total Saldo Semua Dompet
                 <span className="ml-auto font-extrabold text-base tabular-nums">
@@ -253,9 +253,9 @@ export function DashboardView({ transactions, month, onOpenGoals, onOpenWallets 
                         )}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-bold text-[#2D2057] truncate">{w.name}</p>
+                        <p className="text-sm font-bold text-foreground truncate">{w.name}</p>
                       </div>
-                      <p className={cn('font-extrabold text-sm tabular-nums', w.balance >= 0 ? 'text-[#2D2057]' : 'text-destructive')}>
+                      <p className={cn('font-extrabold text-sm tabular-nums', w.balance >= 0 ? 'text-foreground' : 'text-destructive')}>
                         {hideBalance ? '••••' : formatIDR(w.balance)}
                       </p>
                     </div>
@@ -278,7 +278,7 @@ export function DashboardView({ transactions, month, onOpenGoals, onOpenWallets 
               pressScale={0.985}
               onClick={onOpenGoals}
             >
-              <h3 className="font-heading text-sm font-bold text-[#2D2057] mb-1 flex items-center gap-2">
+              <h3 className="font-heading text-sm font-bold text-foreground mb-1 flex items-center gap-2">
                 <PiggyBank className="size-4 text-primary" />
                 Total Tabungan Terkumpul
                 <span className="ml-auto font-extrabold text-base text-primary tabular-nums">
@@ -315,7 +315,7 @@ export function DashboardView({ transactions, month, onOpenGoals, onOpenWallets 
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between mb-1">
-                          <p className="text-sm font-bold text-[#2D2057] truncate">{g.name}</p>
+                          <p className="text-sm font-bold text-foreground truncate">{g.name}</p>
                           <p className="text-xs font-bold text-primary tabular-nums ml-2">
                             {hideBalance ? '••••' : formatIDRShort(g.currentAmount)}
                           </p>
@@ -348,7 +348,7 @@ export function DashboardView({ transactions, month, onOpenGoals, onOpenWallets 
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.3 }}
         >
-          <h3 className="font-heading text-sm font-bold text-[#2D2057] mb-3 flex items-center gap-2">
+          <h3 className="font-heading text-sm font-bold text-foreground mb-3 flex items-center gap-2">
             <BarChart3 className="size-4 text-primary" />
             Cashflow Bulanan
           </h3>
@@ -364,7 +364,7 @@ export function DashboardView({ transactions, month, onOpenGoals, onOpenWallets 
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.38 }}
           >
-            <h3 className="font-heading text-sm font-bold text-[#2D2057] mb-3 flex items-center gap-2">
+            <h3 className="font-heading text-sm font-bold text-foreground mb-3 flex items-center gap-2">
               <span className="size-2 rounded-full bg-primary inline-block" />
               Pengeluaran per Kategori
             </h3>
@@ -374,7 +374,7 @@ export function DashboardView({ transactions, month, onOpenGoals, onOpenWallets 
                 <li key={category.id} className="flex items-center gap-2 text-xs">
                   <span className="size-2.5 rounded-full shrink-0" style={{ backgroundColor: category.color }} />
                   <span className="truncate text-muted-foreground">{category.label}</span>
-                  <span className="ml-auto tabular-nums font-medium text-[#2D2057]">{formatIDR(value)}</span>
+                  <span className="ml-auto tabular-nums font-medium text-foreground">{formatIDR(value)}</span>
                 </li>
               ))}
             </ul>
@@ -389,7 +389,7 @@ export function DashboardView({ transactions, month, onOpenGoals, onOpenWallets 
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.46 }}
         >
-          <h3 className="font-heading text-sm font-bold text-[#2D2057] mb-3 flex items-center gap-2">
+          <h3 className="font-heading text-sm font-bold text-foreground mb-3 flex items-center gap-2">
             <PieChart className="size-4 text-primary" />
             Top Pengeluaran
           </h3>
@@ -404,7 +404,7 @@ export function DashboardView({ transactions, month, onOpenGoals, onOpenWallets 
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.54 }}
         >
-          <h3 className="font-heading text-sm font-bold text-[#2D2057] mb-3 flex items-center gap-2">
+          <h3 className="font-heading text-sm font-bold text-foreground mb-3 flex items-center gap-2">
             <Target className="size-4 text-primary" />
             Progres Anggaran
           </h3>
@@ -419,7 +419,7 @@ export function DashboardView({ transactions, month, onOpenGoals, onOpenWallets 
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.62 }}
         >
-          <h3 className="font-heading text-sm font-bold text-[#2D2057] mb-3 flex items-center gap-2">
+          <h3 className="font-heading text-sm font-bold text-foreground mb-3 flex items-center gap-2">
             <CalendarClock className="size-4 text-primary" />
             Tagihan Mendatang
           </h3>
@@ -433,7 +433,7 @@ export function DashboardView({ transactions, month, onOpenGoals, onOpenWallets 
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.7 }}
         >
-          <h3 className="font-heading text-sm font-bold text-[#2D2057] mb-3">
+          <h3 className="font-heading text-sm font-bold text-foreground mb-3">
             Transaksi Terakhir
           </h3>
           {recent.length === 0 ? (

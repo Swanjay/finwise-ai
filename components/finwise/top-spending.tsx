@@ -44,8 +44,8 @@ export function TopSpending({
             <span className="w-5 text-xs font-bold text-muted-foreground tabular-nums">{i + 1}</span>
             <div className="flex-1 min-w-0">
               <div className="flex items-center justify-between mb-1">
-                <span className="text-xs font-medium text-[#2D2057] truncate">{item.label}</span>
-                <span className="text-xs font-semibold tabular-nums text-[#2D2057] ml-2 shrink-0">
+                <span className="text-xs font-medium text-foreground truncate">{item.label}</span>
+                <span className="text-xs font-semibold tabular-nums text-foreground ml-2 shrink-0">
                   {formatIDRShort(item.value)}
                 </span>
               </div>
