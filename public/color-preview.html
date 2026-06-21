@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>FinWise — Color Themes Preview</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #1a1625;
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    color: #e8e0f0;
+    padding: 16px;
+  }
+  h1 {
+    text-align: center;
+    font-size: 20px;
+    font-weight: 700;
+    margin: 16px 0 8px;
+    color: #9b7fd4;
+  }
+  .subtitle {
+    text-align: center;
+    font-size: 13px;
+    color: #9b8ab8;
+    margin-bottom: 24px;
+  }
+  .theme-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    max-width: 400px;
+    margin: 0 auto;
+  }
+  .theme-card {
+    background: #231e30;
+    border-radius: 20px;
+    padding: 16px;
+    border: 1px solid rgba(155,127,212,0.15);
+    overflow: hidden;
+  }
+  .theme-label {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 14px;
+  }
+  .theme-label h2 {
+    font-size: 15px;
+    font-weight: 600;
+  }
+  .theme-label .badge {
+    font-size: 11px;
+    padding: 2px 10px;
+    border-radius: 999px;
+    font-weight: 600;
+  }
+  .theme-label .badge.current {
+    background: #9b7fd433;
+    color: #9b7fd4;
+  }
+  .theme-label .badge.default {
+    background: #37415144;
+    color: #9ca3af;
+  }
+
+  /* ── Mini Dashboard Mockup ── */
+  .dashboard {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .card {
+    border-radius: 16px;
+    padding: 12px 14px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+  }
+  .row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .row-between {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .stat-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+  .stat-card {
+    padding: 12px;
+    border-radius: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .stat-label {
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+  }
+  .stat-value {
+    font-size: 14px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+  }
+  .bottom-nav {
+    display: flex;
+    justify-content: space-around;
+    padding: 8px 0 2px;
+    border-radius: 16px;
+    margin-top: 4px;
+  }
+  .nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    font-size: 9px;
+    opacity: 0.5;
+  }
+  .nav-item.active {
+    opacity: 1;
+  }
+  .nav-icon {
+    font-size: 18px;
+  }
+  .avatar {
+    width: 36px; height: 36px;
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px;
+  }
+  .greeting-text { font-size: 12px; }
+  .greeting-title { font-size: 14px; font-weight: 700; }
+  .badge-status {
+    font-size: 10px;
+    font-weight: 600;
+    padding: 3px 10px;
+    border-radius: 999px;
+  }
+  .balance-amount {
+    font-size: 20px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+    font-variant-numeric: tabular-nums;
+  }
+  .fab {
+    width: 40px; height: 40px;
+    border-radius: 999px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    align-self: flex-end;
+    margin-top: 4px;
+  }
+
+  /* ── Color Variants ── */
+
+  /* 1. PURPLE (Current) */
+  .theme-purple .primary-bg { background: #9b7fd4; }
+  .theme-purple .primary-text { color: #9b7fd4; }
+  .theme-purple .primary-light-bg { background: #9b7fd420; }
+  .theme-purple .primary-border { border: 1px solid #9b7fd433; }
+  .theme-purple .greeting-card { background: #3a2d5a; }
+  .theme-purple .green-card { background: #1a3322; }
+  .theme-purple .pink-card { background: #3d1e28; }
+  .theme-purple .blue-card { background: #1a2a3d; }
+  .theme-purple .yellow-card { background: #3a3520; }
+  .theme-purple .fab-bg { background: #9b7fd4; }
+  .theme-purple .bottom-nav { background: #231e30; }
+  .theme-purple .balance-text { color: #e8e0f0; }
+  .theme-purple .status-bg-green { background: #16653444; color: #4ade80; }
+  .theme-purple .status-bg-red { background: #991b1b44; color: #f87171; }
+
+  /* 2. EMERALD */
+  .theme-emerald .primary-bg { background: #059669; }
+  .theme-emerald .primary-text { color: #34d399; }
+  .theme-emerald .primary-light-bg { background: #34d39920; }
+  .theme-emerald .primary-border { border: 1px solid #34d39933; }
+  .theme-emerald .greeting-card { background: #064e3b; }
+  .theme-emerald .green-card { background: #1a3322; }
+  .theme-emerald .pink-card { background: #3d1e28; }
+  .theme-emerald .blue-card { background: #1a2a3d; }
+  .theme-emerald .yellow-card { background: #3a3520; }
+  .theme-emerald .fab-bg { background: #059669; }
+  .theme-emerald .bottom-nav { background: #0f172a; }
+  .theme-emerald .balance-text { color: #e2e8f0; }
+  .theme-emerald .status-bg-green { background: #16653444; color: #4ade80; }
+  .theme-emerald .status-bg-red { background: #991b1b44; color: #f87171; }
+
+  /* 3. ROYAL BLUE */
+  .theme-blue .primary-bg { background: #2563eb; }
+  .theme-blue .primary-text { color: #60a5fa; }
+  .theme-blue .primary-light-bg { background: #60a5fa20; }
+  .theme-blue .primary-border { border: 1px solid #60a5fa33; }
+  .theme-blue .greeting-card { background: #172554; }
+  .theme-blue .green-card { background: #1a3322; }
+  .theme-blue .pink-card { background: #3d1e28; }
+  .theme-blue .blue-card { background: #1a2a3d; }
+  .theme-blue .yellow-card { background: #3a3520; }
+  .theme-blue .fab-bg { background: #2563eb; }
+  .theme-blue .bottom-nav { background: #0f172a; }
+  .theme-blue .balance-text { color: #e2e8f0; }
+  .theme-blue .status-bg-green { background: #16653444; color: #4ade80; }
+  .theme-blue .status-bg-red { background: #991b1b44; color: #f87171; }
+
+  /* 4. SLATE / NEUTRAL (Minimal) */
+  .theme-slate .primary-bg { background: #475569; }
+  .theme-slate .primary-text { color: #94a3b8; }
+  .theme-slate .primary-light-bg { background: #94a3b820; }
+  .theme-slate .primary-border { border: 1px solid #47556955; }
+  .theme-slate .greeting-card { background: #1e293b; }
+  .theme-slate .green-card { background: #1a3322; }
+  .theme-slate .pink-card { background: #3d1e28; }
+  .theme-slate .blue-card { background: #1a2a3d; }
+  .theme-slate .yellow-card { background: #3a3520; }
+  .theme-slate .fab-bg { background: #475569; }
+  .theme-slate .bottom-nav { background: #0f172a; }
+  .theme-slate .balance-text { color: #e2e8f0; }
+  .theme-slate .status-bg-green { background: #16653444; color: #4ade80; }
+  .theme-slate .status-bg-red { background: #991b1b44; color: #f87171; }
+
+  /* 5. AMBER/ORANGE */
+  .theme-amber .primary-bg { background: #d97706; }
+  .theme-amber .primary-text { color: #fbbf24; }
+  .theme-amber .primary-light-bg { background: #fbbf2420; }
+  .theme-amber .primary-border { border: 1px solid #fbbf2433; }
+  .theme-amber .greeting-card { background: #451a03; }
+  .theme-amber .green-card { background: #1a3322; }
+  .theme-amber .pink-card { background: #3d1e28; }
+  .theme-amber .blue-card { background: #1a2a3d; }
+  .theme-amber .yellow-card { background: #3a3520; }
+  .theme-amber .fab-bg { background: #d97706; }
+  .theme-amber .bottom-nav { background: #292524; }
+  .theme-amber .balance-text { color: #e8e0f0; }
+  .theme-amber .status-bg-green { background: #16653444; color: #4ade80; }
+  .theme-amber .status-bg-red { background: #991b1b44; color: #f87171; }
+
+  /* ── Shared Styles ── */
+  .light-text { color: #e8e0f0; }
+  .muted-text { color: #9ca3af; }
+  .green-text { color: #4ade80; }
+  .red-text { color: #f87171; }
+  .blue-text { color: #60a5fa; }
+
+  .stat-grid .green-card .stat-value { color: #4ade80; }
+  .stat-grid .pink-card .stat-value { color: #f87171; }
+  .stat-grid .blue-card .stat-value { color: #60a5fa; }
+</style>
+</head>
+<body>
+
+<h1>🎨 FinWise — Warna Tema</h1>
+<p class="subtitle">Geser ke bawah, liat perbandingan 5 opsi warna</p>
+
+<div class="theme-grid">
+
+  <!-- ── CURRENT: PURPLE ── -->
+  <div class="theme-card theme-purple">
+    <div class="theme-label">
+      <h2>💜 Ungu <span style="opacity:0.5;font-weight:400;font-size:12px">(saat ini)</span></h2>
+      <span class="badge current">LIVE</span>
+    </div>
+    <div class="dashboard">
+      <!-- Greeting Card -->
+      <div class="card greeting-card row">
+        <span class="avatar primary-light-bg">🐱</span>
+        <div style="flex:1">
+          <p class="greeting-text muted-text">Halo! 👋</p>
+          <p class="greeting-title light-text">Keuangan Jun 2026</p>
+        </div>
+        <span class="badge-status status-bg-green">✓ Sehat</span>
+      </div>
+      <!-- Balance Card -->
+      <div class="card" style="background:#231e30">
+        <div class="row-between" style="margin-bottom:8px">
+          <span class="stat-label muted-text">💳 Total Saldo</span>
+          <span style="opacity:0.4">👁️</span>
+        </div>
+        <p class="balance-amount balance-text">Rp 25.110.996</p>
+      </div>
+      <!-- Stat Grid -->
+      <div class="stat-grid">
+        <div class="stat-card green-card"><span class="stat-label" style="color:#34d399">↗️ Masuk</span><span class="stat-value" style="color:#4ade80">0</span></div>
+        <div class="stat-card pink-card"><span class="stat-label red-text">↘️ Keluar</span><span class="stat-value red-text">0</span></div>
+        <div class="stat-card blue-card"><span class="stat-label" style="color:#60a5fa">💳 Sisa Saldo</span><span class="stat-value" style="color:#60a5fa">0</span></div>
+        <div class="stat-card yellow-card"><span class="stat-label" style="color:#fbbf24">🛡️ Sisa Budget</span><span class="stat-value" style="color:#fbbf24">0</span></div>
+      </div>
+      <!-- Bottom Nav -->
+      <div class="bottom-nav bottom-nav">
+        <div class="nav-item" style="opacity:0.5"><span class="nav-icon">💳</span>Dompet</div>
+        <div class="nav-item active"><span class="nav-icon primary-text">🏠</span><span class="primary-text" style="font-weight:600">Home</span></div>
+        <div class="nav-item" style="opacity:0.5"><span class="nav-icon">📋</span>Transaksi</div>
+        <div class="nav-item" style="opacity:0.5"><span class="nav-icon">📊</span>Tren</div>
+        <div class="nav-item" style="opacity:0.5"><span class="nav-icon">💰</span>Anggaran</div>
+      </div>
+      <!-- FAB -->
+      <div class="fab fab-bg">+</div>
+    </div>
+    <p style="font-size:11px;margin-top:10px;text-align:center;opacity:0.4">Tema ungu — yang dipake sekarang</p>
+  </div>
+
+  <!-- ── EMERALD ── -->
+  <div class="theme-card theme-emerald">
+    <div class="theme-label">
+      <h2>🟢 Emerald / Hijau</h2>
+      <span class="badge default">Baru</span>
+    </div>
+    <div class="dashboard">
+      <div class="card greeting-card row" style="background:#064e3b">
+        <span class="avatar" style="background:#34d39920">🐱</span>
+        <div style="flex:1">
+          <p class="greeting-text" style="color:#a7f3d0">Halo! 👋</p>
+          <p class="greeting-title light-text">Keuangan Jun 2026</p>
+        </div>
+        <span class="badge-status" style="background:#16653444;color:#4ade80">✓ Sehat</span>
+      </div>
+      <div class="card" style="background:#0f172a">
+        <div class="row-between" style="margin-bottom:8px">
+          <span class="stat-label muted-text">💳 Total Saldo</span>
+          <span style="opacity:0.4">👁️</span>
+        </div>
+        <p class="balance-amount" style="color:#e2e8f0">Rp 25.110.996</p>
+      </div>
+      <div class="stat-grid">
+        <div class="stat-card green-card"><span class="stat-label" style="color:#34d399">↗️ Masuk</span><span class="stat-value" style="color:#4ade80">0</span></div>
+        <div class="stat-card pink-card"><span class="stat-label red-text">↘️ Keluar</span><span class="stat-value red-text">0</span></div>
+        <div class="stat-card blue-card"><span class="stat-label" style="color:#60a5fa">💳 Sisa Saldo</span><span class="stat-value" style="color:#60a5fa">0</span></div>
+        <div class="stat-card yellow-card"><span class="stat-label" style="color:#fbbf24">🛡️ Sisa Budget</span><span class="stat-value" style="color:#fbbf24">0</span></div>
+      </div>
+      <div class="bottom-nav" style="background:#0f172a">
+        <div class="nav-item" style="opacity:0.5"><span class="nav-icon">💳</span>Dompet</div>
+        <div class="nav-item active"><span class="nav-icon" style="color:#34d399">🏠</span><span style="color:#34d399;font-weight:600">Home</span></div>
+        <div class="nav-item" style="opacity:0.5"><span class="nav-icon">📋</span>Transaksi</div>
+        <div class="nav-item" style="opacity:0.5"><span class="nav-icon">📊</span>Tren</div>
+        <div class="nav-item" style="opacity:0.5"><span class="nav-icon">💰</span>Anggaran</div>
+      </div>
+      <div class="fab fab-bg" style="background:#059669">+</div>
+    </div>
+    <p style="font-size:11px;margin-top:10px;text-align:center;opacity:0.4">🔥 Mirip GoPay / Jago vibe</p>
+  </div>
+
+  <!-- ── ROYAL BLUE ── -->
+  <div class="theme-card theme-blue">
+    <div class="theme-label">
+      <h2>🔵 Royal Blue</h2>
+      <span class="badge default">Baru</span>
+    </div>
+    <div class="dashboard">
+      <div class="card greeting-card row" style="background:#172554">
+        <span class="avatar" style="background:#60a5fa20">🐱</span>
+        <div style="flex:1">
+          <p class="greeting-text" style="color:#bfdbfe">Halo! 👋</p>
+          <p class="greeting-title light-text">Keuangan Jun 2026</p>
+        </div>
+        <span class="badge-status" style="background:#16653444;color:#4ade80">✓ Sehat</span>
+      </div>
+      <div class="card" style="background:#0f172a">
+        <div class="row-between" style="margin-bottom:8px">
+          <span class="stat-label muted-text">💳 Total Saldo</span>
+          <span style="opacity:0.4">👁️</span>
+        </div>
+        <p class="balance-amount" style="color:#e2e8f0">Rp 25.110.996</p>
+      </div>
+      <div class="stat-grid">
+        <div class="stat-card green-card"><span class="stat-label" style="color:#34d399">↗️ Masuk</span><span class="stat-value" style="color:#4ade80">0</span></div>
+        <div class="stat-card pink-card"><span class="stat-label red-text">↘️ Keluar</span><span class="stat-value red-text">0</span></div>
+        <div class="stat-card blue-card"><span class="stat-label" style="color:#60a5fa">💳 Sisa Saldo</span><span class="stat-value" style="color:#60a5fa">0</span></div>
+        <div class="stat-card yellow-card"><span class="stat-label" style="color:#fbbf24">🛡️ Sisa Budget</span><span class="stat-value" style="color:#fbbf24">0</span></div>
+      </div>
+      <div class="bottom-nav" style="background:#0f172a">
+        <div class="nav-item" style="opacity:0.5"><span class="nav-icon">💳</span>Dompet</div>
+        <div class="nav-item active"><span class="nav-icon" style="color:#60a5fa">🏠</span><span style="color:#60a5fa;font-weight:600">Home</span></div>
+        <div class="nav-item" style="opacity:0.5"><span class="nav-icon">📋</span>Transaksi</div>
+        <div class="nav-item" style="opacity:0.5"><span class="nav-icon">📊</span>Tren</div>
+        <div class="nav-item" style="opacity:0.5"><span class="nav-icon">💰</span>Anggaran</div>
+      </div>
+      <div class="fab fab-bg" style="background:#2563eb">+</div>
+    </div>
+    <p style="font-size:11px;margin-top:10px;text-align:center;opacity:0.4">💙 Standard banking (OVO, bank)</p>
+  </div>
+
+  <!-- ── SLATE NEUTRAL ── -->
+  <div class="theme-card theme-slate">
+    <div class="theme-label">
+      <h2>⚪ Slate / Neutral</h2>
+      <span class="badge default">Baru</span>
+    </div>
+    <div class="dashboard">
+      <div class="card greeting-card row" style="background:#1e293b">
+        <span class="avatar" style="background:#94a3b820">🐱</span>
+        <div style="flex:1">
+          <p class="greeting-text muted-text">Halo! 👋</p>
+          <p class="greeting-title light-text">Keuangan Jun 2026</p>
+        </div>
+        <span class="badge-status" style="background:#16653444;color:#4ade80">✓ Sehat</span>
+      </div>
+      <div class="card" style="background:#0f172a">
+        <div class="row-between" style="margin-bottom:8px">
+          <span class="stat-label muted-text">💳 Total Saldo</span>
+          <span style="opacity:0.4">👁️</span>
+        </div>
+        <p class="balance-amount" style="color:#e2e8f0">Rp 25.110.996</p>
+      </div>
+      <div class="stat-grid">
+        <div class="stat-card green-card"><span class="stat-label" style="color:#34d399">↗️ Masuk</span><span class="stat-value" style="color:#4ade80">0</span></div>
+        <div class="stat-card pink-card"><span class="stat-label red-text">↘️ Keluar</span><span class="stat-value red-text">0</span></div>
+        <div class="stat-card blue-card"><span class="stat-label" style="color:#60a5fa">💳 Sisa Saldo</span><span class="stat-value" style="color:#60a5fa">0</span></div>
+        <div class="stat-card yellow-card"><span class="stat-label" style="color:#fbbf24">🛡️ Sisa Budget</span><span class="stat-value" style="color:#fbbf24">0</span></div>
+      </div>
+      <div class="bottom-nav" style="background:#0f172a">
+        <div class="nav-item" style="opacity:0.5"><span class="nav-icon">💳</span>Dompet</div>
+        <div class="nav-item active"><span class="nav-icon" style="color:#94a3b8">🏠</span><span style="color:#94a3b8;font-weight:600">Home</span></div>
+        <div class="nav-item" style="opacity:0.5"><span class="nav-icon">📋</span>Transaksi</div>
+        <div class="nav-item" style="opacity:0.5"><span class="nav-icon">📊</span>Tren</div>
+        <div class="nav-item" style="opacity:0.5"><span class="nav-icon">💰</span>Anggaran</div>
+      </div>
+      <div class="fab fab-bg" style="background:#475569">+</div>
+    </div>
+    <p style="font-size:11px;margin-top:10px;text-align:center;opacity:0.4">🤍 Minimalis — Wise / Monzo style</p>
+  </div>
+
+  <!-- ── AMBER ── -->
+  <div class="theme-card theme-amber">
+    <div class="theme-label">
+      <h2>🟠 Amber / Orange</h2>
+      <span class="badge default">Baru</span>
+    </div>
+    <div class="dashboard">
+      <div class="card greeting-card row" style="background:#451a03">
+        <span class="avatar" style="background:#fbbf2420">🐱</span>
+        <div style="flex:1">
+          <p class="greeting-text" style="color:#fde68a">Halo! 👋</p>
+          <p class="greeting-title light-text">Keuangan Jun 2026</p>
+        </div>
+        <span class="badge-status" style="background:#16653444;color:#4ade80">✓ Sehat</span>
+      </div>
+      <div class="card" style="background:#292524">
+        <div class="row-between" style="margin-bottom:8px">
+          <span class="stat-label muted-text">💳 Total Saldo</span>
+          <span style="opacity:0.4">👁️</span>
+        </div>
+        <p class="balance-amount" style="color:#e8e0f0">Rp 25.110.996</p>
+      </div>
+      <div class="stat-grid">
+        <div class="stat-card green-card"><span class="stat-label" style="color:#34d399">↗️ Masuk</span><span class="stat-value" style="color:#4ade80">0</span></div>
+        <div class="stat-card pink-card"><span class="stat-label red-text">↘️ Keluar</span><span class="stat-value red-text">0</span></div>
+        <div class="stat-card blue-card"><span class="stat-label" style="color:#60a5fa">💳 Sisa Saldo</span><span class="stat-value" style="color:#60a5fa">0</span></div>
+        <div class="stat-card yellow-card"><span class="stat-label" style="color:#fbbf24">🛡️ Sisa Budget</span><span class="stat-value" style="color:#fbbf24">0</span></div>
+      </div>
+      <div class="bottom-nav" style="background:#292524">
+        <div class="nav-item" style="opacity:0.5"><span class="nav-icon">💳</span>Dompet</div>
+        <div class="nav-item active"><span class="nav-icon" style="color:#fbbf24">🏠</span><span style="color:#fbbf24;font-weight:600">Home</span></div>
+        <div class="nav-item" style="opacity:0.5"><span class="nav-icon">📋</span>Transaksi</div>
+        <div class="nav-item" style="opacity:0.5"><span class="nav-icon">📊</span>Tren</div>
+        <div class="nav-item" style="opacity:0.5"><span class="nav-icon">💰</span>Anggaran</div>
+      </div>
+      <div class="fab fab-bg" style="background:#d97706">+</div>
+    </div>
+    <p style="font-size:11px;margin-top:10px;text-align:center;opacity:0.4">🔶 DANA / ShopeePay vibe</p>
+  </div>
+
+</div>
+
+<p style="text-align:center;margin-top:20px;font-size:12px;color:#9b8ab8">Kasi tau San pilihan km, langsung implement! 🚀</p>
+
+</body>
+</html>
