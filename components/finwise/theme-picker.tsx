@@ -8,7 +8,19 @@ export function ThemePicker() {
   const [activeId, setActiveId] = useState<string>('purple')
 
   useEffect(() => {
+    // Set initial active
     setActiveId(getStoredThemeId())
+
+    // Listen for dark/light toggle and re-highlight
+    const observer = new MutationObserver(() => {
+      setActiveId(getStoredThemeId())
+    })
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['class'],
+    })
+
+    return () => observer.disconnect()
   }, [])
 
   function handleSelect(theme: ThemeColors) {
@@ -19,7 +31,7 @@ export function ThemePicker() {
   return (
     <div>
       <p className="text-xs text-muted-foreground mb-3">
-        Pilih tema warna untuk tampilan gelap:
+        Pilih tema warna (berlaku untuk mode terang & gelap):
       </p>
       <div className="grid grid-cols-5 gap-2">
         {THEMES.map((theme) => {
@@ -36,7 +48,7 @@ export function ThemePicker() {
               )}
               title={theme.description}
             >
-              {/* Color dot */}
+              {/* Preview circle shows dark mode color, ring shows the theme */}
               <div
                 className="size-8 rounded-full shrink-0 transition-transform"
                 style={{
@@ -46,7 +58,6 @@ export function ThemePicker() {
                     : 'none',
                 }}
               />
-              {/* Label */}
               <span
                 className={cn(
                   'text-[10px] font-semibold leading-tight text-center',

@@ -124,6 +124,11 @@
   --sidebar-accent-foreground: #2D2057;
   --sidebar-border: rgba(138, 110, 207, 0.2);
   --sidebar-ring: #8A6ECF;
+  /* Theme dynamic vars (overridden by JS theme picker) */
+  --color-clay-purple: #D0BFF5;
+  --color-clay-purple-deep: #8A6ECF;
+  --theme-shadow: rgba(138, 110, 207, 0.15);
+  --theme-shadow-strong: rgba(138, 110, 207, 0.3);
 }
 
 /* Dark mode — Claymorphism Dark */

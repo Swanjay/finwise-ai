@@ -1,28 +1,24 @@
 // lib/themes.ts
-// FinWise Theme System — 5 color themes for dark mode
+// FinWise Theme System — 5 color themes for both light & dark mode
+
+export interface ThemePalette {
+  bg: string
+  card: string
+  surface2: string
+  primary: string
+  primaryLight: string
+  greetingBg: string
+  border: string
+  mutedFg: string
+}
 
 export interface ThemeColors {
   name: string
   id: string
   emoji: string
   description: string
-  // Dark mode
-  dark: {
-    bg: string           // main background
-    card: string         // card surfaces
-    surface2: string     // secondary surfaces (input bg, etc.)
-    primary: string      // primary accent
-    primaryLight: string // lighter primary for borders/icons
-    greetingBg: string   // greeting card bg
-    border: string       // border with alpha
-    mutedFg: string      // muted text
-  }
-  // Light mode (primary/accent changes, bg stays lavender)
-  light: {
-    primary: string
-    accent: string
-    ring: string
-  }
+  dark: ThemePalette
+  light: ThemePalette
 }
 
 export const THEMES: ThemeColors[] = [
@@ -42,9 +38,14 @@ export const THEMES: ThemeColors[] = [
       mutedFg: '#9b8ab8',
     },
     light: {
+      bg: '#F5F3FF',
+      card: '#FFFFFF',
+      surface2: '#EDE9FF',
       primary: '#8A6ECF',
-      accent: '#F9A8D4',
-      ring: '#8A6ECF',
+      primaryLight: '#D0BFF5',
+      greetingBg: '#EDE9FF',
+      border: 'rgba(138, 110, 207, 0.15)',
+      mutedFg: '#7C7A8A',
     },
   },
   {
@@ -63,9 +64,14 @@ export const THEMES: ThemeColors[] = [
       mutedFg: '#5eead4',
     },
     light: {
+      bg: '#ECFDF5',
+      card: '#FFFFFF',
+      surface2: '#D1FAE5',
       primary: '#059669',
-      accent: '#6ee7b7',
-      ring: '#059669',
+      primaryLight: '#A7F3D0',
+      greetingBg: '#D1FAE5',
+      border: 'rgba(5, 150, 105, 0.15)',
+      mutedFg: '#6B7280',
     },
   },
   {
@@ -84,9 +90,14 @@ export const THEMES: ThemeColors[] = [
       mutedFg: '#93c5fd',
     },
     light: {
+      bg: '#EFF6FF',
+      card: '#FFFFFF',
+      surface2: '#DBEAFE',
       primary: '#2563eb',
-      accent: '#93c5fd',
-      ring: '#2563eb',
+      primaryLight: '#93C5FD',
+      greetingBg: '#DBEAFE',
+      border: 'rgba(37, 99, 235, 0.15)',
+      mutedFg: '#6B7280',
     },
   },
   {
@@ -105,9 +116,14 @@ export const THEMES: ThemeColors[] = [
       mutedFg: '#94a3b8',
     },
     light: {
+      bg: '#F8FAFC',
+      card: '#FFFFFF',
+      surface2: '#E2E8F0',
       primary: '#475569',
-      accent: '#94a3b8',
-      ring: '#475569',
+      primaryLight: '#94A3B8',
+      greetingBg: '#E2E8F0',
+      border: 'rgba(71, 85, 105, 0.15)',
+      mutedFg: '#6B7280',
     },
   },
   {
@@ -126,9 +142,14 @@ export const THEMES: ThemeColors[] = [
       mutedFg: '#fcd34d',
     },
     light: {
+      bg: '#FFFBEB',
+      card: '#FFFFFF',
+      surface2: '#FEF3C7',
       primary: '#d97706',
-      accent: '#fcd34d',
-      ring: '#d97706',
+      primaryLight: '#FCD34D',
+      greetingBg: '#FEF3C7',
+      border: 'rgba(217, 119, 6, 0.15)',
+      mutedFg: '#6B7280',
     },
   },
 ]
@@ -153,53 +174,67 @@ export function getCurrentTheme(): ThemeColors {
   return getThemeById(getStoredThemeId())
 }
 
+function isDarkMode(): boolean {
+  if (typeof window === 'undefined') return true
+  return document.documentElement.classList.contains('dark')
+}
+
+function hexToRgb(hex: string): { r: number; g: number; b: number } {
+  const h = hex.replace('#', '')
+  return {
+    r: parseInt(h.slice(0, 2), 16),
+    g: parseInt(h.slice(2, 4), 16),
+    b: parseInt(h.slice(4, 6), 16),
+  }
+}
+
 export function applyTheme(themeId: string) {
   if (typeof window === 'undefined') return
   const theme = getThemeById(themeId)
+  const dark = isDarkMode()
+  const palette = dark ? theme.dark : theme.light
+
   const root = document.documentElement
 
-  // Apply dark mode variables
-  root.style.setProperty('--background', theme.dark.bg)
-  root.style.setProperty('--card', theme.dark.card)
-  root.style.setProperty('--popover', theme.dark.card)
-  root.style.setProperty('--surface-2', theme.dark.surface2)
-  root.style.setProperty('--primary', theme.dark.primary)
-  root.style.setProperty('--accent', theme.dark.primaryLight)
-  root.style.setProperty('--muted', theme.dark.surface2)
-  root.style.setProperty('--muted-foreground', theme.dark.mutedFg)
-  root.style.setProperty('--border', theme.dark.border)
-  root.style.setProperty('--input', theme.dark.border)
-  root.style.setProperty('--ring', theme.dark.primary)
-  root.style.setProperty('--sidebar', theme.dark.card)
-  root.style.setProperty('--sidebar-primary', theme.dark.primary)
-  root.style.setProperty('--sidebar-accent', theme.dark.surface2)
-  root.style.setProperty('--sidebar-border', theme.dark.border)
-  root.style.setProperty('--sidebar-ring', theme.dark.primary)
+  // Apply all CSS variables based on current mode
+  root.style.setProperty('--background', palette.bg)
+  root.style.setProperty('--card', palette.card)
+  root.style.setProperty('--popover', palette.card)
+  root.style.setProperty('--surface-2', palette.surface2)
+  root.style.setProperty('--primary', palette.primary)
+  root.style.setProperty('--accent', palette.primaryLight)
+  root.style.setProperty('--muted', palette.surface2)
+  root.style.setProperty('--muted-foreground', palette.mutedFg)
+  root.style.setProperty('--border', palette.border)
+  root.style.setProperty('--input', palette.border)
+  root.style.setProperty('--ring', palette.primary)
+  root.style.setProperty('--sidebar', palette.card)
+  root.style.setProperty('--sidebar-primary', palette.primary)
+  root.style.setProperty('--sidebar-accent', palette.surface2)
+  root.style.setProperty('--sidebar-border', palette.border)
+  root.style.setProperty('--sidebar-ring', palette.primary)
 
-  // Update greeting card background (via custom property)
-  root.style.setProperty('--greeting-bg', theme.dark.greetingBg)
+  // Greeting card
+  root.style.setProperty('--greeting-bg', palette.greetingBg)
 
-  // Update light mode variables (for light mode)
-  root.style.setProperty('--primary', theme.dark.primary)
+  // Clay-purple variables (used by bottom nav active tab, box-shadows, etc.)
+  const pl = palette.primaryLight
+  const pp = palette.primary
+  root.style.setProperty('--color-clay-purple', pl)
+  root.style.setProperty('--color-clay-purple-deep', pp)
 
-  // Update clay-purple variables (used by bottom nav active tab, box-shadows, etc.)
-  root.style.setProperty('--color-clay-purple', theme.dark.primaryLight)
-  root.style.setProperty('--color-clay-purple-deep', theme.dark.primary)
+  // Box-shadow with theme color
+  const { r, g, b } = hexToRgb(palette.primary)
+  root.style.setProperty('--theme-shadow', `rgba(${r},${g},${b},0.15)`)
+  root.style.setProperty('--theme-shadow-strong', `rgba(${r},${g},${b},0.3)`)
 
-  // Update box-shadow with theme color
-  const shadowR = parseInt(theme.dark.primary.slice(1, 3), 16)
-  const shadowG = parseInt(theme.dark.primary.slice(3, 5), 16)
-  const shadowB = parseInt(theme.dark.primary.slice(5, 7), 16)
-  root.style.setProperty('--theme-shadow', `rgba(${shadowR},${shadowG},${shadowB},0.15)`)
-  root.style.setProperty('--theme-shadow-strong', `rgba(${shadowR},${shadowG},${shadowB},0.3)`)
+  // Card border
+  root.style.setProperty('--card-border', palette.border)
 
-  // Update card border color
-  root.style.setProperty('--card-border', theme.dark.border)
-
-  // Update clay cards dark backgrounds
-  root.style.setProperty('--clay-card-dark', theme.dark.card)
-  root.style.setProperty('--clay-greeting-dark', theme.dark.greetingBg)
-  root.style.setProperty('--clay-nav-dark', theme.dark.card)
+  // Clay cards dark backgrounds (same variable names for both modes)
+  root.style.setProperty('--clay-card-dark', palette.card)
+  root.style.setProperty('--clay-greeting-dark', palette.greetingBg)
+  root.style.setProperty('--clay-nav-dark', palette.card)
 
   // Persist
   try {
@@ -210,8 +245,24 @@ export function applyTheme(themeId: string) {
   window.dispatchEvent(new CustomEvent('theme-change', { detail: themeId }))
 }
 
+// Listen for dark/light mode toggle and re-apply theme
+export function watchThemeToggle() {
+  if (typeof window === 'undefined') return
+
+  // Create a MutationObserver to watch class changes on <html>
+  const observer = new MutationObserver(() => {
+    applyTheme(getStoredThemeId())
+  })
+
+  observer.observe(document.documentElement, {
+    attributes: true,
+    attributeFilter: ['class'],
+  })
+}
+
 // Apply default theme on load (client-side only)
 export function initTheme() {
   if (typeof window === 'undefined') return
   applyTheme(getStoredThemeId())
+  watchThemeToggle()
 }
