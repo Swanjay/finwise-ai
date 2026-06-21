@@ -5,6 +5,9 @@ import { getToken } from 'next-auth/jwt'
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl
 
+  // Root landing page — always accessible
+  if (pathname === '/') return NextResponse.next()
+
   // Public routes — no auth needed
   const publicPaths = [
     '/login', '/verify-invite', '/admin', '/api/auth', '/api/auth-telegram',

@@ -2,6 +2,7 @@
 
 import { useState, useMemo, useEffect, useCallback } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import {
   BarChart3, Camera, Home, ListChecks, Plus, Sparkles, Wallet,
   Settings, ChevronLeft, ChevronRight, Target, Repeat, Download,
@@ -1237,6 +1238,24 @@ function OnboardingGate() {
 }
 
 export default function Page() {
+  const { status } = useSession()
+
+  if (status === 'unauthenticated') {
+    const LandingPage = require('@/components/landing-page').default
+    return <LandingPage />
+  }
+
+  if (status === 'loading') {
+    return (
+      <div className="flex min-h-dvh items-center justify-center bg-background">
+        <div className="flex flex-col items-center gap-3">
+          <Image src="/mascot-128.png" alt="FinWise" width={64} height={64} className="animate-pulse drop-shadow-lg" />
+          <div className="h-1.5 w-24 rounded-full bg-muted animate-pulse" />
+        </div>
+      </div>
+    )
+  }
+
   return (
     <FinwiseProvider>
       <SplashScreen />
