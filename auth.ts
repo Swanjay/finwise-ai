@@ -2,11 +2,21 @@ import type { NextAuthOptions } from "next-auth"
 import CredentialsProvider from "next-auth/providers/credentials"
 import GoogleProvider from "next-auth/providers/google"
 import crypto from "crypto"
+import bcrypt from "bcryptjs"
+import { createClient } from "@supabase/supabase-js"
 
 function createTelegramSignature(id: string, username: string): string {
   const secret = process.env.NEXTAUTH_SECRET
   if (!secret) throw new Error('NEXTAUTH_SECRET not configured')
   return crypto.createHmac('sha256', secret).update(`telegram:${id}:${username}`).digest('hex').slice(0, 16)
+}
+
+// Service role Supabase for auth lookups (server-side only)
+function getAuthSupabase() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY
+  if (!url || !key) return null
+  return createClient(url, key)
 }
 
 export const authOptions: NextAuthOptions = {
@@ -20,6 +30,47 @@ export const authOptions: NextAuthOptions = {
           }),
         ]
       : []),
+    // Email + Password login [NEW]
+    CredentialsProvider({
+      id: "email-password",
+      name: "Email & Password",
+      credentials: {
+        email: { type: "email", label: "Email" },
+        password: { type: "password", label: "Password" },
+      },
+      async authorize(credentials) {
+        if (!credentials?.email || !credentials?.password) return null
+
+        const supabase = getAuthSupabase()
+        if (!supabase) {
+          console.error("[auth] Supabase not configured for email-password auth")
+          return null
+        }
+
+        const email = credentials.email.trim().toLowerCase()
+        const userId = `email:${email}`
+
+        // Look up password hash from user_credentials table
+        const { data: cred, error } = await supabase
+          .from("user_credentials")
+          .select("password_hash, name")
+          .eq("user_id", userId)
+          .single()
+
+        if (error || !cred) return null
+
+        // Verify password
+        const valid = await bcrypt.compare(credentials.password, cred.password_hash)
+        if (!valid) return null
+
+        return {
+          id: userId,
+          name: cred.name || email.split("@")[0],
+          email,
+          image: null,
+        }
+      },
+    }),
     // Email OTP login
     CredentialsProvider({
       id: "email",

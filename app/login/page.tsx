@@ -1,7 +1,7 @@
 "use client"
 import { useState, useRef, useEffect } from "react"
 import { signIn } from "next-auth/react"
-import { Loader2, MessageCircle, CheckCircle, Mail, ArrowLeft, Send, HelpCircle, Sun, Moon } from "lucide-react"
+import { Loader2, MessageCircle, CheckCircle, Mail, ArrowLeft, Send, HelpCircle, Sun, Moon, Eye, EyeOff, User, Lock } from "lucide-react"
 import { useRouter } from "next/navigation"
 import FinWiseLogo from "@/components/finwise-logo"
 
@@ -22,21 +22,46 @@ function StepDots({ current, total }: { current: number; total: number }) {
 }
 
 export default function LoginPage() {
-  const [loading, setLoading] = useState<"google" | "telegram" | "email" | null>(null)
+  const router = useRouter()
+  // ─── Global state ───
+  const [loading, setLoading] = useState<"google" | "telegram" | "email" | "credentials" | "register" | null>(null)
   const [error, setError] = useState("")
+  const [darkMode, setDarkMode] = useState(true)
+
+  // ─── View state ───
+  const [view, setView] = useState<"login" | "register" | "forgot">("login")
+
+  // ─── Email+Password Login ───
+  const [authEmail, setAuthEmail] = useState("")
+  const [authPassword, setAuthPassword] = useState("")
+  const [showPassword, setShowPassword] = useState(false)
+
+  // ─── Registration ───
+  const [regName, setRegName] = useState("")
+  const [regEmail, setRegEmail] = useState("")
+  const [regPassword, setRegPassword] = useState("")
+  const [regConfirm, setRegConfirm] = useState("")
+  const [showRegPassword, setShowRegPassword] = useState(false)
+  const [regSuccess, setRegSuccess] = useState(false)
+
+  // ─── Telegram OTP ───
   const [tgStep, setTgStep] = useState<"idle" | "code" | "done">("idle")
-  const [emailStep, setEmailStep] = useState<"idle" | "input" | "sent" | "done">("idle")
   const [tgUsername, setTgUsername] = useState("")
   const [tgCode, setTgCode] = useState("")
-  const [email, setEmail] = useState("")
-  const [emailCode, setEmailCode] = useState("")
   const [botUrl, setBotUrl] = useState("")
   const [channelUrl, setChannelUrl] = useState("")
-  const [darkMode, setDarkMode] = useState(true)
+
+  // ─── Email OTP ───
+  const [emailStep, setEmailStep] = useState<"idle" | "input" | "sent" | "done">("idle")
+  const [email, setEmail] = useState("")
+  const [emailCode, setEmailCode] = useState("")
+
+  // ─── Refs ───
   const otpRef = useRef<HTMLInputElement>(null)
   const emailOtpRef = useRef<HTMLInputElement>(null)
   const tgInputRef = useRef<HTMLInputElement>(null)
   const emailInputRef = useRef<HTMLInputElement>(null)
+  const authEmailRef = useRef<HTMLInputElement>(null)
 
   // Auto-focus OTP input when step changes
   useEffect(() => {
@@ -56,11 +81,117 @@ export default function LoginPage() {
     const isDark = !root.classList.contains('dark')
     root.classList.toggle('dark', isDark)
     setDarkMode(isDark)
-    // Trigger theme re-apply
     window.dispatchEvent(new CustomEvent('theme-change'))
   }
 
-  // ─── Google Login ───
+  // ═══════════════════════════════════════════
+  //  EMAIL + PASSWORD LOGIN
+  // ═══════════════════════════════════════════
+  async function handleEmailPasswordLogin() {
+    if (!authEmail.trim()) return setError("Masukkan email kamu")
+    if (!authPassword.trim()) return setError("Masukkan password")
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(authEmail.trim())) return setError("Format email tidak valid")
+    if (authPassword.length < 6) return setError("Password minimal 6 karakter")
+
+    setLoading("credentials")
+    setError("")
+
+    try {
+      const result = await signIn("email-password", {
+        email: authEmail.trim().toLowerCase(),
+        password: authPassword,
+        redirect: false,
+      })
+
+      if (result?.error) {
+        setError("Email atau password salah")
+        setLoading(null)
+      } else if (result?.ok) {
+        router.push("/")
+        router.refresh()
+      }
+    } catch {
+      setError("Koneksi gagal. Periksa internet kamu.")
+      setLoading(null)
+    }
+  }
+
+  // ═══════════════════════════════════════════
+  //  REGISTRATION
+  // ═══════════════════════════════════════════
+  async function handleRegister() {
+    if (!regName.trim()) return setError("Masukkan nama kamu")
+    if (!regEmail.trim()) return setError("Masukkan email")
+    if (!regPassword.trim()) return setError("Masukkan password")
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(regEmail.trim())) return setError("Format email tidak valid")
+    if (regPassword.length < 6) return setError("Password minimal 6 karakter")
+    if (regPassword !== regConfirm) return setError("Password tidak cocok")
+
+    setLoading("register")
+    setError("")
+
+    try {
+      const res = await fetch("/api/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: regEmail.trim().toLowerCase(),
+          password: regPassword,
+          name: regName.trim(),
+        }),
+      })
+      const data = await res.json()
+
+      if (res.status === 409) {
+        setError(data.error || "Email sudah terdaftar")
+        setLoading(null)
+        return
+      }
+      if (!res.ok) {
+        setError(data.error || "Gagal mendaftar")
+        setLoading(null)
+        return
+      }
+
+      // Registration success — auto-login
+      setRegSuccess(true)
+      setLoading(null)
+
+      // Auto-login after 1.5 seconds
+      setTimeout(async () => {
+        try {
+          const loginResult = await signIn("email-password", {
+            email: regEmail.trim().toLowerCase(),
+            password: regPassword,
+            redirect: false,
+          })
+          if (loginResult?.ok) {
+            router.push("/")
+            router.refresh()
+          } else {
+            // Fallback to login view
+            setView("login")
+            setAuthEmail(regEmail.trim().toLowerCase())
+            setAuthPassword("")
+          }
+        } catch {
+          setView("login")
+          setAuthEmail(regEmail.trim().toLowerCase())
+        }
+      }, 1500)
+    } catch {
+      setError("Koneksi gagal. Periksa internet kamu.")
+      setLoading(null)
+    }
+  }
+
+  // ═══════════════════════════════════════════
+  //  GOOGLE LOGIN
+  // ═══════════════════════════════════════════
   async function handleGoogleLogin() {
     setLoading("google")
     setError("")
@@ -72,7 +203,9 @@ export default function LoginPage() {
     }
   }
 
-  // ─── Telegram: Request OTP ───
+  // ═══════════════════════════════════════════
+  //  TELEGRAM: Request OTP
+  // ═══════════════════════════════════════════
   async function handleTelegramRequest() {
     if (!tgUsername.trim()) return setError("Masukkan username Telegram")
     if (!/^[a-zA-Z0-9_]+$/.test(tgUsername.trim())) return setError("Username hanya huruf, angka, dan underscore")
@@ -118,7 +251,9 @@ export default function LoginPage() {
     setLoading(null)
   }
 
-  // ─── Telegram: Verify OTP ───
+  // ═══════════════════════════════════════════
+  //  TELEGRAM: Verify OTP
+  // ═══════════════════════════════════════════
   async function handleTelegramVerify() {
     if (!tgCode.trim()) return setError("Masukkan kode verifikasi")
     if (tgCode.trim().length < 6) return setError("Kode harus 6 digit")
@@ -176,7 +311,9 @@ export default function LoginPage() {
     }
   }
 
-  // ─── Email: Request Magic Code ───
+  // ═══════════════════════════════════════════
+  //  EMAIL: Request Magic Code
+  // ═══════════════════════════════════════════
   async function handleEmailRequest() {
     if (!email.trim()) return setError("Masukkan alamat email")
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) return setError("Format email tidak valid")
@@ -208,7 +345,9 @@ export default function LoginPage() {
     setLoading(null)
   }
 
-  // ─── Email: Verify Code ───
+  // ═══════════════════════════════════════════
+  //  EMAIL: Verify Code
+  // ═══════════════════════════════════════════
   async function handleEmailVerify() {
     if (!emailCode.trim()) return setError("Masukkan kode verifikasi")
     if (emailCode.trim().length < 6) return setError("Kode harus 6 digit")
@@ -258,9 +397,11 @@ export default function LoginPage() {
     setTimeout(() => emailInputRef.current?.focus(), 100)
   }
 
+  const isLoading = loading !== null
+
   return (
     <div className="flex min-h-dvh items-center justify-center bg-background p-6">
-      <div className="w-full max-w-sm space-y-6 relative">
+      <div className="w-full max-w-sm space-y-5 relative">
         {/* ─── Dark mode toggle ─── */}
         <button
           onClick={toggleDarkMode}
@@ -277,11 +418,15 @@ export default function LoginPage() {
           </div>
           <div>
             <h1 className="font-heading text-2xl font-bold tracking-tight">
-              Masuk ke{" "}
+              {view === "register" ? "Buat Akun" : view === "forgot" ? "Reset Password" : "Masuk ke"}{" "}
               <span className="text-primary">FinWise</span>
             </h1>
             <p className="mt-1.5 text-sm text-muted-foreground">
-              Kelola keuanganmu dengan lebih pintar 💰
+              {view === "register"
+                ? "Mulai kelola keuanganmu 💰"
+                : view === "forgot"
+                ? "Kami akan kirim instruksi reset"
+                : "Kelola keuanganmu dengan lebih pintar 💰"}
             </p>
           </div>
         </div>
@@ -297,132 +442,270 @@ export default function LoginPage() {
         )}
 
         {/* ═══════════════════════════════════════════
-            LOGIN METHODS (idle state)
+            LOGIN VIEW — Email + Password (default)
         ═══════════════════════════════════════════ */}
-        {tgStep === "idle" && emailStep === "idle" && (
-          <div className="space-y-3">
-            {/* Google Login */}
+        {view === "login" && tgStep === "idle" && emailStep === "idle" && (
+          <div className="space-y-4">
+            {/* Email field */}
+            <div className="relative">
+              <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+              <input
+                ref={authEmailRef}
+                type="email"
+                placeholder="Email"
+                value={authEmail}
+                onChange={(e) => { setAuthEmail(e.target.value); setError("") }}
+                onKeyDown={(e) => e.key === "Enter" && handleEmailPasswordLogin()}
+                disabled={isLoading}
+                aria-label="Email"
+                className="w-full rounded-xl border border-border bg-card pl-10 pr-4 py-3 text-sm outline-none transition-all focus:border-primary focus:ring-2 focus:ring-primary/20 disabled:opacity-50"
+              />
+            </div>
+
+            {/* Password field */}
+            <div className="relative">
+              <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+              <input
+                type={showPassword ? "text" : "password"}
+                placeholder="Password"
+                value={authPassword}
+                onChange={(e) => { setAuthPassword(e.target.value); setError("") }}
+                onKeyDown={(e) => e.key === "Enter" && handleEmailPasswordLogin()}
+                disabled={isLoading}
+                aria-label="Password"
+                className="w-full rounded-xl border border-border bg-card pl-10 pr-10 py-3 text-sm outline-none transition-all focus:border-primary focus:ring-2 focus:ring-primary/20 disabled:opacity-50"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-muted-foreground hover:text-foreground transition"
+                aria-label={showPassword ? "Sembunyikan password" : "Tampilkan password"}
+              >
+                {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+              </button>
+            </div>
+
+            {/* Login button */}
             <button
-              onClick={handleGoogleLogin}
-              disabled={loading !== null}
-              aria-label="Masuk dengan akun Google"
-              className="flex w-full items-center justify-center gap-3 rounded-xl bg-card border border-border px-4 py-3.5 text-sm font-bold text-foreground shadow-md transition-all hover:bg-muted hover:shadow-lg active:scale-[0.98] disabled:opacity-50 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+              onClick={handleEmailPasswordLogin}
+              disabled={isLoading}
+              className="w-full rounded-xl bg-primary py-3.5 text-sm font-bold text-primary-foreground shadow-md transition-all hover:bg-primary/90 hover:shadow-lg active:scale-[0.98] disabled:opacity-50 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
             >
-              {loading === "google" ? (
-                <Loader2 className="size-5 animate-spin" />
+              {loading === "credentials" ? (
+                <Loader2 className="size-5 animate-spin mx-auto" />
               ) : (
-                <svg className="size-5 shrink-0" viewBox="0 0 24 24">
-                  <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z"/>
-                  <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-                  <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
-                  <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
-                </svg>
+                "Masuk ✨"
               )}
-              Masuk dengan Google
             </button>
 
-            {/* Email Login [P0] */}
-            <button
-              onClick={() => { setError(""); setEmailStep("input") }}
-              disabled={loading !== null}
-              aria-label="Masuk dengan email"
-              className="relative flex w-full items-center justify-center gap-3 rounded-xl bg-primary/5 border border-primary/20 px-4 py-3.5 text-sm font-bold text-foreground shadow-sm transition-all hover:bg-primary/10 hover:shadow-md active:scale-[0.98] disabled:opacity-50 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
-            >
-              <Mail className="size-5 shrink-0 text-primary" />
-              Masuk dengan Email
-              <span className="absolute -top-1.5 -right-1.5 rounded-full bg-destructive px-1.5 py-0.5 text-[9px] font-bold text-white leading-none shadow-sm">BARU</span>
-            </button>
+            {/* Forgot password link */}
+            <div className="text-center">
+              <button
+                onClick={() => { setView("forgot"); setError("") }}
+                className="text-xs text-primary hover:underline font-medium"
+              >
+                Lupa password?
+              </button>
+            </div>
 
-            {/* Divider */}
+            {/* ─── Divider ─── */}
             <div className="flex items-center gap-3" role="separator">
               <div className="h-px flex-1 bg-border" />
               <span className="text-xs text-muted-foreground font-medium">atau</span>
               <div className="h-px flex-1 bg-border" />
             </div>
 
-            {/* Telegram Login */}
-            <div className="space-y-3">
-              <p className="text-sm font-medium text-center text-muted-foreground">
-                Login dengan Telegram
-              </p>
-              <div className="flex gap-2">
-                <input
-                  ref={tgInputRef}
-                  type="text"
-                  placeholder="Username Telegram (tanpa @)"
-                  value={tgUsername}
-                  onChange={(e) => { setTgUsername(e.target.value.replace(/[^a-zA-Z0-9_]/g, '')); setError("") }}
-                  onKeyDown={(e) => e.key === "Enter" && handleTelegramRequest()}
-                  maxLength={50}
-                  aria-label="Username Telegram"
-                  className="flex-1 rounded-xl border border-border bg-card px-4 py-3 text-sm outline-none transition-all focus:border-primary focus:ring-2 focus:ring-primary/20"
-                />
-                {/* [P1] Fixed: button now has label */}
+            {/* ─── Social Buttons ─── */}
+            <div className="space-y-2.5">
+              {/* Google */}
+              <button
+                onClick={handleGoogleLogin}
+                disabled={isLoading}
+                aria-label="Masuk dengan akun Google"
+                className="flex w-full items-center justify-center gap-3 rounded-xl bg-card border border-border px-4 py-3 text-sm font-bold text-foreground shadow-sm transition-all hover:bg-muted hover:shadow-md active:scale-[0.98] disabled:opacity-50 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+              >
+                {loading === "google" ? (
+                  <Loader2 className="size-5 animate-spin" />
+                ) : (
+                  <svg className="size-5 shrink-0" viewBox="0 0 24 24">
+                    <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z"/>
+                    <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                    <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+                    <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+                  </svg>
+                )}
+                Masuk dengan Google
+              </button>
+
+              {/* Telegram */}
+              <button
+                onClick={() => { setTgStep("idle"); setError(""); setTimeout(() => tgInputRef.current?.focus(), 100) }}
+                disabled={isLoading}
+                aria-label="Masuk dengan Telegram"
+                className="flex w-full items-center justify-center gap-3 rounded-xl bg-[#229ED9]/10 border border-[#229ED9]/20 px-4 py-3 text-sm font-bold text-foreground shadow-sm transition-all hover:bg-[#229ED9]/15 hover:shadow-md active:scale-[0.98] disabled:opacity-50 focus-visible:ring-2 focus-visible:ring-[#229ED9] focus-visible:ring-offset-2"
+              >
+                <MessageCircle className="size-5 shrink-0 text-[#229ED9]" />
+                Masuk dengan Telegram
+              </button>
+
+              {/* Email OTP */}
+              <button
+                onClick={() => { setEmailStep("input"); setError(""); setTimeout(() => emailInputRef.current?.focus(), 100) }}
+                disabled={isLoading}
+                aria-label="Masuk dengan email OTP"
+                className="relative flex w-full items-center justify-center gap-3 rounded-xl bg-card border border-border px-4 py-3 text-sm font-bold text-foreground shadow-sm transition-all hover:bg-muted hover:shadow-md active:scale-[0.98] disabled:opacity-50 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+              >
+                <Mail className="size-5 shrink-0 text-muted-foreground" />
+                Masuk dengan Email OTP
+                <span className="absolute -top-1.5 -right-1.5 rounded-full bg-primary px-1.5 py-0.5 text-[9px] font-bold text-primary-foreground leading-none shadow-sm">BARU</span>
+              </button>
+            </div>
+
+            {/* ─── Register link ─── */}
+            <div className="text-center pt-1">
+              <p className="text-xs text-muted-foreground">
+                Belum punya akun?{" "}
                 <button
-                  onClick={handleTelegramRequest}
-                  disabled={loading === "telegram"}
-                  aria-label="Kirim kode verifikasi ke Telegram"
-                  title="Kirim kode OTP"
-                  className="flex items-center justify-center gap-1.5 rounded-xl bg-[#229ED9] px-3 py-3 text-sm font-semibold text-white transition-all hover:bg-[#1d8ec4] active:scale-[0.98] disabled:opacity-50 focus-visible:ring-2 focus-visible:ring-[#229ED9] focus-visible:ring-offset-2"
+                  onClick={() => { setView("register"); setError("") }}
+                  className="text-primary font-bold hover:underline"
                 >
-                  {loading === "telegram" ? (
-                    <Loader2 className="size-5 animate-spin" />
-                  ) : (
-                    <>
-                      <Send className="size-4 shrink-0" />
-                      <span className="hidden sm:inline">Kirim</span>
-                    </>
-                  )}
+                  Daftar sekarang
                 </button>
-              </div>
-
-              {/* Bot not found info box */}
-              {botUrl && (
-                <div className="space-y-2 rounded-xl border border-primary/30 bg-primary/5 p-4 animate-[slideUp_0.2s_ease]" role="alert">
-                  <p className="text-sm font-medium">🤖 Bot belum ditemukan!</p>
-                  <p className="text-xs text-muted-foreground">
-                    Kamu perlu /start dulu ke bot Telegram FinWise sebelum bisa login.
-                  </p>
-                  <a
-                    href={botUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex w-full items-center justify-center gap-2 rounded-lg bg-[#229ED9] px-4 py-2.5 text-sm font-medium text-white transition hover:bg-[#1d8ec4] active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-[#229ED9]"
-                  >
-                    <MessageCircle className="size-4" /> Buka @KiyAii_bot
-                  </a>
-                  <p className="text-xs text-muted-foreground">
-                    Setelah kirim /start, balik sini dan klik tombol Kirim lagi
-                  </p>
-                </div>
-              )}
-
-              {/* Channel not joined info box */}
-              {channelUrl && (
-                <div className="space-y-2 rounded-xl border border-orange-300/30 bg-orange-500/5 p-4 animate-[slideUp_0.2s_ease]" role="alert">
-                  <p className="text-sm font-medium">📢 Belum join channel!</p>
-                  <p className="text-xs text-muted-foreground">
-                    Kamu harus join channel Telegram dulu sebelum bisa login.
-                  </p>
-                  <a
-                    href={channelUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex w-full items-center justify-center gap-2 rounded-lg bg-[#229ED9] px-4 py-2.5 text-sm font-medium text-white transition hover:bg-[#1d8ec4] active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-[#229ED9]"
-                  >
-                    <MessageCircle className="size-4" /> Join Channel @ainsyir
-                  </a>
-                  <p className="text-xs text-muted-foreground">
-                    Setelah join, balik sini dan coba lagi
-                  </p>
-                </div>
-              )}
+              </p>
             </div>
           </div>
         )}
 
         {/* ═══════════════════════════════════════════
-            TELEGRAM OTP STEP [P1 improved]
+            REGISTER VIEW
+        ═══════════════════════════════════════════ */}
+        {view === "register" && !regSuccess && (
+          <div className="space-y-4">
+            {/* Name */}
+            <div className="relative">
+              <User className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+              <input
+                type="text"
+                placeholder="Nama lengkap"
+                value={regName}
+                onChange={(e) => { setRegName(e.target.value); setError("") }}
+                disabled={isLoading}
+                aria-label="Nama"
+                className="w-full rounded-xl border border-border bg-card pl-10 pr-4 py-3 text-sm outline-none transition-all focus:border-primary focus:ring-2 focus:ring-primary/20 disabled:opacity-50"
+              />
+            </div>
+
+            {/* Email */}
+            <div className="relative">
+              <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+              <input
+                type="email"
+                placeholder="Email"
+                value={regEmail}
+                onChange={(e) => { setRegEmail(e.target.value); setError("") }}
+                disabled={isLoading}
+                aria-label="Email"
+                className="w-full rounded-xl border border-border bg-card pl-10 pr-4 py-3 text-sm outline-none transition-all focus:border-primary focus:ring-2 focus:ring-primary/20 disabled:opacity-50"
+              />
+            </div>
+
+            {/* Password */}
+            <div className="relative">
+              <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+              <input
+                type={showRegPassword ? "text" : "password"}
+                placeholder="Password (min. 6 karakter)"
+                value={regPassword}
+                onChange={(e) => { setRegPassword(e.target.value); setError("") }}
+                disabled={isLoading}
+                aria-label="Password"
+                className="w-full rounded-xl border border-border bg-card pl-10 pr-10 py-3 text-sm outline-none transition-all focus:border-primary focus:ring-2 focus:ring-primary/20 disabled:opacity-50"
+              />
+              <button
+                type="button"
+                onClick={() => setShowRegPassword(!showRegPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-muted-foreground hover:text-foreground transition"
+                aria-label={showRegPassword ? "Sembunyikan password" : "Tampilkan password"}
+              >
+                {showRegPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+              </button>
+            </div>
+
+            {/* Confirm Password */}
+            <div className="relative">
+              <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+              <input
+                type={showRegPassword ? "text" : "password"}
+                placeholder="Konfirmasi password"
+                value={regConfirm}
+                onChange={(e) => { setRegConfirm(e.target.value); setError("") }}
+                disabled={isLoading}
+                aria-label="Konfirmasi password"
+                className="w-full rounded-xl border border-border bg-card pl-10 pr-4 py-3 text-sm outline-none transition-all focus:border-primary focus:ring-2 focus:ring-primary/20 disabled:opacity-50"
+              />
+            </div>
+
+            {/* Register button */}
+            <button
+              onClick={handleRegister}
+              disabled={isLoading}
+              className="w-full rounded-xl bg-primary py-3.5 text-sm font-bold text-primary-foreground shadow-md transition-all hover:bg-primary/90 hover:shadow-lg active:scale-[0.98] disabled:opacity-50 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+            >
+              {loading === "register" ? (
+                <Loader2 className="size-5 animate-spin mx-auto" />
+              ) : (
+                "Buat Akun 🚀"
+              )}
+            </button>
+
+            {/* Back to login */}
+            <div className="text-center">
+              <button
+                onClick={() => { setView("login"); setError("") }}
+                className="flex items-center justify-center gap-1 text-xs text-muted-foreground hover:text-foreground transition mx-auto"
+              >
+                <ArrowLeft className="size-3" /> Sudah punya akun? Masuk
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Register success */}
+        {view === "register" && regSuccess && (
+          <div className="text-center space-y-3 py-6 animate-[slideUp_0.3s_ease]">
+            <CheckCircle className="size-14 text-success mx-auto" />
+            <p className="text-sm font-bold text-success">Akun berhasil dibuat! 🎉</p>
+            <p className="text-xs text-muted-foreground">Mengalihkan ke dashboard...</p>
+          </div>
+        )}
+
+        {/* ═══════════════════════════════════════════
+            FORGOT PASSWORD VIEW
+        ═══════════════════════════════════════════ */}
+        {view === "forgot" && (
+          <div className="text-center space-y-4 py-4">
+            <div className="rounded-xl border border-primary/20 bg-primary/5 p-4">
+              <p className="text-sm text-muted-foreground">
+                Fitur reset password segera hadir! 🛠️
+              </p>
+              <p className="text-xs text-muted-foreground/60 mt-2">
+                Untuk sekarang, hubungi admin di{" "}
+                <a href="https://t.me/ainsyir" target="_blank" rel="noopener noreferrer" className="text-primary font-medium hover:underline">
+                  @ainsyir
+                </a>
+              </p>
+            </div>
+            <button
+              onClick={() => { setView("login"); setError("") }}
+              className="flex items-center justify-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition mx-auto"
+            >
+              <ArrowLeft className="size-3" /> Kembali ke login
+            </button>
+          </div>
+        )}
+
+        {/* ═══════════════════════════════════════════
+            TELEGRAM OTP STEP
         ═══════════════════════════════════════════ */}
         {tgStep === "code" && (
           <div className="space-y-4">
@@ -432,7 +715,7 @@ export default function LoginPage() {
                 Kode 6 digit dikirim ke Telegram kamu ✨
               </p>
               <p className="text-xs text-muted-foreground/60">
-                @<span className="font-medium text-foreground">{tgUsername}</span>
+                @{tgUsername}
               </p>
             </div>
             <div className="flex gap-2">
@@ -480,7 +763,94 @@ export default function LoginPage() {
         )}
 
         {/* ═══════════════════════════════════════════
-            EMAIL INPUT STEP [P0 new]
+            TELEGRAM IDLE — Show username input
+        ═══════════════════════════════════════════ */}
+        {tgStep === "idle" && view === "login" && emailStep === "idle" && (
+          <div className="space-y-3">
+            <div className="flex gap-2">
+              <input
+                ref={tgInputRef}
+                type="text"
+                placeholder="Username Telegram (tanpa @)"
+                value={tgUsername}
+                onChange={(e) => { setTgUsername(e.target.value.replace(/[^a-zA-Z0-9_]/g, '')); setError("") }}
+                onKeyDown={(e) => e.key === "Enter" && handleTelegramRequest()}
+                maxLength={50}
+                aria-label="Username Telegram"
+                className="flex-1 rounded-xl border border-border bg-card px-4 py-3 text-sm outline-none transition-all focus:border-primary focus:ring-2 focus:ring-primary/20"
+              />
+              <button
+                onClick={handleTelegramRequest}
+                disabled={loading === "telegram"}
+                aria-label="Kirim kode verifikasi ke Telegram"
+                title="Kirim kode OTP"
+                className="flex items-center justify-center gap-1.5 rounded-xl bg-[#229ED9] px-3 py-3 text-sm font-semibold text-white transition-all hover:bg-[#1d8ec4] active:scale-[0.98] disabled:opacity-50 focus-visible:ring-2 focus-visible:ring-[#229ED9] focus-visible:ring-offset-2"
+              >
+                {loading === "telegram" ? (
+                  <Loader2 className="size-5 animate-spin" />
+                ) : (
+                  <>
+                    <Send className="size-4 shrink-0" />
+                    <span className="hidden sm:inline">Kirim</span>
+                  </>
+                )}
+              </button>
+            </div>
+
+            {/* Bot not found info box */}
+            {botUrl && (
+              <div className="space-y-2 rounded-xl border border-primary/30 bg-primary/5 p-4 animate-[slideUp_0.2s_ease]" role="alert">
+                <p className="text-sm font-medium">🤖 Bot belum ditemukan!</p>
+                <p className="text-xs text-muted-foreground">
+                  Kamu perlu /start dulu ke bot Telegram FinWise sebelum bisa login.
+                </p>
+                <a
+                  href={botUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex w-full items-center justify-center gap-2 rounded-lg bg-[#229ED9] px-4 py-2.5 text-sm font-medium text-white transition hover:bg-[#1d8ec4] active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-[#229ED9]"
+                >
+                  <MessageCircle className="size-4" /> Buka @KiyAii_bot
+                </a>
+                <p className="text-xs text-muted-foreground">
+                  Setelah kirim /start, balik sini dan klik tombol Kirim lagi
+                </p>
+              </div>
+            )}
+
+            {/* Channel not joined info box */}
+            {channelUrl && (
+              <div className="space-y-2 rounded-xl border border-orange-300/30 bg-orange-500/5 p-4 animate-[slideUp_0.2s_ease]" role="alert">
+                <p className="text-sm font-medium">📢 Belum join channel!</p>
+                <p className="text-xs text-muted-foreground">
+                  Kamu harus join channel Telegram dulu sebelum bisa login.
+                </p>
+                <a
+                  href={channelUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex w-full items-center justify-center gap-2 rounded-lg bg-[#229ED9] px-4 py-2.5 text-sm font-medium text-white transition hover:bg-[#1d8ec4] active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-[#229ED9]"
+                >
+                  <MessageCircle className="size-4" /> Join Channel @ainsyir
+                </a>
+                <p className="text-xs text-muted-foreground">
+                  Setelah join, balik sini dan coba lagi
+                </p>
+              </div>
+            )}
+
+            {/* Back to email+password */}
+            <button
+              onClick={() => { setTgStep("idle"); setError(""); setTimeout(() => authEmailRef.current?.focus(), 100) }}
+              className="flex items-center justify-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition mx-auto"
+            >
+              <ArrowLeft className="size-3" /> Kembali
+            </button>
+          </div>
+        )}
+
+        {/* ═══════════════════════════════════════════
+            EMAIL OTP STEPS
         ═══════════════════════════════════════════ */}
         {emailStep === "input" && (
           <div className="space-y-4">
@@ -499,13 +869,13 @@ export default function LoginPage() {
                 onChange={(e) => { setEmail(e.target.value); setError("") }}
                 onKeyDown={(e) => e.key === "Enter" && handleEmailRequest()}
                 aria-label="Alamat email"
-                className="flex-1 rounded-xl border border-border bg-card px-4 py-3.5 text-sm outline-none transition-all focus:border-primary focus:ring-2 focus:ring-primary/20"
+                className="flex-1 rounded-xl border border-border bg-card px-4 py-3 text-sm outline-none transition-all focus:border-primary focus:ring-2 focus:ring-primary/20"
               />
               <button
                 onClick={handleEmailRequest}
                 disabled={loading === "email"}
                 aria-label="Kirim kode verifikasi ke email"
-                className="flex items-center justify-center gap-1.5 rounded-xl bg-primary px-4 py-3.5 text-sm font-semibold text-white transition-all hover:bg-primary/90 active:scale-[0.98] disabled:opacity-50 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+                className="flex items-center justify-center gap-1.5 rounded-xl bg-primary px-3 py-3 text-sm font-semibold text-white transition-all hover:bg-primary/90 active:scale-[0.98] disabled:opacity-50 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
               >
                 {loading === "email" ? (
                   <Loader2 className="size-5 animate-spin" />
@@ -582,12 +952,7 @@ export default function LoginPage() {
           </div>
         )}
 
-        {/* ═══════════════════════════════════════════
-            EMAIL INLINE FORM (shown when clicking email button)
-        ═══════════════════════════════════════════ */}
-        {emailStep === "idle" && tgStep !== "idle" ? null : null}
-
-        {/* ─── Footer ─── [P0/P1] */}
+        {/* ─── Footer ─── */}
         <div className="space-y-2 text-center">
           <p className="flex items-center justify-center gap-1.5 text-xs text-muted-foreground">
             🔒 Data kamu aman & tersimpan di server terenkripsi

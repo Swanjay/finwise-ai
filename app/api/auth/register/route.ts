@@ -1,0 +1,151 @@
+import { NextResponse } from "next/server"
+import bcrypt from "bcryptjs"
+import { createClient } from "@supabase/supabase-js"
+import crypto from "crypto"
+
+function getAuthSupabase() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY
+  if (!url || !key) return null
+  return createClient(url, key)
+}
+
+// POST /api/auth/register
+export async function POST(req: Request) {
+  try {
+    let body: unknown
+    try {
+      body = await req.json()
+    } catch {
+      return NextResponse.json({ error: "Request body tidak valid" }, { status: 400 })
+    }
+
+    const { email, password, name } = body as {
+      email?: string
+      password?: string
+      name?: string
+    }
+
+    // ─── Validate ───
+    if (!email || typeof email !== "string") {
+      return NextResponse.json({ error: "Email wajib diisi" }, { status: 400 })
+    }
+    if (!password || typeof password !== "string") {
+      return NextResponse.json({ error: "Password wajib diisi" }, { status: 400 })
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(email.trim())) {
+      return NextResponse.json({ error: "Format email tidak valid" }, { status: 400 })
+    }
+
+    if (password.length < 6) {
+      return NextResponse.json({ error: "Password minimal 6 karakter" }, { status: 400 })
+    }
+
+    const normalizedEmail = email.trim().toLowerCase()
+    const userId = `email:${normalizedEmail}`
+
+    // ─── Check if already registered ───
+    const supabase = getAuthSupabase()
+    if (!supabase) {
+      return NextResponse.json(
+        { error: "Server tidak terkonfigurasi. Hubungi admin." },
+        { status: 500 }
+      )
+    }
+
+    const { data: existing } = await supabase
+      .from("user_credentials")
+      .select("user_id")
+      .eq("user_id", userId)
+      .single()
+
+    if (existing) {
+      return NextResponse.json(
+        { error: "Email sudah terdaftar. Gunakan email lain atau login." },
+        { status: 409 }
+      )
+    }
+
+    // ─── Hash password ───
+    const salt = await bcrypt.genSalt(12)
+    const passwordHash = await bcrypt.hash(password, salt)
+
+    // ─── Store credentials ───
+    const displayName = name?.trim() || normalizedEmail.split("@")[0]
+    const { error: insertError } = await supabase
+      .from("user_credentials")
+      .insert({
+        user_id: userId,
+        password_hash: passwordHash,
+        email: normalizedEmail,
+        name: displayName,
+      })
+
+    if (insertError) {
+      console.error("[register] Insert error:", insertError)
+      return NextResponse.json(
+        { error: "Gagal mendaftarkan akun. Coba lagi." },
+        { status: 500 }
+      )
+    }
+
+    // ─── Also create Supabase Auth user (so sync works) ───
+    try {
+      const { error: createUserError } = await supabase.auth.admin.createUser({
+        email: normalizedEmail,
+        password,
+        email_confirm: true,
+        user_metadata: {
+          name: displayName,
+          provider: "email-password",
+        },
+      })
+      if (createUserError) {
+        console.warn("[register] Supabase auth user creation:", createUserError)
+        // Non-fatal — credentials already stored
+      }
+    } catch (err) {
+      console.warn("[register] Supabase auth user exception:", err)
+    }
+
+    return NextResponse.json({
+      ok: true,
+      message: "Akun berhasil dibuat! Silakan login.",
+      user: { email: normalizedEmail, name: displayName },
+    })
+  } catch (err) {
+    console.error("[register] Error:", err)
+    return NextResponse.json({ error: "Terjadi kesalahan server" }, { status: 500 })
+  }
+}
+
+// GET to check registration status
+export async function GET(req: Request) {
+  const { searchParams } = new URL(req.url)
+  const email = searchParams.get("email")
+
+  if (!email) {
+    return NextResponse.json({ registered: false })
+  }
+
+  const supabase = getAuthSupabase()
+  if (!supabase) {
+    return NextResponse.json({ registered: false })
+  }
+
+  const normalizedEmail = email.trim().toLowerCase()
+  const userId = `email:${normalizedEmail}`
+
+  const { data } = await supabase
+    .from("user_credentials")
+    .select("user_id, name")
+    .eq("user_id", userId)
+    .single()
+
+  return NextResponse.json({
+    registered: !!data,
+    name: data?.name || null,
+  })
+}
