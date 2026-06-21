@@ -28,6 +28,7 @@ import { SmartBudgetSheet } from '@/components/finwise/smart-budget'
 import { SplitBillSheet } from '@/components/finwise/split-bill'
 import { haptic } from '@/lib/haptics'
 import FinWiseLogo from '@/components/finwise-logo'
+import { ThemePicker } from '@/components/finwise/theme-picker'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -641,39 +642,10 @@ function SettingsSheet({ onClose, onOpenSheet }: { onClose: () => void; onOpenSh
         </Button>
       </div>
 
-      {/* Accent Color */}
+      {/* Warna Tema */}
       <div className="flex flex-col gap-2">
         <Label className="text-sm">Warna Aksen</Label>
-        <div className="flex gap-2 flex-wrap">
-          {[
-            { id: 'purple', color: '#8A6ECF', label: 'Ungu' },
-            { id: 'blue', color: '#5B9BD5', label: 'Biru' },
-            { id: 'green', color: '#4CAF50', label: 'Hijau' },
-            { id: 'pink', color: '#EC4899', label: 'Pink' },
-            { id: 'orange', color: '#F97316', label: 'Oranye' },
-            { id: 'teal', color: '#14B8A6', label: 'Teal' },
-          ].map((c) => (
-            <button
-              key={c.id}
-              onClick={() => setAccentColor(c.id)}
-              aria-label={`Warna aksen ${c.label}`}
-              className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition ${
-                accentColor === c.id
-                  ? 'ring-2 ring-offset-2 bg-opacity-100'
-                  : 'bg-opacity-70 hover:bg-opacity-100'
-              }`}
-              style={{ 
-                backgroundColor: c.color + '20', 
-                color: c.color,
-                ...(accentColor === c.id ? { ringColor: c.color } : {})
-              }}
-              title={c.label}
-            >
-              <span className="size-3 rounded-full" style={{ backgroundColor: c.color }} />
-              {c.label}
-            </button>
-          ))}
-        </div>
+        <ThemePicker />
       </div>
 
       {/* Font Size */}

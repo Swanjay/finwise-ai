@@ -152,6 +152,10 @@
   --border: rgba(155, 127, 212, 0.15);
   --input: rgba(155, 127, 212, 0.1);
   --ring: #9b7fd4;
+  /* Theme dynamic vars (overridden by JS theme picker) */
+  --clay-card-dark: var(--card);
+  --clay-greeting-dark: #3a2d5a;
+  --clay-nav-dark: var(--card);
   --chart-1: #9b7fd4;
   --chart-2: #c4a0e8;
   --chart-3: #66BB6A;
@@ -211,7 +215,7 @@ html, html * {
 }
 
 .dark .clay-card {
-  background: var(--card);
+  background: var(--clay-card-dark, var(--card));
   box-shadow:
     0 4px 20px rgba(0, 0, 0, 0.2),
     0 1px 4px rgba(0, 0, 0, 0.15),
@@ -228,7 +232,7 @@ html, html * {
 }
 
 .dark .clay-card-purple {
-  background: #3a2d5a;
+  background: var(--clay-greeting-dark, #3a2d5a);
   box-shadow:
     0 4px 20px rgba(0, 0, 0, 0.25),
     inset 0 1px 0 rgba(155, 127, 212, 0.2);
@@ -384,7 +388,7 @@ html, html * {
     inset 0 1px 0 rgba(255, 255, 255, 0.9);
 }
 .dark .clay-bottom-nav {
-  background: var(--card);
+  background: var(--clay-nav-dark, var(--card));
   box-shadow:
     0 -4px 20px rgba(0, 0, 0, 0.25),
     0 4px 16px rgba(0, 0, 0, 0.2),
