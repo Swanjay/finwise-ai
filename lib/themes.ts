@@ -155,7 +155,7 @@ export const THEMES: ThemeColors[] = [
 ]
 
 const STORAGE_KEY = 'fw.colorTheme.v1'
-const DEFAULT_THEME = 'purple'
+const DEFAULT_THEME = 'emerald'
 
 export function getStoredThemeId(): string {
   if (typeof window === 'undefined') return DEFAULT_THEME

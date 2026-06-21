@@ -56,7 +56,7 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = {
   colorScheme: 'light',
-  themeColor: '#F5F3FF',
+  themeColor: '#ECFDF5',
 }
 
 // Theme color map — must be kept in sync with lib/themes.ts
@@ -87,10 +87,10 @@ const THEME_MAP: Record<string, { dark: Record<string, string>; light: Record<st
 const themeScript = `
 (function(){
   try {
-    var id = localStorage.getItem('fw.colorTheme.v1') || 'purple';
+    var id = localStorage.getItem('fw.colorTheme.v1') || 'emerald';
     var dark = document.documentElement.classList.contains('dark');
     var m = ${JSON.stringify(THEME_MAP)};
-    var t = m[id] || m.purple;
+    var t = m[id] || m.emerald;
     var p = dark ? t.dark : t.light;
     var r = document.documentElement;
     r.style.setProperty('--background', p.bg);
