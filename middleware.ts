@@ -5,8 +5,27 @@ import { getToken } from 'next-auth/jwt'
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl
 
-  // Root landing page — always accessible
-  if (pathname === '/') return NextResponse.next()
+  // Root landing page — public pages go through, but authenticated users still need invite
+  const publicPageRoutes = ['/', '/about', '/privacy', '/terms']
+  if (publicPageRoutes.includes(pathname)) {
+    // For '/', check if user is authenticated AND needs invite
+    if (pathname === '/') {
+      const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET })
+      if (token) {
+        // Authenticated user on root — check invite activation
+        const activated = req.cookies.get('finwise-activated')?.value === 'true'
+        if (!activated) {
+          const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+          const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+          if (supabaseUrl && supabaseKey) {
+            const verifyUrl = new URL('/verify-invite', req.url)
+            return NextResponse.redirect(verifyUrl)
+          }
+        }
+      }
+    }
+    return NextResponse.next()
+  }
 
   // Public routes — no auth needed
   const publicPaths = [
