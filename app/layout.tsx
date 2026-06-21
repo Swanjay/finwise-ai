@@ -22,12 +22,10 @@ export const metadata: Metadata = {
   title: 'FinWise — Catat Keuangan Lebih Pintar',
   description:
     'Aplikasi keuangan pribadi berbasis AI. Catat pemasukan & pengeluaran, scan struk otomatis, atur anggaran, dan dapatkan saran hemat. Bahasa Indonesia.',
-  generator: 'v0.app',
-  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || 'https://finny.biz.id'),
+  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || 'https://finwise.my.id'),
   openGraph: {
     title: 'FinWise — Catat Keuangan Lebih Pintar',
     description: 'Aplikasi keuangan pribadi berbasis AI. Catat pemasukan & pengeluaran, scan struk otomatis, atur anggaran.',
-    url: 'https://finny.biz.id',
     siteName: 'FinWise',
     images: [
       {
@@ -52,7 +50,7 @@ export const metadata: Metadata = {
     apple: '/mascot-cat-192.png',
   },
   alternates: {
-    canonical: 'https://finny.biz.id',
+    canonical: './',
   },
 }
 
