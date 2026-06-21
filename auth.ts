@@ -53,7 +53,7 @@ export const authOptions: NextAuthOptions = {
         // Look up password hash from user_credentials table
         const { data: cred, error } = await supabase
           .from("user_credentials")
-          .select("password_hash, name")
+          .select("password_hash")
           .eq("user_id", userId)
           .single()
 
@@ -65,7 +65,7 @@ export const authOptions: NextAuthOptions = {
 
         return {
           id: userId,
-          name: cred.name || email.split("@")[0],
+          name: email.split("@")[0],
           email,
           image: null,
         }

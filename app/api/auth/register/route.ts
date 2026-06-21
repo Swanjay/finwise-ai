@@ -73,14 +73,11 @@ export async function POST(req: Request) {
     const passwordHash = await bcrypt.hash(password, salt)
 
     // ─── Store credentials ───
-    const displayName = name?.trim() || normalizedEmail.split("@")[0]
     const { error: insertError } = await supabase
       .from("user_credentials")
       .insert({
         user_id: userId,
         password_hash: passwordHash,
-        email: normalizedEmail,
-        name: displayName,
       })
 
     if (insertError) {
@@ -91,28 +88,22 @@ export async function POST(req: Request) {
       )
     }
 
-    // ─── Also create Supabase Auth user (so sync works) ───
+    // ─── Also create Supabase Auth user (so session works) ───
     try {
-      const { error: createUserError } = await supabase.auth.admin.createUser({
+      await supabase.auth.admin.createUser({
         email: normalizedEmail,
         password,
         email_confirm: true,
-        user_metadata: {
-          name: displayName,
-          provider: "email-password",
-        },
+        user_metadata: { provider: "email-password" },
       })
-      if (createUserError) {
-        console.warn("[register] Supabase auth user creation:", createUserError)
-        // Non-fatal — credentials already stored
-      }
-    } catch (err) {
-      console.warn("[register] Supabase auth user exception:", err)
+    } catch {
+      // Non-fatal
     }
 
+    const displayName = name?.trim() || normalizedEmail.split("@")[0]
     return NextResponse.json({
       ok: true,
-      message: "Akun berhasil dibuat! Silakan login.",
+      message: "Akun berhasil dibuat!",
       user: { email: normalizedEmail, name: displayName },
     })
   } catch (err) {
@@ -140,12 +131,11 @@ export async function GET(req: Request) {
 
   const { data } = await supabase
     .from("user_credentials")
-    .select("user_id, name")
+    .select("user_id")
     .eq("user_id", userId)
     .single()
 
   return NextResponse.json({
     registered: !!data,
-    name: data?.name || null,
   })
 }
