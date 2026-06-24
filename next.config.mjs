@@ -70,8 +70,9 @@ const nextConfig = {
         ],
       },
       {
-        // CORS for API routes — restrict to own origin
-        source: '/api/(.*)',
+        // CORS — restrict to own origin on ALL routes (not just /api)
+        // Prevents Vercel CDN from serving `access-control-allow-origin: *`
+        source: '/(.*)',
         headers: [
           {
             key: 'Access-Control-Allow-Origin',
@@ -80,6 +81,32 @@ const nextConfig = {
           {
             key: 'Access-Control-Allow-Methods',
             value: 'GET, POST, OPTIONS',
+          },
+          {
+            key: 'Access-Control-Allow-Headers',
+            value: 'Content-Type, Authorization',
+          },
+          {
+            key: 'Access-Control-Max-Age',
+            value: '86400',
+          },
+          {
+            key: 'Access-Control-Allow-Credentials',
+            value: 'true',
+          },
+        ],
+      },
+      {
+        // CORS for API routes — same origin restriction (explicit)
+        source: '/api/(.*)',
+        headers: [
+          {
+            key: 'Access-Control-Allow-Origin',
+            value: appUrl,
+          },
+          {
+            key: 'Access-Control-Allow-Methods',
+            value: 'GET, POST, PUT, DELETE, OPTIONS',
           },
           {
             key: 'Access-Control-Allow-Headers',
