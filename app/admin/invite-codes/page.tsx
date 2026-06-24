@@ -1,8 +1,8 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
-import { useSession } from "next-auth/react"
-import { KeyRound, Loader2, Trash2, Plus, Copy, Check } from "lucide-react"
+import { useSession, signIn } from "next-auth/react"
+import { KeyRound, Loader2, Trash2, Plus, Copy, Check, LogIn } from "lucide-react"
 
 interface InviteCode {
   code: string
@@ -97,7 +97,16 @@ export default function InviteCodesAdmin() {
   if (!session?.user) {
     return (
       <div className="flex min-h-dvh items-center justify-center bg-background p-6">
-        <p className="text-muted-foreground">Silakan login terlebih dahulu</p>
+        <div className="text-center space-y-4">
+          <p className="text-muted-foreground">Silakan login terlebih dahulu</p>
+          <button
+            onClick={() => signIn()}
+            className="flex items-center justify-center gap-2 rounded-lg bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground transition active:scale-[0.98]"
+          >
+            <LogIn className="size-4" />
+            Login ke FinWise
+          </button>
+        </div>
       </div>
     )
   }
