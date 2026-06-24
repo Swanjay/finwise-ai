@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
-import { KeyRound, Loader2, Trash2, Plus, Copy, Check, LogIn, LogOut, Users, Eye, EyeOff, Calendar } from "lucide-react"
+import { KeyRound, Loader2, Trash2, Plus, Copy, Check, LogIn, LogOut, Users, Eye, EyeOff, Calendar, Pencil, X } from "lucide-react"
 
 interface InviteCode {
   code: string
@@ -42,6 +42,13 @@ export default function AdminCodes() {
 
   // Expiry
   const [expiresAt, setExpiresAt] = useState("")
+
+  // Edit mode
+  const [editingCode, setEditingCode] = useState<string | null>(null)
+  const [editExpiry, setEditExpiry] = useState("")
+  const [editMaxUses, setEditMaxUses] = useState(1)
+  const [editDesc, setEditDesc] = useState("")
+  const [saving, setSaving] = useState(false)
 
   // Check if already logged in
   useEffect(() => {
@@ -127,6 +134,44 @@ export default function AdminCodes() {
       const data = await res.json()
       if (data.ok) fetchData()
     } catch { setError("Gagal menghapus") }
+  }
+
+  function startEdit(c: InviteCode) {
+    setEditingCode(c.code)
+    setEditExpiry(c.expires_at ? c.expires_at.slice(0, 10) : "")
+    setEditMaxUses(c.max_uses)
+    setEditDesc(c.description || "")
+  }
+
+  async function handleUpdate() {
+    if (!editingCode) return
+    setSaving(true)
+    setError("")
+    try {
+      const res = await fetch("/api/admin/codes-simple", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "update",
+          code: editingCode,
+          expiresAt: editExpiry || null,
+          maxUses: editMaxUses,
+          description: editDesc.trim() || null,
+        }),
+      })
+      const data = await res.json()
+      if (data.ok) {
+        setEditingCode(null)
+        fetchData()
+      } else {
+        setError(data.error || "Gagal update")
+      }
+    } catch { setError("Koneksi gagal") }
+    setSaving(false)
+  }
+
+  function cancelEdit() {
+    setEditingCode(null)
   }
 
   function copyCode(code: string) {
@@ -376,9 +421,20 @@ export default function AdminCodes() {
                           {copied === c.code ? <Check className="size-3.5 text-green-500" /> : <Copy className="size-3.5" />}
                         </button>
                       </div>
-                      <button onClick={() => handleDelete(c.code)} className="text-muted-foreground hover:text-destructive transition" title="Hapus">
-                        <Trash2 className="size-3.5" />
-                      </button>
+                      <div className="flex items-center gap-2">
+                        {editingCode === c.code ? (
+                          <button onClick={cancelEdit} className="text-muted-foreground hover:text-destructive transition" title="Batal edit">
+                            <X className="size-3.5" />
+                          </button>
+                        ) : (
+                          <button onClick={() => startEdit(c)} className="text-muted-foreground hover:text-primary transition" title="Edit kode">
+                            <Pencil className="size-3.5" />
+                          </button>
+                        )}
+                        <button onClick={() => handleDelete(c.code)} className="text-muted-foreground hover:text-destructive transition" title="Hapus">
+                          <Trash2 className="size-3.5" />
+                        </button>
+                      </div>
                     </div>
 
                     <div className="flex items-center gap-3 text-xs text-muted-foreground">
@@ -422,6 +478,86 @@ export default function AdminCodes() {
                             ))}
                           </div>
                         )}
+                      </div>
+                    )}
+
+                    {/* ── Edit form ── */}
+                    {editingCode === c.code && (
+                      <div className="mt-3 space-y-3 rounded-lg border border-primary/30 bg-primary/5 p-3">
+                        <p className="text-xs font-semibold text-primary">Edit {c.code}</p>
+                        <div>
+                          <label className="text-[10px] text-muted-foreground">Masa Berlaku</label>
+                          <div className="mt-1 flex gap-2">
+                            <input
+                              type="date"
+                              value={editExpiry}
+                              onChange={e => setEditExpiry(e.target.value)}
+                              className="flex-1 rounded-lg border border-border bg-background px-3 py-1.5 text-xs outline-none focus:border-primary"
+                            />
+                            {editExpiry && (
+                              <button onClick={() => setEditExpiry("")} className="text-[10px] text-muted-foreground hover:text-destructive">
+                                Hapus
+                              </button>
+                            )}
+                          </div>
+                          <div className="mt-1 flex gap-1">
+                            {[
+                              { label: "7 hari", days: 7 },
+                              { label: "30 hari", days: 30 },
+                              { label: "90 hari", days: 90 },
+                              { label: "1 tahun", days: 365 },
+                            ].map(p => (
+                              <button
+                                key={p.days}
+                                type="button"
+                                onClick={() => {
+                                  const d = new Date()
+                                  d.setDate(d.getDate() + p.days)
+                                  setEditExpiry(d.toISOString().slice(0, 10))
+                                }}
+                                className="rounded bg-muted px-1.5 py-0.5 text-[9px] text-muted-foreground hover:bg-primary/10 hover:text-primary transition"
+                              >
+                                {p.label}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                        <div className="flex gap-3">
+                          <div className="flex-1">
+                            <label className="text-[10px] text-muted-foreground">Max User</label>
+                            <input
+                              type="number"
+                              min={1}
+                              max={100}
+                              value={editMaxUses}
+                              onChange={e => setEditMaxUses(parseInt(e.target.value) || 1)}
+                              className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-1.5 text-xs outline-none focus:border-primary"
+                            />
+                          </div>
+                          <div className="flex-[2]">
+                            <label className="text-[10px] text-muted-foreground">Deskripsi</label>
+                            <input
+                              type="text"
+                              value={editDesc}
+                              onChange={e => setEditDesc(e.target.value)}
+                              maxLength={50}
+                              className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-1.5 text-xs outline-none focus:border-primary"
+                            />
+                          </div>
+                        </div>
+                        <div className="flex gap-2">
+                          <button
+                            onClick={handleUpdate}
+                            disabled={saving}
+                            className="flex items-center justify-center gap-1 rounded-lg bg-primary px-4 py-1.5 text-xs font-semibold text-primary-foreground transition active:scale-[0.98] disabled:opacity-50"
+                          >
+                            {saving ? <Loader2 className="size-3 animate-spin" /> : null}
+                            Simpan
+                          </button>
+                          <button onClick={cancelEdit} className="rounded-lg border border-border px-4 py-1.5 text-xs text-muted-foreground hover:text-foreground transition">
+                            Batal
+                          </button>
+                        </div>
                       </div>
                     )}
                   </div>

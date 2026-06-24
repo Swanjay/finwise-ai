@@ -75,6 +75,29 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: true })
   }
 
+  // Edit code (update expiry/description/maxUses)
+  if (body.action === 'update') {
+    const supabase = getSupabase()
+    if (!supabase) return NextResponse.json({ ok: false, error: 'DB error' }, { status: 500 })
+
+    const updates: Record<string, unknown> = {}
+    if (body.expiresAt !== undefined) updates.expires_at = body.expiresAt || null
+    if (body.description !== undefined) updates.description = body.description || null
+    if (body.maxUses !== undefined) updates.max_uses = body.maxUses
+
+    if (Object.keys(updates).length === 0) {
+      return NextResponse.json({ ok: false, error: 'Tidak ada perubahan' }, { status: 400 })
+    }
+
+    const { error } = await supabase
+      .from('invite_codes')
+      .update(updates)
+      .eq('code', body.code)
+
+    if (error) return NextResponse.json({ ok: false, error: error.message }, { status: 500 })
+    return NextResponse.json({ ok: true })
+  }
+
   return NextResponse.json({ ok: false, error: 'Unknown action' }, { status: 400 })
 }
 
