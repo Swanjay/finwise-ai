@@ -43,10 +43,12 @@ export async function POST(req: Request) {
     if (!supabase) return NextResponse.json({ ok: false, error: 'DB error' }, { status: 500 })
 
     const code = body.code || generateCode()
+    const expiresAt = body.expiresAt || null
     const { error } = await supabase.from('invite_codes').insert({
       code,
       max_uses: body.maxUses || 1,
       description: body.description || null,
+      expires_at: expiresAt,
     })
 
     if (error) {
