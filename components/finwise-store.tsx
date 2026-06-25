@@ -110,6 +110,7 @@ interface FinwiseStore {
   addRecurring: (r: RecurringItem) => void
   toggleRecurring: (id: string) => void
   deleteRecurring: (id: string) => void
+  updateRecurring: (id: string, data: Partial<RecurringItem>) => void
 
   // PIN
   pin: string | null
@@ -377,6 +378,10 @@ export function FinwiseProvider({ children }: { children: ReactNode }) {
     setRecurring((prev) => prev.filter((r) => r.id !== id))
   }, [])
 
+  const updateRecurring = useCallback((id: string, data: Partial<RecurringItem>) => {
+    setRecurring((prev) => prev.map((r) => r.id === id ? { ...r, ...data } : r))
+  }, [])
+
   // PIN
   const setPin = useCallback(async (newPin: string | null) => {
     if (newPin === null) {
@@ -448,7 +453,7 @@ export function FinwiseProvider({ children }: { children: ReactNode }) {
         monthlyIncome, updateMonthlyIncome,
         wallets, addWallet, updateWallet, deleteWallet, getWalletBalance, getTotalBalance,
         goals, addGoal, updateGoal, deleteGoal, addToGoal,
-        recurring, addRecurring, toggleRecurring, deleteRecurring,
+        recurring, addRecurring, toggleRecurring, deleteRecurring, updateRecurring,
         pin, setPin, isLocked, unlock,
         theme, toggleTheme, accentColor, setAccentColor,
         fontSize, setFontSize, compactMode, toggleCompactMode,

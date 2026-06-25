@@ -86,6 +86,9 @@ export interface RecurringItem {
   description: string
   frequency: 'harian' | 'mingguan' | 'bulanan'
   active: boolean
+  dueDate?: number  // 1-31, hari jatuh tempo (khusus bulanan)
+  endDate?: string  // YYYY-MM-DD, tanggal berakhir (opsional)
+  color?: string    // custom color (opsional)
 }
 
 // ─── Indonesian → English Category Alias ───
