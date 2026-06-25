@@ -1,13 +1,29 @@
 import { NextResponse } from "next/server"
-import { getServerSession } from "next-auth"
-import { authOptions } from "@/auth"
 import { createClient } from "@supabase/supabase-js"
+import bcrypt from "bcryptjs"
+
+const ADMIN_USER = process.env.ADMIN_USER || "fure"
+const ADMIN_PASS_HASH = process.env.ADMIN_PASS_HASH || ""
 
 function getSupabase() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY
   if (!url || !key) return null
   return createClient(url, key)
+}
+
+function checkAuth(req: Request): boolean {
+  const cookie = req.headers.get("cookie") || ""
+  const match = cookie.match(/fw-admin-session=([^;]+)/)
+  if (!match) return false
+  try {
+    const val = decodeURIComponent(match[1])
+    const [user, hash] = val.split(":")
+    if (user !== ADMIN_USER) return false
+    return bcrypt.compareSync(ADMIN_PASS_HASH, hash)
+  } catch {
+    return false
+  }
 }
 
 // Suspicious email patterns
@@ -34,10 +50,9 @@ function isSuspiciousEmail(email: string): string | null {
   return null
 }
 
-export async function GET() {
-  // Check auth
-  const session = await getServerSession(authOptions)
-  if (!session?.user?.email) {
+export async function GET(req: Request) {
+  // Check auth via cookie
+  if (!checkAuth(req)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 

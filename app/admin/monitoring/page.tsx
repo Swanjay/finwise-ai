@@ -1,7 +1,6 @@
 "use client"
-import { useState, useEffect } from "react"
-import { useSession } from "next-auth/react"
-import { Loader2, AlertTriangle, TrendingUp, Users, Calendar, Shield, RefreshCw } from "lucide-react"
+import { useState, useEffect, useCallback } from "react"
+import { Loader2, AlertTriangle, TrendingUp, Users, Calendar, Shield, RefreshCw, LogIn, LogOut } from "lucide-react"
 
 interface Stats {
   total: number
@@ -31,12 +30,68 @@ interface MonitoringData {
 }
 
 export default function MonitoringPage() {
-  const { data: session, status } = useSession()
+  const [loggedIn, setLoggedIn] = useState(false)
+  const [checking, setChecking] = useState(true)
+  const [username, setUsername] = useState("")
+  const [password, setPassword] = useState("")
+  const [loginError, setLoginError] = useState("")
+  const [loggingIn, setLoggingIn] = useState(false)
+
   const [data, setData] = useState<MonitoringData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
 
-  async function fetchData() {
+  // Check cookie on mount
+  useEffect(() => {
+    const cookie = document.cookie.match(/fw-admin-session=([^;]+)/)
+    if (cookie) {
+      // Verify cookie is valid by trying to fetch
+      fetch("/api/admin/monitoring").then(r => {
+        if (r.ok) {
+          setLoggedIn(true)
+          r.json().then(json => { setData(json); setLoading(false) })
+        } else {
+          setLoggedIn(false)
+          setLoading(false)
+        }
+      }).catch(() => { setLoggedIn(false); setLoading(false) })
+    } else {
+      setLoggedIn(false)
+      setLoading(false)
+    }
+    setChecking(false)
+  }, [])
+
+  async function handleLogin(e: React.FormEvent) {
+    e.preventDefault()
+    setLoggingIn(true)
+    setLoginError("")
+    try {
+      const res = await fetch("/api/admin/codes-simple", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "login", username, password }),
+      })
+      const json = await res.json()
+      if (json.ok) {
+        setLoggedIn(true)
+        fetchData()
+      } else {
+        setLoginError(json.error || "Login gagal")
+      }
+    } catch {
+      setLoginError("Koneksi gagal")
+    }
+    setLoggingIn(false)
+  }
+
+  function handleLogout() {
+    document.cookie = "fw-admin-session=; path=/; max-age=0"
+    setLoggedIn(false)
+    setData(null)
+  }
+
+  const fetchData = useCallback(async () => {
     setLoading(true)
     setError("")
     try {
@@ -51,13 +106,10 @@ export default function MonitoringPage() {
       setError(err instanceof Error ? err.message : "Failed to load data")
     }
     setLoading(false)
-  }
-
-  useEffect(() => {
-    fetchData()
   }, [])
 
-  if (status === "loading" || loading) {
+  // ── Checking auth ──
+  if (checking) {
     return (
       <div className="min-h-screen bg-[#d5f5f0] flex items-center justify-center">
         <Loader2 className="size-8 animate-spin text-[#2cb5a0]" />
@@ -65,18 +117,55 @@ export default function MonitoringPage() {
     )
   }
 
-  if (!session) {
+  // ── Login form ──
+  if (!loggedIn) {
     return (
       <div className="min-h-screen bg-[#d5f5f0] flex items-center justify-center p-6">
-        <div className="bg-white rounded-3xl p-8 shadow-lg text-center max-w-md">
-          <Shield className="size-12 mx-auto text-red-400 mb-4" />
-          <h1 className="text-xl font-bold text-gray-800 mb-2">Access Denied</h1>
-          <p className="text-gray-600">Please login to access monitoring.</p>
+        <div className="bg-white rounded-3xl p-8 shadow-lg text-center max-w-sm w-full">
+          <Shield className="size-12 mx-auto text-[#2cb5a0] mb-4" />
+          <h1 className="text-xl font-bold text-gray-800 mb-2">Admin Monitoring</h1>
+          <p className="text-gray-500 text-sm mb-6">Masukkan kredensial admin untuk akses</p>
+          <form onSubmit={handleLogin} className="space-y-3">
+            <input
+              type="text"
+              placeholder="Username"
+              value={username}
+              onChange={e => setUsername(e.target.value)}
+              className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm focus:outline-none focus:border-[#2cb5a0]"
+              autoFocus
+            />
+            <input
+              type="password"
+              placeholder="Password"
+              value={password}
+              onChange={e => setPassword(e.target.value)}
+              className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm focus:outline-none focus:border-[#2cb5a0]"
+            />
+            {loginError && <p className="text-red-500 text-xs">{loginError}</p>}
+            <button
+              type="submit"
+              disabled={loggingIn}
+              className="w-full flex items-center justify-center gap-2 bg-[#2cb5a0] text-white py-2.5 rounded-xl font-semibold hover:bg-[#1a8f7d] transition disabled:opacity-50"
+            >
+              {loggingIn ? <Loader2 className="size-4 animate-spin" /> : <LogIn className="size-4" />}
+              Login
+            </button>
+          </form>
         </div>
       </div>
     )
   }
 
+  // ── Loading data ──
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[#d5f5f0] flex items-center justify-center">
+        <Loader2 className="size-8 animate-spin text-[#2cb5a0]" />
+      </div>
+    )
+  }
+
+  // ── Error state ──
   if (error) {
     return (
       <div className="min-h-screen bg-[#d5f5f0] flex items-center justify-center p-6">
@@ -84,9 +173,14 @@ export default function MonitoringPage() {
           <AlertTriangle className="size-12 mx-auto text-red-400 mb-4" />
           <h1 className="text-xl font-bold text-gray-800 mb-2">Error</h1>
           <p className="text-gray-600 mb-4">{error}</p>
-          <button onClick={fetchData} className="bg-[#2cb5a0] text-white px-6 py-2 rounded-xl font-semibold hover:bg-[#1a8f7d]">
-            Retry
-          </button>
+          <div className="flex gap-2 justify-center">
+            <button onClick={fetchData} className="bg-[#2cb5a0] text-white px-6 py-2 rounded-xl font-semibold hover:bg-[#1a8f7d]">
+              Retry
+            </button>
+            <button onClick={handleLogout} className="bg-gray-200 text-gray-700 px-6 py-2 rounded-xl font-semibold hover:bg-gray-300">
+              Logout
+            </button>
+          </div>
         </div>
       </div>
     )
@@ -106,10 +200,16 @@ export default function MonitoringPage() {
             </h1>
             <p className="text-[#6b9a91] text-sm mt-1">User registration analytics & abuse detection</p>
           </div>
-          <button onClick={fetchData} className="flex items-center gap-2 bg-white px-4 py-2 rounded-xl shadow-sm hover:shadow-md transition text-[#2cb5a0] font-semibold text-sm">
-            <RefreshCw className="size-4" />
-            Refresh
-          </button>
+          <div className="flex items-center gap-2">
+            <button onClick={() => fetchData()} className="flex items-center gap-2 bg-white px-4 py-2 rounded-xl shadow-sm hover:shadow-md transition text-[#2cb5a0] font-semibold text-sm">
+              <RefreshCw className="size-4" />
+              Refresh
+            </button>
+            <button onClick={handleLogout} className="flex items-center gap-2 bg-white px-4 py-2 rounded-xl shadow-sm hover:shadow-md transition text-gray-500 font-semibold text-sm">
+              <LogOut className="size-4" />
+              Logout
+            </button>
+          </div>
         </div>
 
         {/* Alerts */}
