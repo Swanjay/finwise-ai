@@ -1,9 +1,7 @@
 import { NextResponse } from "next/server"
 import { createClient } from "@supabase/supabase-js"
-import bcrypt from "bcryptjs"
-
 const ADMIN_USER = process.env.ADMIN_USER || "fure"
-const ADMIN_PASS_HASH = process.env.ADMIN_PASS_HASH || ""
+const ADMIN_PASS = process.env.ADMIN_PASS || "123"
 
 function getSupabase() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL
@@ -14,16 +12,9 @@ function getSupabase() {
 
 function checkAuth(req: Request): boolean {
   const cookie = req.headers.get("cookie") || ""
-  const match = cookie.match(/fw-admin-session=([^;]+)/)
+  const match = cookie.match(/fw-admin=([^;]+)/)
   if (!match) return false
-  try {
-    const val = decodeURIComponent(match[1])
-    const [user, hash] = val.split(":")
-    if (user !== ADMIN_USER) return false
-    return bcrypt.compareSync(ADMIN_PASS_HASH, hash)
-  } catch {
-    return false
-  }
+  return decodeURIComponent(match[1]) === ADMIN_PASS
 }
 
 // Suspicious email patterns

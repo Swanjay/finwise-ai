@@ -43,7 +43,7 @@ export default function MonitoringPage() {
 
   // Check cookie on mount
   useEffect(() => {
-    const cookie = document.cookie.match(/fw-admin-session=([^;]+)/)
+    const cookie = document.cookie.match(/fw-admin=([^;]+)/)
     if (cookie) {
       // Verify cookie is valid by trying to fetch
       fetch("/api/admin/monitoring").then(r => {
@@ -70,7 +70,7 @@ export default function MonitoringPage() {
       const res = await fetch("/api/admin/codes-simple", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "login", username, password }),
+        body: JSON.stringify({ action: "login", user: username, pass: password }),
       })
       const json = await res.json()
       if (json.ok) {
@@ -86,7 +86,7 @@ export default function MonitoringPage() {
   }
 
   function handleLogout() {
-    document.cookie = "fw-admin-session=; path=/; max-age=0"
+    document.cookie = "fw-admin=; path=/; max-age=0"
     setLoggedIn(false)
     setData(null)
   }
