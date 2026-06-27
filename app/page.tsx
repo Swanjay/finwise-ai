@@ -3,6 +3,7 @@
 import { useState, useMemo, useEffect, useCallback } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
+import { useRouter } from 'next/navigation'
 import {
   BarChart3, Camera, Home, ListChecks, Plus, Sparkles, Wallet,
   Settings, ChevronLeft, ChevronRight, Target, Repeat, Download,
@@ -1192,6 +1193,7 @@ function UserAvatar({ onOpenSettings }: { onOpenSettings?: () => void }) {
 function AppShell() {
   const { transactions, isLocked, pin, tipsDismissed, dismissTips, allCategories, addTransaction, theme, toggleTheme } = useFinwise()
   const { stats, newBadge, clearNewBadge } = useGamification()
+  const router = useRouter()
   const [tab, setTab] = useState<Tab>('home')
   const [sheet, setSheet] = useState<Sheet>(null)
   const [monthKey, setMonthKey] = useState(getMonthKey(new Date()))
@@ -1219,10 +1221,10 @@ function AppShell() {
   if (isLoading) return <LoadingScreen message="Menyiapkan dashboard..." />
 
   const navItems: { id: Tab; label: string; icon: typeof Home }[] = [
-    { id: 'home', label: 'Home', icon: Home },
+    { id: 'home', label: 'Stream', icon: Home },
     { id: 'transactions', label: 'Transaksi', icon: ListChecks },
-    { id: 'trends', label: 'Tren', icon: BarChart3 },
-    { id: 'budget', label: 'Anggaran', icon: Wallet },
+    { id: 'trends', label: 'Rencana', icon: BarChart3 },
+    { id: 'budget', label: 'Kesehatan', icon: Wallet },
   ]
 
   return (
@@ -1234,24 +1236,15 @@ function AppShell() {
           <div>
             <p className="text-xs text-muted-foreground font-medium">Selamat datang 👋</p>
             <h2 className="font-heading text-base font-bold text-foreground leading-tight">
-              {tab === 'home' && 'Dashboard'}
+              {tab === 'home' && 'Stream'}
               {tab === 'transactions' && 'Transaksi'}
-              {tab === 'trends' && 'Tren Keuangan'}
-              {tab === 'budget' && 'Anggaran'}
+              {tab === 'trends' && 'Rencana'}
+              {tab === 'budget' && 'Kesehatan'}
             </h2>
           </div>
         </div>
         <div className="flex items-center gap-2">
           <MonthNavigator monthKey={monthKey} onChange={setMonthKey} />
-          <NotificationBell onClick={() => { haptic.light(); setSheet('notifications') }} />
-          <button
-            onClick={() => { haptic.light(); toggleTheme() }}
-            aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
-            className="flex size-9 items-center justify-center rounded-full bg-card text-muted-foreground shadow-md hover:text-primary transition"
-            style={{ boxShadow: '0 4px 12px var(--theme-shadow, rgba(138,110,207,0.15))' }}
-                        >
-                          {theme === 'dark' ? <Sun className="size-4" /> : <Moon className="size-4" />}
-          </button>
           <UserAvatar onOpenSettings={() => setSheet('settings')} />
         </div>
       </header>
@@ -1296,13 +1289,13 @@ function AppShell() {
 
       {/* Bottom nav — Clay Style */}
       <nav className="fixed inset-x-0 bottom-4 z-40 mx-auto max-w-[360px] px-4">
-        <div className="clay-bottom-nav grid grid-cols-5 items-end px-3 py-3">
+        <div className="clay-bottom-nav grid grid-cols-5 items-center px-3 py-2">
           {navItems.slice(0, 2).map((item) => (
             <button
               key={item.id}
               onClick={() => { haptic.light(); setTab(item.id) }}
               className={cn(
-                'flex flex-col items-center gap-1 rounded-2xl py-1.5 px-2 text-[10px] font-semibold transition',
+                'flex flex-col items-center gap-0.5 rounded-2xl py-1.5 px-2 text-[10px] font-semibold transition',
                 tab === item.id
                   ? 'bg-[var(--color-clay-purple,#D0BFF5)] text-primary'
                   : 'text-muted-foreground hover:text-primary'
@@ -1315,7 +1308,7 @@ function AppShell() {
             <button
               onClick={() => { haptic.medium(); setSheet('scan') }}
               aria-label="Scan struk"
-              className="clay-btn -mt-7 flex size-14 items-center justify-center"
+              className="clay-btn -mt-5 flex size-14 items-center justify-center"
             >
               <Camera className="size-6" />
             </button>
@@ -1325,7 +1318,7 @@ function AppShell() {
               key={item.id}
               onClick={() => { haptic.light(); setTab(item.id) }}
               className={cn(
-                'flex flex-col items-center gap-1 rounded-2xl py-1.5 px-2 text-[10px] font-semibold transition',
+                'flex flex-col items-center gap-0.5 rounded-2xl py-1.5 px-2 text-[10px] font-semibold transition',
                 tab === item.id
                   ? 'bg-[var(--color-clay-purple,#D0BFF5)] text-primary'
                   : 'text-muted-foreground hover:text-primary'
@@ -1337,14 +1330,30 @@ function AppShell() {
         </div>
       </nav>
 
-      {/* FAB */}
-      <button
-        onClick={() => setSheet('add')}
-        aria-label="Catat transaksi baru"
-        className="clay-btn fixed bottom-24 right-5 z-30 flex size-12 items-center justify-center sm:hidden"
-      >
-        <Plus className="size-5" />
-      </button>
+      {/* FAB — Expandable */}
+      <div className="fixed bottom-20 right-5 z-30 flex flex-col-reverse items-center gap-3 sm:hidden">
+        <button
+          onClick={() => { haptic.medium(); setSheet('add') }}
+          aria-label="Catat transaksi baru"
+          className="clay-btn flex size-14 items-center justify-center shadow-lg"
+        >
+          <Plus className="size-6" />
+        </button>
+        <button
+          onClick={() => { haptic.light(); setSheet('scan') }}
+          aria-label="Scan struk"
+          className="flex size-10 items-center justify-center rounded-full bg-gradient-to-br from-green-400 to-teal-500 text-white shadow-lg"
+        >
+          <Camera className="size-5" />
+        </button>
+        <button
+          onClick={() => { haptic.light(); router.push('/voice') }}
+          aria-label="Voice input"
+          className="flex size-10 items-center justify-center rounded-full bg-gradient-to-br from-purple-400 to-blue-500 text-white shadow-lg"
+        >
+          <Mic className="size-5" />
+        </button>
+      </div>
 
       {/* Bottom Sheets */}
       <BottomSheet open={sheet === 'add'} onClose={() => setSheet(null)} title="Catat Transaksi"><AddTransactionForm onDone={() => setSheet(null)} /></BottomSheet>
