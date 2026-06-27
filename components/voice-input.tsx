@@ -98,6 +98,15 @@ export default function VoiceInput({ onResult, onError }: VoiceInputProps) {
     }
     logs.push("✅ getUserMedia: Found")
 
+    // 4. Detect Brave browser
+    const isBrave = (navigator as any).brave || navigator.userAgent.toLowerCase().includes('brave')
+    if (isBrave) {
+      logs.push("🦁 Brave browser detected")
+      setError("brave-browser")
+      setDebugInfo(logs)
+      return
+    }
+
     // 4. Create recognition instance
     const recognition = new SpeechRecognition()
     recognition.continuous = false
@@ -273,7 +282,23 @@ export default function VoiceInput({ onResult, onError }: VoiceInputProps) {
       {/* Error */}
       {error && (
         <div className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-400 space-y-2">
-          {error === "mic-denied" ? (
+          {error === "brave-browser" ? (
+            <>
+              <p className="font-semibold">🦁 Brave Browser Detected</p>
+              <p className="text-xs text-gray-400">Brave blocks microphone by default. To use voice:</p>
+              <ol className="text-xs text-gray-400 list-decimal list-inside space-y-1">
+                <li>Click the <strong>Brave shield icon</strong> 🛡️ in address bar</li>
+                <li>Turn OFF shields for this site</li>
+                <li>OR: Open in <strong>Chrome</strong> instead</li>
+              </ol>
+              <button
+                onClick={() => window.open('https://finwise.my.id', '_blank')}
+                className="mt-2 w-full rounded-lg bg-blue-500/20 px-3 py-2 text-xs font-semibold text-blue-300 hover:bg-blue-500/30 transition"
+              >
+                🌐 Open in Chrome
+              </button>
+            </>
+          ) : error === "mic-denied" ? (
             <>
               <p className="font-semibold">🎤 Microphone Access Denied</p>
               <p className="text-xs text-gray-400">Please allow microphone access in your browser:</p>
