@@ -3,6 +3,44 @@
 import { useState, useRef, useEffect } from "react"
 import { Mic, MicOff, Loader2, Check, X } from "lucide-react"
 
+// Speech Recognition types
+interface SpeechRecognitionEvent {
+  results: SpeechRecognitionResultList
+}
+interface SpeechRecognitionResultList {
+  length: number
+  [index: number]: SpeechRecognitionResult
+}
+interface SpeechRecognitionResult {
+  isFinal: boolean
+  [index: number]: SpeechRecognitionAlternative
+}
+interface SpeechRecognitionAlternative {
+  transcript: string
+}
+interface SpeechRecognitionErrorEvent {
+  error: string
+}
+interface SpeechRecognitionInstance {
+  continuous: boolean
+  interimResults: boolean
+  lang: string
+  onresult: ((event: SpeechRecognitionEvent) => void) | null
+  onerror: ((event: SpeechRecognitionErrorEvent) => void) | null
+  onend: (() => void) | null
+  start(): void
+  stop(): void
+}
+interface SpeechRecognitionConstructor {
+  new(): SpeechRecognitionInstance
+}
+declare global {
+  interface Window {
+    SpeechRecognition?: SpeechRecognitionConstructor
+    webkitSpeechRecognition?: SpeechRecognitionConstructor
+  }
+}
+
 interface VoiceInputProps {
   onResult: (parsed: {
     type: "income" | "expense"
@@ -25,7 +63,7 @@ export default function VoiceInput({ onResult, onError }: VoiceInputProps) {
   } | null>(null)
   const [error, setError] = useState("")
   
-  const recognitionRef = useRef<SpeechRecognition | null>(null)
+  const recognitionRef = useRef<SpeechRecognitionInstance | null>(null)
   const timeoutRef = useRef<NodeJS.Timeout | null>(null)
 
   useEffect(() => {

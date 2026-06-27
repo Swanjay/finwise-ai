@@ -13,7 +13,7 @@ function getSupabase() {
 // GET /api/households/[id]/members — List members of a household
 export async function GET(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await getServerSession(authOptions)
   if (!session?.user?.email) {
@@ -27,7 +27,7 @@ export async function GET(
 
   try {
     const userId = (session.user as Record<string, unknown>).id as string
-    const householdId = params.id
+    const { id: householdId } = await params
 
     // Verify user has access to this household
     const { data: household, error: findError } = await supabase
