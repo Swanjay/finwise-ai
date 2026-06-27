@@ -11,6 +11,7 @@ import {
   ToggleRight, CalendarClock, Shield, Eye, EyeOff, Moon, Sun,
   PiggyBank, ReceiptText, ShieldCheck, Upload, LogOut,
   ArrowDownUp, ArrowLeftRight, Pencil,
+  Users, CreditCard, Mic, Heart,
 } from 'lucide-react'
 import { useSession, signOut } from 'next-auth/react'
 import { FinwiseProvider, useFinwise } from '@/components/finwise-store'
@@ -729,6 +730,40 @@ function SettingsSheet({ onClose, onOpenSheet }: { onClose: () => void; onOpenSh
 
       {/* Export & Import */}
       <div className="border-t border-border pt-4">
+        {/* New Features Links */}
+        <div className="mb-4 space-y-2">
+          <Label className="text-sm font-semibold">✨ Fitur Baru</Label>
+          <div className="grid grid-cols-2 gap-2">
+            <Link href="/households" className="flex items-center gap-2 rounded-xl border border-border bg-card p-3 text-xs hover:bg-secondary transition">
+              <Users className="size-4 text-teal-400" />
+              <div>
+                <p className="font-semibold">Household</p>
+                <p className="text-muted-foreground">Kolaborasi</p>
+              </div>
+            </Link>
+            <Link href="/subscriptions" className="flex items-center gap-2 rounded-xl border border-border bg-card p-3 text-xs hover:bg-secondary transition">
+              <CreditCard className="size-4 text-purple-400" />
+              <div>
+                <p className="font-semibold">Subscription</p>
+                <p className="text-muted-foreground">Tracking</p>
+              </div>
+            </Link>
+            <Link href="/voice" className="flex items-center gap-2 rounded-xl border border-border bg-card p-3 text-xs hover:bg-secondary transition">
+              <Mic className="size-4 text-orange-400" />
+              <div>
+                <p className="font-semibold">Voice</p>
+                <p className="text-muted-foreground">Input Suara</p>
+              </div>
+            </Link>
+            <Link href="/score" className="flex items-center gap-2 rounded-xl border border-border bg-card p-3 text-xs hover:bg-secondary transition">
+              <Heart className="size-4 text-red-400" />
+              <div>
+                <p className="font-semibold">Health</p>
+                <p className="text-muted-foreground">Skor Keuangan</p>
+              </div>
+            </Link>
+          </div>
+        </div>
         <Button
           variant="outline"
           className="w-full gap-2"
