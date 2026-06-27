@@ -1379,7 +1379,7 @@ function AppShell() {
       <BottomSheet open={sheet === 'smart-budget'} onClose={() => setSheet(null)} title="🤖 Smart Budget"><SmartBudgetSheet onClose={() => setSheet(null)} /></BottomSheet>
       <BottomSheet open={sheet === 'split-bill'} onClose={() => setSheet(null)} title="👥 Split Bill"><SplitBillSheet onClose={() => setSheet(null)} /></BottomSheet>
       <BottomSheet open={sheet === 'notifications'} onClose={() => setSheet(null)} title="🔔 Notifikasi"><NotificationCenter onClose={() => setSheet(null)} /></BottomSheet>
-      <BottomSheet open={sheet === 'voice'} onClose={() => setSheet(null)} title="🎤 Voice Input"><VoiceInput onResult={(parsed) => { setSheet(null); setSheet('add') }} onError={(err) => console.error(err)} /></BottomSheet>
+      <BottomSheet open={sheet === 'voice'} onClose={() => setSheet(null)} title="🎤 Voice Input"><VoiceInput onResult={(parsed) => { setSheet(null); setSheet('add') }} /></BottomSheet>
 
       {/* Badge unlock toast */}
       {newBadge && <BadgeUnlockToast badge={newBadge} onClose={clearNewBadge} />}

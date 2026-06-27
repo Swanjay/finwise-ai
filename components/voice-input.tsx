@@ -1,45 +1,7 @@
 "use client"
 
-import { useState, useRef, useEffect } from "react"
+import { useState, useRef } from "react"
 import { Mic, MicOff, Loader2, Check, X } from "lucide-react"
-
-// Speech Recognition types
-interface SpeechRecognitionEvent {
-  results: SpeechRecognitionResultList
-}
-interface SpeechRecognitionResultList {
-  length: number
-  [index: number]: SpeechRecognitionResult
-}
-interface SpeechRecognitionResult {
-  isFinal: boolean
-  [index: number]: SpeechRecognitionAlternative
-}
-interface SpeechRecognitionAlternative {
-  transcript: string
-}
-interface SpeechRecognitionErrorEvent {
-  error: string
-}
-interface SpeechRecognitionInstance {
-  continuous: boolean
-  interimResults: boolean
-  lang: string
-  onresult: ((event: SpeechRecognitionEvent) => void) | null
-  onerror: ((event: SpeechRecognitionErrorEvent) => void) | null
-  onend: (() => void) | null
-  start(): void
-  stop(): void
-}
-interface SpeechRecognitionConstructor {
-  new(): SpeechRecognitionInstance
-}
-declare global {
-  interface Window {
-    SpeechRecognition?: SpeechRecognitionConstructor
-    webkitSpeechRecognition?: SpeechRecognitionConstructor
-  }
-}
 
 interface VoiceInputProps {
   onResult: (parsed: {
@@ -48,10 +10,9 @@ interface VoiceInputProps {
     category: string
     note: string
   }) => void
-  onError?: (error: string) => void
 }
 
-export default function VoiceInput({ onResult, onError }: VoiceInputProps) {
+export default function VoiceInput({ onResult }: VoiceInputProps) {
   const [isListening, setIsListening] = useState(false)
   const [transcript, setTranscript] = useState("")
   const [parsing, setParsing] = useState(false)
@@ -62,97 +23,111 @@ export default function VoiceInput({ onResult, onError }: VoiceInputProps) {
     note: string
   } | null>(null)
   const [error, setError] = useState("")
-  const [debugInfo, setDebugInfo] = useState<string[]>([])
-  
-  const recognitionRef = useRef<SpeechRecognitionInstance | null>(null)
-  const timeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const [debugLog, setDebugLog] = useState<string[]>([])
+  const recognitionRef = useRef<any>(null)
 
-  useEffect(() => {
-    const logs: string[] = []
-    
-    // 1. Check browser support
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition
-    if (!SpeechRecognition) {
-      logs.push("❌ SpeechRecognition: NOT FOUND")
-      setError("SpeechRecognition not supported")
-      setDebugInfo(logs)
-      return
-    }
-    logs.push("✅ SpeechRecognition: Found")
-    
-    // 2. Check HTTPS
-    const isSecure = window.location.protocol === 'https:' || window.location.hostname === 'localhost'
-    logs.push(`${isSecure ? '✅' : '❌'} HTTPS: ${window.location.protocol}`)
-    if (!isSecure) {
-      setError("HTTPS required for microphone")
-      setDebugInfo(logs)
-      return
-    }
+  function log(msg: string) {
+    console.log("[voice]", msg)
+    setDebugLog(prev => [...prev, msg])
+  }
 
-    // 3. Check getUserMedia
+  async function startListening() {
+    setError("")
+    setTranscript("")
+    setParsed(null)
+    setDebugLog([])
+
+    log("🎤 Starting voice input...")
+
+    // Step 1: Check basic support
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-      logs.push("❌ getUserMedia: NOT FOUND")
-      setError("getUserMedia not supported")
-      setDebugInfo(logs)
+      log("❌ getUserMedia not available")
+      setError("Browser doesn't support microphone access. Use Chrome or Edge.")
       return
     }
-    logs.push("✅ getUserMedia: Found")
+    log("✅ getUserMedia available")
 
-    // 4. Detect Brave browser
-    const isBrave = (navigator as any).brave || navigator.userAgent.toLowerCase().includes('brave')
-    if (isBrave) {
-      logs.push("🦁 Brave browser detected")
-      setError("brave-browser")
-      setDebugInfo(logs)
-      return
-    }
-
-    // 4. Create recognition instance
-    const recognition = new SpeechRecognition()
-    recognition.continuous = false
-    recognition.interimResults = true
-    recognition.lang = "id-ID"
-
-    recognition.onresult = (event: SpeechRecognitionEvent) => {
-      const current = event.results[event.results.length - 1]
-      const text = current[0].transcript
-      setTranscript(text)
-      if (current.isFinal) {
-        parseTransaction(text)
-      }
-    }
-
-    recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
-      console.error("[voice] Error:", event.error)
-      setIsListening(false)
-      logs.push(`❌ Error: ${event.error}`)
-      setDebugInfo([...logs])
-      
-      if (event.error === "not-allowed") {
-        setError("Microphone permission denied by browser")
-      } else if (event.error === "no-speech") {
-        setError("No speech detected. Try again.")
+    // Step 2: Request microphone
+    log("📞 Requesting microphone permission...")
+    let stream: MediaStream
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+      log("✅ Microphone access granted!")
+    } catch (err: any) {
+      log(`❌ Microphone error: ${err.name} - ${err.message}`)
+      if (err.name === "NotAllowedError") {
+        setError("mic-denied")
+      } else if (err.name === "NotFoundError") {
+        setError("No microphone found. Please connect a microphone.")
       } else {
-        setError(`Error: ${event.error}`)
+        setError(`Microphone error: ${err.message}`)
       }
+      return
     }
 
-    recognition.onend = () => {
-      setIsListening(false)
+    // Step 3: Check SpeechRecognition
+    const SR = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
+    if (!SR) {
+      log("❌ SpeechRecognition not available")
+      stream.getTracks().forEach(t => t.stop())
+      setError("Speech recognition not supported. Use Chrome browser.")
+      return
     }
+    log("✅ SpeechRecognition available")
 
-    recognitionRef.current = recognition
-    logs.push("✅ Recognition initialized")
-    setDebugInfo(logs)
+    // Step 4: Start recognition
+    try {
+      const recognition = new SR()
+      recognition.continuous = false
+      recognition.interimResults = true
+      recognition.lang = "id-ID"
 
-    return () => {
-      if (timeoutRef.current) clearTimeout(timeoutRef.current)
+      recognition.onresult = (event: any) => {
+        const text = event.results[event.results.length - 1][0].transcript
+        setTranscript(text)
+        if (event.results[event.results.length - 1].isFinal) {
+          log(`✅ Final: "${text}"`)
+          parseTransaction(text)
+        }
+      }
+
+      recognition.onerror = (event: any) => {
+        log(`❌ Recognition error: ${event.error}`)
+        setIsListening(false)
+        stream.getTracks().forEach(t => t.stop())
+        if (event.error === "not-allowed") {
+          setError("mic-denied")
+        } else {
+          setError(`Error: ${event.error}`)
+        }
+      }
+
+      recognition.onend = () => {
+        log("⏹️ Recognition ended")
+        setIsListening(false)
+        stream.getTracks().forEach(t => t.stop())
+      }
+
+      recognitionRef.current = recognition
+      recognition.start()
+      setIsListening(true)
+      log("✅ Listening started!")
+    } catch (err: any) {
+      log(`❌ Failed to start: ${err.message}`)
+      stream.getTracks().forEach(t => t.stop())
+      setError(`Failed to start: ${err.message}`)
     }
-  }, [])
+  }
+
+  function stopListening() {
+    if (recognitionRef.current) {
+      recognitionRef.current.stop()
+    }
+    setIsListening(false)
+  }
 
   async function parseTransaction(text: string) {
     setParsing(true)
-    setError("")
     try {
       const res = await fetch("/api/ai/voice-parse", {
         method: "POST",
@@ -164,74 +139,11 @@ export default function VoiceInput({ onResult, onError }: VoiceInputProps) {
         setParsed(data.parsed)
       } else {
         setError(data.error || "Failed to parse")
-        onError?.(data.error || "Failed to parse")
       }
     } catch {
       setError("Connection failed")
-      onError?.("Connection failed")
     }
     setParsing(false)
-  }
-
-  async function startListening() {
-    if (!recognitionRef.current) return
-    
-    setError("")
-    setTranscript("")
-    setParsed(null)
-    
-    const logs = [...debugInfo]
-    logs.push("🎤 Requesting mic access...")
-    setDebugInfo(logs)
-    
-    try {
-      // Request mic access FIRST
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
-      logs.push("✅ Mic access granted!")
-      setDebugInfo([...logs])
-      
-      // Stop the test stream
-      stream.getTracks().forEach(t => t.stop())
-      
-      // Now start recognition
-      recognitionRef.current.start()
-      setIsListening(true)
-      logs.push("✅ Recognition started")
-      setDebugInfo([...logs])
-    } catch (err: any) {
-      console.error("[voice] Error:", err)
-      logs.push(`❌ Error: ${err.name}: ${err.message}`)
-      setDebugInfo([...logs])
-      
-      if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
-        setError("mic-denied")
-      } else if (err.name === 'NotFoundError') {
-        setError("No microphone found on this device")
-      } else if (err.name === 'NotReadableError') {
-        setError("Microphone is being used by another app")
-      } else {
-        setError(`Error: ${err.message}`)
-      }
-    }
-  }
-
-  function stopListening() {
-    if (!recognitionRef.current) return
-    recognitionRef.current.stop()
-    setIsListening(false)
-  }
-
-  function handleConfirm() {
-    if (parsed) {
-      onResult(parsed)
-      setParsed(null)
-      setTranscript("")
-    }
-  }
-
-  function handleCancel() {
-    setParsed(null)
-    setTranscript("")
   }
 
   function formatCurrency(amount: number) {
@@ -263,11 +175,8 @@ export default function VoiceInput({ onResult, onError }: VoiceInputProps) {
             <Mic className="size-8 text-teal-400" />
           )}
         </button>
-        
         <p className="text-xs text-gray-400 text-center">
-          {isListening ? "Listening... tap to stop" :
-           parsing ? "Processing..." :
-           "Tap to start speaking"}
+          {isListening ? "Listening... tap to stop" : parsing ? "Processing..." : "Tap to start speaking"}
         </p>
       </div>
 
@@ -282,38 +191,16 @@ export default function VoiceInput({ onResult, onError }: VoiceInputProps) {
       {/* Error */}
       {error && (
         <div className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-400 space-y-2">
-          {error === "brave-browser" ? (
-            <>
-              <p className="font-semibold">🦁 Brave Browser Detected</p>
-              <p className="text-xs text-gray-400">Brave blocks microphone by default. To use voice:</p>
-              <ol className="text-xs text-gray-400 list-decimal list-inside space-y-1">
-                <li>Click the <strong>Brave shield icon</strong> 🛡️ in address bar</li>
-                <li>Turn OFF shields for this site</li>
-                <li>OR: Open in <strong>Chrome</strong> instead</li>
-              </ol>
-              <button
-                onClick={() => window.open('https://finwise.my.id', '_blank')}
-                className="mt-2 w-full rounded-lg bg-blue-500/20 px-3 py-2 text-xs font-semibold text-blue-300 hover:bg-blue-500/30 transition"
-              >
-                🌐 Open in Chrome
-              </button>
-            </>
-          ) : error === "mic-denied" ? (
+          {error === "mic-denied" ? (
             <>
               <p className="font-semibold">🎤 Microphone Access Denied</p>
-              <p className="text-xs text-gray-400">Please allow microphone access in your browser:</p>
+              <p className="text-xs text-gray-400">Please allow microphone access:</p>
               <ol className="text-xs text-gray-400 list-decimal list-inside space-y-1">
-                <li>Click the 🔒 or ⓘ icon in the address bar</li>
+                <li>Click the 🔒 icon in the address bar</li>
                 <li>Find &quot;Microphone&quot;</li>
                 <li>Set to &quot;Allow&quot;</li>
                 <li>Refresh this page</li>
               </ol>
-              <button
-                onClick={() => window.location.reload()}
-                className="mt-2 w-full rounded-lg bg-red-500/20 px-3 py-2 text-xs font-semibold text-red-300 hover:bg-red-500/30 transition"
-              >
-                🔄 Refresh Page
-              </button>
             </>
           ) : (
             <p>{error}</p>
@@ -325,27 +212,21 @@ export default function VoiceInput({ onResult, onError }: VoiceInputProps) {
       {parsed && (
         <div className="rounded-xl border border-teal-500/30 bg-teal-500/5 p-4 space-y-3">
           <p className="text-xs text-teal-400 font-semibold">Parsed Result:</p>
-          
           <div className="space-y-2">
             <div className="flex justify-between">
               <span className="text-xs text-gray-400">Type</span>
-              <span className={`text-xs font-semibold ${
-                parsed.type === "income" ? "text-green-400" : "text-red-400"
-              }`}>
+              <span className={`text-xs font-semibold ${parsed.type === "income" ? "text-green-400" : "text-red-400"}`}>
                 {parsed.type === "income" ? "📈 Income" : "📉 Expense"}
               </span>
             </div>
-            
             <div className="flex justify-between">
               <span className="text-xs text-gray-400">Amount</span>
               <span className="text-sm font-bold text-white">{formatCurrency(parsed.amount)}</span>
             </div>
-            
             <div className="flex justify-between">
               <span className="text-xs text-gray-400">Category</span>
               <span className="text-xs text-white">{parsed.category}</span>
             </div>
-            
             {parsed.note && (
               <div className="flex justify-between">
                 <span className="text-xs text-gray-400">Note</span>
@@ -353,21 +234,12 @@ export default function VoiceInput({ onResult, onError }: VoiceInputProps) {
               </div>
             )}
           </div>
-
           <div className="flex gap-3 pt-2">
-            <button
-              onClick={handleCancel}
-              className="flex-1 flex items-center justify-center gap-2 rounded-lg border border-border px-4 py-2.5 text-sm text-gray-400 hover:text-white transition"
-            >
-              <X className="size-4" />
-              Cancel
+            <button onClick={() => { setParsed(null); setTranscript("") }} className="flex-1 flex items-center justify-center gap-2 rounded-lg border border-border px-4 py-2.5 text-sm text-gray-400 hover:text-white transition">
+              <X className="size-4" /> Cancel
             </button>
-            <button
-              onClick={handleConfirm}
-              className="flex-1 flex items-center justify-center gap-2 rounded-lg bg-teal-500 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-teal-600"
-            >
-              <Check className="size-4" />
-              Confirm
+            <button onClick={() => { onResult(parsed); setParsed(null); setTranscript("") }} className="flex-1 flex items-center justify-center gap-2 rounded-lg bg-teal-500 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-teal-600">
+              <Check className="size-4" /> Confirm
             </button>
           </div>
         </div>
@@ -380,24 +252,18 @@ export default function VoiceInput({ onResult, onError }: VoiceInputProps) {
           <li>&ldquo;Beli batagor 5 ribu&rdquo;</li>
           <li>&ldquo;Makan siang 25rb&rdquo;</li>
           <li>&ldquo;Terima gaji 5 juta&rdquo;</li>
-          <li>&ldquo;Grab ke kantor 15rb&rdquo;</li>
-          <li>&ldquo;Bayar listrik 200 ribu&rdquo;</li>
         </ul>
       </div>
 
-      {/* Debug Info */}
-      <details className="rounded-xl bg-muted p-4">
-        <summary className="text-xs text-gray-400 font-semibold cursor-pointer">🔧 Debug Info</summary>
-        <div className="mt-2 space-y-1 text-xs text-gray-500">
-          {debugInfo.map((info, i) => (
-            <p key={i}>{info}</p>
-          ))}
-          <p>--- Environment ---</p>
-          <p>Browser: {typeof window !== 'undefined' ? navigator.userAgent.split(' ').slice(-2).join(' ') : 'N/A'}</p>
-          <p>HTTPS: {typeof window !== 'undefined' && window.location.protocol === 'https:' ? '✅ Yes' : '❌ No'}</p>
-          <p>Host: {typeof window !== 'undefined' ? window.location.hostname : 'N/A'}</p>
-        </div>
-      </details>
+      {/* Debug Log */}
+      {debugLog.length > 0 && (
+        <details className="rounded-xl bg-muted p-4" open>
+          <summary className="text-xs text-gray-400 font-semibold cursor-pointer">🔧 Debug Log</summary>
+          <div className="mt-2 space-y-1 text-xs text-gray-500 font-mono">
+            {debugLog.map((msg, i) => <p key={i}>{msg}</p>)}
+          </div>
+        </details>
+      )}
     </div>
   )
 }
