@@ -74,6 +74,17 @@ export default function VoiceInput({ onResult, onError }: VoiceInputProps) {
       return
     }
 
+    // Proactively check microphone permission
+    if (navigator.permissions) {
+      navigator.permissions.query({ name: 'microphone' as PermissionName }).then((result) => {
+        if (result.state === 'denied') {
+          setError("izin-mic")
+        }
+      }).catch(() => {
+        // permissions API not supported, will check on first use
+      })
+    }
+
     const recognition = new SpeechRecognition()
     recognition.continuous = false
     recognition.interimResults = true
@@ -93,7 +104,7 @@ export default function VoiceInput({ onResult, onError }: VoiceInputProps) {
       console.error("[voice] Error:", event.error)
       setIsListening(false)
       if (event.error === "not-allowed") {
-        setError("Izin microphone ditolak. Silakan izinkan akses microphone.")
+        setError("izin-mic")
       } else {
         setError(`Error: ${event.error}`)
       }
@@ -218,8 +229,27 @@ export default function VoiceInput({ onResult, onError }: VoiceInputProps) {
 
       {/* Error */}
       {error && (
-        <div className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-400">
-          {error}
+        <div className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-400 space-y-2">
+          {error === "izin-mic" ? (
+            <>
+              <p className="font-semibold">🎤 Izin Microphone Ditolak</p>
+              <p className="text-xs text-gray-400">Untuk menggunakan voice input, kamu perlu izinkan akses microphone:</p>
+              <ol className="text-xs text-gray-400 list-decimal list-inside space-y-1">
+                <li>Klik icon 🔒 atau ⓘ di address bar (atas)</li>
+                <li>Cari &quot;Microphone&quot;</li>
+                <li>Ganti ke &quot;Allow&quot;</li>
+                <li>Refresh halaman ini</li>
+              </ol>
+              <button
+                onClick={() => window.location.reload()}
+                className="mt-2 w-full rounded-lg bg-red-500/20 px-3 py-2 text-xs font-semibold text-red-300 hover:bg-red-500/30 transition"
+              >
+                🔄 Refresh Halaman
+              </button>
+            </>
+          ) : (
+            <p>{error}</p>
+          )}
         </div>
       )}
 
