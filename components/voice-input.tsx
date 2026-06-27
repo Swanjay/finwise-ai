@@ -155,12 +155,30 @@ export default function VoiceInput({ onResult, onError }: VoiceInputProps) {
     setTranscript("")
     setParsed(null)
     
-    try {
-      recognitionRef.current.start()
-      setIsListening(true)
-    } catch (err) {
-      console.error("[voice] Start error:", err)
-    }
+    // First verify microphone access
+    navigator.mediaDevices.getUserMedia({ audio: true })
+      .then((stream) => {
+        // Mic access granted, stop the test stream
+        stream.getTracks().forEach(t => t.stop())
+        // Now start speech recognition
+        try {
+          recognitionRef.current!.start()
+          setIsListening(true)
+        } catch (err) {
+          console.error("[voice] Start error:", err)
+          setError("Gagal memulai voice recognition. Coba refresh halaman.")
+        }
+      })
+      .catch((err) => {
+        console.error("[voice] Mic access error:", err)
+        if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+          setError("izin-mic")
+        } else if (err.name === 'NotFoundError') {
+          setError("Microphone tidak ditemukan di device ini.")
+        } else {
+          setError(`Error microphone: ${err.message}`)
+        }
+      })
   }
 
   function stopListening() {
@@ -316,6 +334,17 @@ export default function VoiceInput({ onResult, onError }: VoiceInputProps) {
           <li>&ldquo;Bayar listrik 200 ribu&rdquo;</li>
         </ul>
       </div>
+
+      {/* Debug Info */}
+      <details className="rounded-xl bg-muted p-4">
+        <summary className="text-xs text-gray-400 font-semibold cursor-pointer">🔧 Debug Info</summary>
+        <div className="mt-2 space-y-1 text-xs text-gray-500">
+          <p>Browser: {typeof window !== 'undefined' ? navigator.userAgent.split(' ').slice(-2).join(' ') : 'N/A'}</p>
+          <p>SpeechRecognition: {typeof window !== 'undefined' && (window.SpeechRecognition || window.webkitSpeechRecognition) ? '✅ Supported' : '❌ Not supported'}</p>
+          <p>getUserMedia: {typeof window !== 'undefined' && navigator.mediaDevices ? '✅ Supported' : '❌ Not supported'}</p>
+          <p>HTTPS: {typeof window !== 'undefined' && window.location.protocol === 'https:' ? '✅ Yes' : '❌ No (required for mic)'}</p>
+        </div>
+      </details>
     </div>
   )
 }
