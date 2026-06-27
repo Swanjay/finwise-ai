@@ -51,7 +51,7 @@ import {
 import { cn } from '@/lib/utils'
 
 type Tab = 'home' | 'transactions' | 'trends' | 'budget'
-type Sheet = 'add' | 'scan' | 'advisor' | 'settings' | 'goals' | 'wallets' | 'transfer' | 'recurring' | 'export' | 'categories' | 'pin' | 'benchmark' | 'smart-budget' | 'split-bill' | 'notifications' | null
+type Sheet = 'add' | 'scan' | 'advisor' | 'settings' | 'goals' | 'wallets' | 'transfer' | 'recurring' | 'export' | 'categories' | 'pin' | 'benchmark' | 'smart-budget' | 'split-bill' | 'notifications' | 'voice' | null
 
 // ─── PIN Lock Screen ───
 function PinLock() {
@@ -107,6 +107,7 @@ function MonthNavigator({ monthKey, onChange }: { monthKey: string; onChange: (k
 import { ExportSheet as ExportSheetNew } from '@/components/finwise/export-sheet'
 import { ErrorBoundary } from '@/components/error-boundary'
 import { OnboardingWizard } from '@/components/finwise/onboarding-wizard'
+import VoiceInput from '@/components/voice-input'
 import { detectLogo } from '@/lib/brand-logos'
 
 // ─── Backup/Restore Sheet ───
@@ -1347,7 +1348,7 @@ function AppShell() {
           <Camera className="size-5" />
         </button>
         <button
-          onClick={() => { haptic.light(); router.push('/voice') }}
+          onClick={() => { haptic.light(); setSheet('voice') }}
           aria-label="Voice input"
           className="flex size-10 items-center justify-center rounded-full bg-gradient-to-br from-purple-400 to-blue-500 text-white shadow-lg"
         >
@@ -1371,6 +1372,7 @@ function AppShell() {
       <BottomSheet open={sheet === 'smart-budget'} onClose={() => setSheet(null)} title="🤖 Smart Budget"><SmartBudgetSheet onClose={() => setSheet(null)} /></BottomSheet>
       <BottomSheet open={sheet === 'split-bill'} onClose={() => setSheet(null)} title="👥 Split Bill"><SplitBillSheet onClose={() => setSheet(null)} /></BottomSheet>
       <BottomSheet open={sheet === 'notifications'} onClose={() => setSheet(null)} title="🔔 Notifikasi"><NotificationCenter onClose={() => setSheet(null)} /></BottomSheet>
+      <BottomSheet open={sheet === 'voice'} onClose={() => setSheet(null)} title="🎤 Voice Input"><VoiceInput onResult={(parsed) => { setSheet(null); setSheet('add') }} onError={(err) => console.error(err)} /></BottomSheet>
 
       {/* Badge unlock toast */}
       {newBadge && <BadgeUnlockToast badge={newBadge} onClose={clearNewBadge} />}
