@@ -1199,6 +1199,7 @@ function AppShell() {
   const [sheet, setSheet] = useState<Sheet>(null)
   const [monthKey, setMonthKey] = useState(getMonthKey(new Date()))
   const [isLoading, setIsLoading] = useState(true)
+  const [fabOpen, setFabOpen] = useState(false)
 
   // Simulate loading on mount
   useEffect(() => {
@@ -1333,27 +1334,33 @@ function AppShell() {
 
       {/* FAB — Expandable */}
       <div className="fixed bottom-20 right-5 z-30 flex flex-col-reverse items-center gap-3 sm:hidden">
+        {/* Main FAB button — toggles menu */}
         <button
-          onClick={() => { haptic.medium(); setSheet('add') }}
-          aria-label="Catat transaksi baru"
-          className="clay-btn flex size-14 items-center justify-center shadow-lg"
+          onClick={() => { haptic.medium(); setFabOpen(!fabOpen) }}
+          aria-label={fabOpen ? 'Tutup menu' : 'Buka menu aksi'}
+          className={`clay-btn flex size-14 items-center justify-center shadow-lg transition-transform duration-300 ${fabOpen ? 'rotate-45' : ''}`}
         >
           <Plus className="size-6" />
         </button>
-        <button
-          onClick={() => { haptic.light(); setSheet('scan') }}
-          aria-label="Scan struk"
-          className="flex size-10 items-center justify-center rounded-full bg-gradient-to-br from-green-400 to-teal-500 text-white shadow-lg"
-        >
-          <Camera className="size-5" />
-        </button>
-        <button
-          onClick={() => { haptic.light(); setSheet('voice') }}
-          aria-label="Voice input"
-          className="flex size-10 items-center justify-center rounded-full bg-gradient-to-br from-purple-400 to-blue-500 text-white shadow-lg"
-        >
-          <Mic className="size-5" />
-        </button>
+        {/* Sub buttons — only visible when fabOpen */}
+        {fabOpen && (
+          <>
+            <button
+              onClick={() => { haptic.light(); setFabOpen(false); setSheet('scan') }}
+              aria-label="Scan struk"
+              className="flex size-10 items-center justify-center rounded-full bg-gradient-to-br from-green-400 to-teal-500 text-white shadow-lg animate-in fade-in slide-in-from-bottom-2 duration-200"
+            >
+              <Camera className="size-5" />
+            </button>
+            <button
+              onClick={() => { haptic.light(); setFabOpen(false); setSheet('voice') }}
+              aria-label="Voice input"
+              className="flex size-10 items-center justify-center rounded-full bg-gradient-to-br from-purple-400 to-blue-500 text-white shadow-lg animate-in fade-in slide-in-from-bottom-2 duration-200 delay-75"
+            >
+              <Mic className="size-5" />
+            </button>
+          </>
+        )}
       </div>
 
       {/* Bottom Sheets */}
