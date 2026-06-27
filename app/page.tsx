@@ -730,40 +730,6 @@ function SettingsSheet({ onClose, onOpenSheet }: { onClose: () => void; onOpenSh
 
       {/* Export & Import */}
       <div className="border-t border-border pt-4">
-        {/* New Features Links */}
-        <div className="mb-4 space-y-2">
-          <Label className="text-sm font-semibold">✨ Fitur Baru</Label>
-          <div className="grid grid-cols-2 gap-2">
-            <Link href="/households" className="flex items-center gap-2 rounded-xl border border-border bg-card p-3 text-xs hover:bg-secondary transition">
-              <Users className="size-4 text-teal-400" />
-              <div>
-                <p className="font-semibold">Household</p>
-                <p className="text-muted-foreground">Kolaborasi</p>
-              </div>
-            </Link>
-            <Link href="/subscriptions" className="flex items-center gap-2 rounded-xl border border-border bg-card p-3 text-xs hover:bg-secondary transition">
-              <CreditCard className="size-4 text-purple-400" />
-              <div>
-                <p className="font-semibold">Subscription</p>
-                <p className="text-muted-foreground">Tracking</p>
-              </div>
-            </Link>
-            <Link href="/voice" className="flex items-center gap-2 rounded-xl border border-border bg-card p-3 text-xs hover:bg-secondary transition">
-              <Mic className="size-4 text-orange-400" />
-              <div>
-                <p className="font-semibold">Voice</p>
-                <p className="text-muted-foreground">Input Suara</p>
-              </div>
-            </Link>
-            <Link href="/score" className="flex items-center gap-2 rounded-xl border border-border bg-card p-3 text-xs hover:bg-secondary transition">
-              <Heart className="size-4 text-red-400" />
-              <div>
-                <p className="font-semibold">Health</p>
-                <p className="text-muted-foreground">Skor Keuangan</p>
-              </div>
-            </Link>
-          </div>
-        </div>
         <Button
           variant="outline"
           className="w-full gap-2"
@@ -1161,7 +1127,7 @@ function OnboardingTips({ onDismiss }: { onDismiss: () => void }) {
 }
 
 // ─── User Avatar ───
-function UserAvatar() {
+function UserAvatar({ onOpenSettings }: { onOpenSettings?: () => void }) {
   const { data: session } = useSession()
   const [showMenu, setShowMenu] = useState(false)
   const user = session?.user
@@ -1169,29 +1135,52 @@ function UserAvatar() {
 
   return (
     <div className="relative">
-      <button onClick={() => setShowMenu(!showMenu)} aria-label="Menu profil" className="flex size-8 items-center justify-center overflow-hidden rounded-full bg-primary/20 ring-2 ring-primary/30">
+      <button onClick={() => setShowMenu(!showMenu)} aria-label="Menu profil" className="flex size-9 items-center justify-center overflow-hidden rounded-full bg-primary/20 ring-2 ring-primary/30 shadow-md hover:ring-primary/50 transition" style={{ boxShadow: '0 4px 12px var(--theme-shadow, rgba(138,110,207,0.15))' }}>
         {user.image ? (
           <img src={user.image} alt="" className="size-full object-cover" />
         ) : (
-          <span className="text-xs font-bold text-primary">{(user.name || 'U')[0].toUpperCase()}</span>
+          <span className="text-sm font-bold text-primary">{(user.name || 'U')[0].toUpperCase()}</span>
         )}
       </button>
       {showMenu && (
         <>
           <div className="fixed inset-0 z-50" onClick={() => setShowMenu(false)} />
-          <div className="absolute right-0 top-10 z-50 w-56 rounded-xl border border-border bg-card p-3 shadow-xl">
-            <div className="mb-3 flex items-center gap-2.5">
+          <div className="absolute right-0 top-11 z-50 w-64 rounded-xl border border-border bg-card shadow-xl overflow-hidden">
+            {/* Profile header */}
+            <div className="flex items-center gap-2.5 p-3 bg-gradient-to-br from-primary/10 to-primary/5 border-b border-border">
               <div className="flex size-10 items-center justify-center overflow-hidden rounded-full bg-primary/20">
                 {user.image ? <img src={user.image} alt="" className="size-full object-cover" /> : <span className="text-sm font-bold text-primary">{(user.name || 'U')[0].toUpperCase()}</span>}
               </div>
               <div className="min-w-0">
-                <p className="truncate text-sm font-medium">{user.name}</p>
+                <p className="truncate text-sm font-bold">{user.name}</p>
                 <p className="truncate text-xs text-muted-foreground">{user.email || 'Telegram'}</p>
               </div>
             </div>
-            <button onClick={() => signOut({ callbackUrl: '/login' })} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-destructive transition hover:bg-destructive/10">
-              <LogOut className="size-4" /> Keluar
-            </button>
+            {/* Features */}
+            <div className="p-2">
+              <p className="px-2 py-1 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Fitur</p>
+              <Link href="/households" onClick={() => setShowMenu(false)} className="flex items-center gap-2.5 rounded-lg px-2 py-2 text-sm hover:bg-muted transition">
+                <Users className="size-4 text-teal-400" /> Household
+              </Link>
+              <Link href="/subscriptions" onClick={() => setShowMenu(false)} className="flex items-center gap-2.5 rounded-lg px-2 py-2 text-sm hover:bg-muted transition">
+                <CreditCard className="size-4 text-purple-400" /> Subscription
+              </Link>
+              <Link href="/voice" onClick={() => setShowMenu(false)} className="flex items-center gap-2.5 rounded-lg px-2 py-2 text-sm hover:bg-muted transition">
+                <Mic className="size-4 text-orange-400" /> Voice Input
+              </Link>
+              <Link href="/score" onClick={() => setShowMenu(false)} className="flex items-center gap-2.5 rounded-lg px-2 py-2 text-sm hover:bg-muted transition">
+                <Heart className="size-4 text-red-400" /> Health Score
+              </Link>
+            </div>
+            {/* Settings & Logout */}
+            <div className="p-2 border-t border-border">
+              <button onClick={() => { setShowMenu(false); onOpenSettings?.() }} className="flex w-full items-center gap-2.5 rounded-lg px-2 py-2 text-sm hover:bg-muted transition">
+                <Settings className="size-4 text-muted-foreground" /> Pengaturan
+              </button>
+              <button onClick={() => signOut({ callbackUrl: '/login' })} className="flex w-full items-center gap-2.5 rounded-lg px-2 py-2 text-sm text-destructive transition hover:bg-destructive/10">
+                <LogOut className="size-4" /> Keluar
+              </button>
+            </div>
           </div>
         </>
       )}
@@ -1263,15 +1252,7 @@ function AppShell() {
                         >
                           {theme === 'dark' ? <Sun className="size-4" /> : <Moon className="size-4" />}
           </button>
-          <button
-            onClick={() => setSheet('settings')}
-            aria-label="Pengaturan"
-            className="flex size-9 items-center justify-center rounded-full bg-card text-muted-foreground shadow-md hover:text-primary transition"
-            style={{ boxShadow: '0 4px 12px var(--theme-shadow, rgba(138,110,207,0.15))' }}
-          >
-            <Settings className="size-4" />
-          </button>
-          <UserAvatar />
+          <UserAvatar onOpenSettings={() => setSheet('settings')} />
         </div>
       </header>
 
