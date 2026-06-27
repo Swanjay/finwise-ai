@@ -74,6 +74,15 @@ export default function VoiceInput({ onResult, onError }: VoiceInputProps) {
       return
     }
 
+    // Detect Telegram in-app browser or other limited webviews
+    const ua = navigator.userAgent.toLowerCase()
+    const isTelegram = ua.includes('telegram') || ua.includes('tgweb')
+    const isWebView = ua.includes('wv') || ua.includes('webview')
+    if (isTelegram || isWebView) {
+      setError("telegram-webview")
+      return
+    }
+
     // Proactively check microphone permission
     if (navigator.permissions) {
       navigator.permissions.query({ name: 'microphone' as PermissionName }).then((result) => {
@@ -248,7 +257,24 @@ export default function VoiceInput({ onResult, onError }: VoiceInputProps) {
       {/* Error */}
       {error && (
         <div className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-400 space-y-2">
-          {error === "izin-mic" ? (
+          {error === "telegram-webview" ? (
+            <>
+              <p className="font-semibold">📱 Buka di Browser</p>
+              <p className="text-xs text-gray-400">Voice input gak bisa dipakai di dalam Telegram. Kamu perlu buka di browser:</p>
+              <ol className="text-xs text-gray-400 list-decimal list-inside space-y-1">
+                <li>Klik <strong>⋮</strong> (3 titik) di pojok kanan atas</li>
+                <li>Pilih <strong>&quot;Open in Chrome&quot;</strong> atau <strong>&quot;Buka di Browser&quot;</strong></li>
+                <li>Login ulang kalau diminta</li>
+                <li>Coba voice input lagi</li>
+              </ol>
+              <button
+                onClick={() => window.open(window.location.href, '_blank')}
+                className="mt-2 w-full rounded-lg bg-blue-500/20 px-3 py-2 text-xs font-semibold text-blue-300 hover:bg-blue-500/30 transition"
+              >
+                🌐 Buka di Browser
+              </button>
+            </>
+          ) : error === "izin-mic" ? (
             <>
               <p className="font-semibold">🎤 Izin Microphone Ditolak</p>
               <p className="text-xs text-gray-400">Untuk menggunakan voice input, kamu perlu izinkan akses microphone:</p>
