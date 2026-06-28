@@ -318,7 +318,7 @@ export function DashboardView({ transactions, month, onOpenGoals, onOpenWallets 
           {topCat && (
             <PressableCard className="clay-card p-4" pressScale={0.95}>
               <motion.div variants={{ hidden: { opacity: 0, scale: 0.9 }, show: { opacity: 1, scale: 1 } }}>
-                <div className="text-lg mb-2">{topCat.category.icon}</div>
+                <div className="mb-2"><topCat.category.icon className="size-5" style={{ color: topCat.category.color }} /></div>
                 <p className="text-[10px] font-semibold text-muted-foreground mb-1">Top Kategori</p>
                 <p className="text-xs font-bold text-foreground truncate">{topCat.category.label}</p>
                 <p className="text-sm font-bold tabular-nums mt-1" style={{ color: topCat.category.color }}>
