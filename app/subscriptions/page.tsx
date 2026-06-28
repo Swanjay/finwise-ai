@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react"
 import { useSession } from "next-auth/react"
 import { useRouter } from "next/navigation"
+import { formatIDRInput, parseIDRInput } from "@/lib/finwise"
 import { 
   Calendar, Plus, Loader2, Trash2, ArrowLeft, 
   CreditCard, Bell, ChevronRight
@@ -80,7 +81,7 @@ export default function SubscriptionsPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...formData,
-          amount: Number(formData.amount),
+          amount: parseIDRInput(formData.amount),
         }),
       })
       const data = await res.json()
@@ -218,9 +219,10 @@ export default function SubscriptionsPage() {
               <div className="flex-1">
                 <label className="text-xs text-gray-400">Amount (Rp)</label>
                 <input
-                  type="number"
-                  value={formData.amount}
-                  onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
+                  type="text"
+                  inputMode="numeric"
+                  value={formatIDRInput(formData.amount)}
+                  onChange={(e) => setFormData({ ...formData, amount: e.target.value.replace(/\D/g, '') })}
                   placeholder="54000"
                   className="w-full mt-1 rounded-lg border border-border bg-background px-3 py-2.5 text-sm text-white placeholder:text-gray-500 outline-none focus:border-teal-500"
                 />

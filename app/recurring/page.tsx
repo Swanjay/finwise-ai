@@ -28,6 +28,8 @@ import {
   formatIDR,
   EXPENSE_CATEGORIES,
   CATEGORIES,
+  formatIDRInput,
+  parseIDRInput,
   type CategoryId,
   type TxType,
 } from '@/lib/finwise'
@@ -85,12 +87,12 @@ function RecurringContent() {
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    if (Number(amount) <= 0) return
+    if (parseIDRInput(amount) <= 0) return
     const newItem: RecurringItem = {
       id: `r${Date.now()}`,
       type,
       category: type === 'income' ? 'income' : category,
-      amount: Number(amount),
+      amount: parseIDRInput(amount),
       description: description || 'Transaksi berulang',
       frequency,
       active: true,
@@ -198,7 +200,7 @@ function RecurringContent() {
                   id="rec-amount"
                   inputMode="numeric"
                   placeholder="0"
-                  value={amount}
+                  value={formatIDRInput(amount)}
                   onChange={(e) => setAmount(e.target.value.replace(/\D/g, ''))}
                   className="h-10 tabular-nums"
                 />
@@ -274,7 +276,7 @@ function RecurringContent() {
                 </Button>
                 <Button
                   type="submit"
-                  disabled={Number(amount) <= 0}
+                  disabled={parseIDRInput(amount) <= 0}
                   className="flex-1"
                 >
                   <Check className="size-4" /> Simpan

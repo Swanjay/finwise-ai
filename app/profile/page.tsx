@@ -6,6 +6,7 @@ import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { FinwiseProvider, useFinwise } from "@/components/finwise-store"
 import { useSession } from "next-auth/react"
+import { formatIDRInput, parseIDRInput } from "@/lib/finwise"
 
 export default function ProfilePageWrapper() {
   return (
@@ -72,11 +73,6 @@ function ProfilePage() {
     setSaving(false)
   }
 
-  function formatCurrencyInput(value: string) {
-    const num = value.replace(/\D/g, "")
-    if (!num) return ""
-    return new Intl.NumberFormat("id-ID").format(parseInt(num))
-  }
 
   // Get real stats from store
   const txCount = store.transactions.length
@@ -222,8 +218,8 @@ function ProfilePage() {
                 <Wallet className="absolute left-4 top-1/2 -translate-y-1/2 size-4 text-gray-500" />
                 <input
                   type="text"
-                  value={store.monthlyIncome ? formatCurrencyInput(String(store.monthlyIncome)) : ""}
-                  onChange={(e) => store.updateMonthlyIncome(parseInt(e.target.value.replace(/\D/g, "")) || 0)}
+                  value={store.monthlyIncome ? formatIDRInput(String(store.monthlyIncome)) : ""}
+                  onChange={(e) => store.updateMonthlyIncome(parseIDRInput(e.target.value))}
                   placeholder="Rp 0"
                   className="w-full pl-11 pr-4 py-3 rounded-xl bg-muted border border-border text-white placeholder-gray-500 focus:border-teal-500 focus:ring-1 focus:ring-teal-500 outline-none transition"
                 />

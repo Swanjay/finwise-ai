@@ -6,7 +6,7 @@ import {
   ChevronLeft, ChevronRight, Check, Plus, Trash2,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { EXPENSE_CATEGORIES } from '@/lib/finwise'
+import { EXPENSE_CATEGORIES, formatIDRInput as fwFormatIDRInput, parseIDRInput } from '@/lib/finwise'
 import { detectLogo } from '@/lib/brand-logos'
 import { FinWiseMascot } from '@/components/finwise/mascot'
 import { Input } from '@/components/ui/input'
@@ -338,7 +338,7 @@ function WalletStepContent({
             <Label className="text-[10px]">Saldo Awal (Rp)</Label>
             <Input
               inputMode="numeric"
-              value={formatIDR(localBalance)}
+              value={fwFormatIDRInput(localBalance)}
               onChange={(e) => setLocalBalance(e.target.value.replace(/\D/g, ''))}
               onBlur={syncToWallets}
               placeholder="0"
@@ -426,7 +426,7 @@ function SalaryStepContent({
         <Label className="text-xs">Nominal Gaji (Rp)</Label>
         <Input
           inputMode="numeric"
-          value={formatIDR(localAmount)}
+          value={fwFormatIDRInput(localAmount)}
           onChange={(e) => {
             const v = e.target.value.replace(/\D/g, '')
             setLocalAmount(v)
@@ -499,7 +499,7 @@ export function OnboardingWizard({ onComplete }: { onComplete: (data: {
       onComplete({
         selectedCategories: selectedCats,
         wallets: wallets.filter(w => w.name.trim().length > 0),
-        salaryAmount: Number(salaryAmount.replace(/\D/g, '')) || 0,
+        salaryAmount: parseIDRInput(salaryAmount),
         salaryDay,
       })
       return

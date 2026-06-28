@@ -2,6 +2,7 @@
 
 import { useState, useRef, useCallback } from "react"
 import { Mic, Loader2, Check, X, Square } from "lucide-react"
+import { formatIDR } from "@/lib/finwise"
 
 interface VoiceInputProps {
   onResult: (parsed: {
@@ -157,7 +158,7 @@ export default function VoiceInput({ onResult }: VoiceInputProps) {
   }
 
   function formatTime(s: number) { return `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, "0")}` }
-  function formatCurrency(n: number) { return new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", minimumFractionDigits: 0 }).format(n) }
+  function formatCurrency(n: number) { return formatIDR(n) }
   
   function reset() {
     setStatus("idle"); setError(""); setTranscript(""); setParsed(null)

@@ -10,7 +10,7 @@ import {
   TabsList,
   TabsTrigger,
 } from '@/components/ui/tabs'
-import { EXPENSE_CATEGORIES, walletAutoCategory, formatIDRShort, type CategoryId, type TxType } from '@/lib/finwise'
+import { EXPENSE_CATEGORIES, walletAutoCategory, formatIDRShort, parseIDRInput, type CategoryId, type TxType } from '@/lib/finwise'
 import { useFinwise } from '@/components/finwise-store'
 import { LocationPicker, type LocationData } from '@/components/finwise/location-picker'
 import { cn } from '@/lib/utils'
@@ -32,7 +32,7 @@ export function AddTransactionForm({ onDone }: { onDone: () => void }) {
   const tagInputRef = useRef<HTMLInputElement>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
-  const valid = Number(amount) > 0 && !isSubmitting
+  const valid = parseIDRInput(amount) > 0 && !isSubmitting
 
   const tagSuggestions = savedTags.filter(
     (t) => !selectedTags.includes(t) && t.includes(tagInput.toLowerCase().trim())
@@ -70,7 +70,7 @@ export function AddTransactionForm({ onDone }: { onDone: () => void }) {
       addTransaction({
         type,
         category: type === 'income' ? 'income' : category,
-        amount: Number(amount),
+        amount: parseIDRInput(amount),
         description: description || (type === 'income' ? 'Pemasukan' : 'Pengeluaran'),
         date,
         walletId,

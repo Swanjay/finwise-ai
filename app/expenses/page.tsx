@@ -28,6 +28,8 @@ import {
   CATEGORIES,
   EXPENSE_CATEGORIES,
   resolveCategory,
+  formatIDRInput,
+  parseIDRInput,
   type Transaction,
   type TxType,
   type CategoryId,
@@ -78,11 +80,11 @@ function ExpensesContent() {
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    if (Number(amount) <= 0) return
+    if (parseIDRInput(amount) <= 0) return
     addTransaction({
       type,
       category: type === 'income' ? 'income' : category,
-      amount: Number(amount),
+      amount: parseIDRInput(amount),
       description: description || (type === 'income' ? 'Pemasukan' : 'Pengeluaran'),
       date,
     })
@@ -167,7 +169,7 @@ function ExpensesContent() {
                   id="exp-amount"
                   inputMode="numeric"
                   placeholder="0"
-                  value={amount}
+                  value={formatIDRInput(amount)}
                   onChange={(e) => setAmount(e.target.value.replace(/\D/g, ''))}
                   className="h-10 tabular-nums"
                 />
@@ -232,7 +234,7 @@ function ExpensesContent() {
                 </Button>
                 <Button
                   type="submit"
-                  disabled={Number(amount) <= 0}
+                  disabled={parseIDRInput(amount) <= 0}
                   className="flex-1"
                 >
                   Simpan

@@ -10,7 +10,7 @@ import {
   TabsList,
   TabsTrigger,
 } from '@/components/ui/tabs'
-import { EXPENSE_CATEGORIES, walletAutoCategory, type CategoryId, type TxType, type Transaction } from '@/lib/finwise'
+import { EXPENSE_CATEGORIES, walletAutoCategory, formatIDRInput, parseIDRInput, type CategoryId, type TxType, type Transaction } from '@/lib/finwise'
 import { useFinwise } from '@/components/finwise-store'
 import { LocationPicker, type LocationData } from '@/components/finwise/location-picker'
 import { cn } from '@/lib/utils'
@@ -38,7 +38,7 @@ export function EditTransactionForm({
   const tagInputRef = useRef<HTMLInputElement>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
-  const valid = Number(amount) > 0 && !isSubmitting
+  const valid = parseIDRInput(amount) > 0 && !isSubmitting
 
   const tagSuggestions = savedTags.filter(
     (t) => !selectedTags.includes(t) && t.includes(tagInput.toLowerCase().trim())
@@ -78,7 +78,7 @@ export function EditTransactionForm({
       updateTransaction(transaction.id, {
         type,
         category: type === 'income' ? 'income' : category,
-        amount: Number(amount),
+        amount: parseIDRInput(amount),
         description: description || (type === 'income' ? 'Pemasukan' : 'Pengeluaran'),
         date,
         walletId,
@@ -105,7 +105,7 @@ export function EditTransactionForm({
           inputMode="numeric"
           autoFocus
           placeholder="0"
-          value={amount}
+          value={formatIDRInput(amount)}
           onChange={(e) => setAmount(e.target.value.replace(/\D/g, ''))}
           className="h-12 text-lg tabular-nums"
         />

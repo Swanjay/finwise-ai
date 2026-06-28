@@ -44,6 +44,7 @@ import {
   filterByMonth, getMonthKey, getMonthLabel,
   EXPENSE_CATEGORIES, BENCHMARK, COLOR_PRESETS, ICON_OPTIONS,
   autoCategory, generateId, resolveCategory,
+  formatIDRInput, parseIDRInput,
   type CategoryId, type Transaction, type Category, type TxType,
   type Wallet as WalletType, type Goal, type RecurringItem,
   WALLET_ICON_OPTIONS, WALLET_COLOR_PRESETS,
@@ -266,8 +267,8 @@ function GoalsSheet({ onClose }: { onClose: () => void }) {
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    if (!name || Number(target) <= 0) return
-    addGoal({ id: generateId(), name, targetAmount: Number(target), currentAmount: 0, deadline: deadline || '2026-12-31', icon: '🎯', color: COLOR_PRESETS[goals.length % COLOR_PRESETS.length] })
+    if (!name || parseIDRInput(target) <= 0) return
+    addGoal({ id: generateId(), name, targetAmount: parseIDRInput(target), currentAmount: 0, deadline: deadline || '2026-12-31', icon: '🎯', color: COLOR_PRESETS[goals.length % COLOR_PRESETS.length] })
     setName(''); setTarget(''); setDeadline(''); setShowForm(false)
   }
 
@@ -277,7 +278,7 @@ function GoalsSheet({ onClose }: { onClose: () => void }) {
       {showForm && (
         <form onSubmit={handleSubmit} className="flex flex-col gap-2 p-3 rounded-xl border border-primary/30">
           <Input placeholder="Nama target (e.g. Laptop baru)" value={name} onChange={(e) => setName(e.target.value)} />
-          <Input inputMode="numeric" placeholder="Target nominal (Rp)" value={target} onChange={(e) => setTarget(e.target.value.replace(/\D/g, ''))} />
+          <Input inputMode="numeric" placeholder="Target nominal (Rp)" value={formatIDRInput(target)} onChange={(e) => setTarget(e.target.value.replace(/\D/g, ''))} />
           <Input type="date" value={deadline} onChange={(e) => setDeadline(e.target.value)} />
           <div className="flex gap-2"><Button type="button" variant="secondary" className="flex-1" onClick={() => setShowForm(false)}>Batal</Button><Button type="submit" className="flex-1">Simpan</Button></div>
         </form>
@@ -329,7 +330,7 @@ function WalletsSheet({ onClose }: { onClose: () => void }) {
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!name) return
-    const balance = Number(initBalance.replace(/\D/g, '')) || 0
+    const balance = parseIDRInput(initBalance)
     const detectedLogo = detectLogo(name)
     if (editingId) {
       updateWallet(editingId, { name, icon, balance, color: walletColor, type: walletType, logo: detectedLogo })
@@ -364,7 +365,7 @@ function WalletsSheet({ onClose }: { onClose: () => void }) {
       {showForm && (
         <form onSubmit={handleSubmit} className="flex flex-col gap-2 p-3 rounded-xl border border-primary/30">
           <Input placeholder="Nama dompet (e.g. GoPay)" value={name} onChange={(e) => setName(e.target.value)} />
-          <Input inputMode="numeric" placeholder="Saldo awal (Rp)" value={initBalance} onChange={(e) => setInitBalance(e.target.value)} />
+          <Input inputMode="numeric" placeholder="Saldo awal (Rp)" value={formatIDRInput(initBalance)} onChange={(e) => setInitBalance(e.target.value.replace(/\D/g, ''))} />
 
           {/* Wallet Type */}
           <div>
@@ -452,12 +453,12 @@ function TransferSheet({ onClose }: { onClose: () => void }) {
   const [amount, setAmount] = useState('')
   const [note, setNote] = useState('')
 
-  const valid = Number(amount) > 0 && fromId && toId && fromId !== toId
+  const valid = parseIDRInput(amount) > 0 && fromId && toId && fromId !== toId
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!valid) return
-    const val = Number(amount.replace(/\D/g, ''))
+    const val = parseIDRInput(amount)
     const fromName = wallets.find(w => w.id === fromId)?.name || 'Dompet'
     const toName = wallets.find(w => w.id === toId)?.name || 'Dompet'
     // Create expense from source wallet
@@ -551,7 +552,7 @@ function TransferSheet({ onClose }: { onClose: () => void }) {
           inputMode="numeric"
           autoFocus
           placeholder="0"
-          value={amount}
+          value={formatIDRInput(amount)}
           onChange={(e) => setAmount(e.target.value.replace(/\D/g, ''))}
           className="h-12 text-lg tabular-nums"
         />
@@ -785,8 +786,8 @@ function SettingsSheet({ onClose, onOpenSheet }: { onClose: () => void; onOpenSh
       <div className="flex flex-col gap-1.5">
         <Label>Pemasukan Bulanan (Rp)</Label>
         <div className="flex gap-2">
-          <Input inputMode="numeric" placeholder="0" value={incStr} onChange={(e) => setIncStr(e.target.value.replace(/\D/g, ''))} className="h-10 tabular-nums" />
-          <Button size="sm" onClick={() => updateMonthlyIncome(Number(incStr) || 0)}>Simpan</Button>
+          <Input inputMode="numeric" placeholder="0" value={formatIDRInput(incStr)} onChange={(e) => setIncStr(e.target.value.replace(/\D/g, ''))} className="h-10 tabular-nums" />
+          <Button size="sm" onClick={() => updateMonthlyIncome(parseIDRInput(incStr))}>Simpan</Button>
         </div>
       </div>
 
@@ -800,7 +801,7 @@ function SettingsSheet({ onClose, onOpenSheet }: { onClose: () => void; onOpenSh
               <div key={c.id} className="flex items-center gap-2">
                 <Icon className="size-4 text-muted-foreground shrink-0" />
                 <span className="flex-1 text-xs">{c.label}</span>
-                <Input inputMode="numeric" placeholder="0" defaultValue={budgets[c.id] || ''} onBlur={(e) => setBudget(c.id, Number(e.target.value.replace(/\D/g, '')) || 0)} className="w-24 h-7 text-xs tabular-nums text-right" />
+                <Input inputMode="numeric" placeholder="0" defaultValue={formatIDRInput(String(budgets[c.id] || ''))} onBlur={(e) => setBudget(c.id, parseIDRInput(e.target.value))} className="w-24 h-7 text-xs tabular-nums text-right" />
               </div>
             )
           })}
@@ -951,12 +952,12 @@ function RecurringSheet({ onClose }: { onClose: () => void }) {
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    if (Number(amount) <= 0) return
+    if (parseIDRInput(amount) <= 0) return
     addRecurring({
       id: generateId(),
       type,
       category: type === 'income' ? 'income' : category,
-      amount: Number(amount),
+      amount: parseIDRInput(amount),
       description: description || 'Transaksi berulang',
       frequency,
       active: true,
@@ -1005,7 +1006,7 @@ function RecurringSheet({ onClose }: { onClose: () => void }) {
           <Tabs value={type} onValueChange={(v) => setType(v as TxType)}>
             <TabsList className="grid w-full grid-cols-2"><TabsTrigger value="expense">Pengeluaran</TabsTrigger><TabsTrigger value="income">Pemasukan</TabsTrigger></TabsList>
           </Tabs>
-          <Input inputMode="numeric" placeholder="Jumlah (Rp)" value={amount} onChange={(e) => setAmount(e.target.value.replace(/\D/g, ''))} />
+          <Input inputMode="numeric" placeholder="Jumlah (Rp)" value={formatIDRInput(amount)} onChange={(e) => setAmount(e.target.value.replace(/\D/g, ''))} />
           <Input placeholder="Deskripsi" value={description} onChange={(e) => setDescription(e.target.value)} />
           <div className="flex gap-2">
             {(['harian', 'mingguan', 'bulanan'] as const).map((f) => (
@@ -1168,7 +1169,7 @@ function BudgetTab({ transactions }: { transactions: Transaction[] }) {
               <div key={c.id} className="flex items-center gap-3">
                 <Icon className="size-4 text-muted-foreground shrink-0" />
                 <span className="flex-1 text-sm">{c.label}</span>
-                <Input inputMode="numeric" placeholder="0" defaultValue={budgets[c.id] || ''} onBlur={(e) => setBudget(c.id, Number(e.target.value.replace(/\D/g, '')) || 0)} className="w-28 h-8 text-xs tabular-nums text-right" />
+                <Input inputMode="numeric" placeholder="0" defaultValue={formatIDRInput(String(budgets[c.id] || ''))} onBlur={(e) => setBudget(c.id, parseIDRInput(e.target.value))} className="w-28 h-8 text-xs tabular-nums text-right" />
               </div>
             )
           })}

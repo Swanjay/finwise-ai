@@ -5,7 +5,7 @@ import { Users, Plus, X, Calculator, Share2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { formatIDR } from '@/lib/finwise'
+import { formatIDR, formatIDRInput, parseIDRInput } from '@/lib/finwise'
 import { cn } from '@/lib/utils'
 
 interface SplitPerson {
@@ -23,7 +23,7 @@ export function SplitBillSheet({ onClose }: { onClose: () => void }) {
   const [splitMode, setSplitMode] = useState<'equal' | 'custom'>('equal')
   const [showResult, setShowResult] = useState(false)
 
-  const total = Number(totalAmount.replace(/\D/g, '')) || 0
+  const total = parseIDRInput(totalAmount)
   const validPeople = people.filter((p) => p.name.trim())
   const equalAmount = validPeople.length > 0 ? Math.ceil(total / validPeople.length) : 0
 
@@ -40,7 +40,7 @@ export function SplitBillSheet({ onClose }: { onClose: () => void }) {
     setPeople((prev) =>
       prev.map((p, i) =>
         i === index
-          ? { ...p, [field]: field === 'amount' ? Number(value.replace(/\D/g, '')) || 0 : value }
+          ? { ...p, [field]: field === 'amount' ? parseIDRInput(value) : value }
           : p
       )
     )
@@ -82,7 +82,7 @@ export function SplitBillSheet({ onClose }: { onClose: () => void }) {
         <Input
           inputMode="numeric"
           placeholder="0"
-          value={totalAmount}
+          value={formatIDRInput(totalAmount)}
           onChange={(e) => setTotalAmount(e.target.value.replace(/\D/g, ''))}
           className="h-12 text-lg tabular-nums"
         />
@@ -152,8 +152,8 @@ export function SplitBillSheet({ onClose }: { onClose: () => void }) {
               <Input
                 inputMode="numeric"
                 placeholder="Rp"
-                value={person.amount ? String(person.amount) : ''}
-                onChange={(e) => updatePerson(i, 'amount', e.target.value)}
+                value={person.amount ? formatIDRInput(String(person.amount)) : ''}
+                onChange={(e) => updatePerson(i, 'amount', e.target.value.replace(/\D/g, ''))}
                 className="w-28 tabular-nums"
               />
             )}

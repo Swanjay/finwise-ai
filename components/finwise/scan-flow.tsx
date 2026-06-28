@@ -13,6 +13,7 @@ import { Label } from '@/components/ui/label'
 import {
   EXPENSE_CATEGORIES,
   formatIDR,
+  formatIDRInput,
   type CategoryId,
   type ReceiptLineItem,
 } from '@/lib/finwise'
@@ -689,8 +690,8 @@ export function ScanFlow({ onDone }: { onDone: () => void }) {
             </div>
             <Input
               inputMode="numeric"
-              value={result.amount}
-              onChange={(e) => setResult({ ...result, amount: Number(e.target.value) || 0 })}
+              value={formatIDRInput(String(result.amount))}
+              onChange={(e) => setResult({ ...result, amount: Number(e.target.value.replace(/\D/g, '')) || 0 })}
               className="mt-2 h-8 text-right text-sm"
               placeholder="Edit total manual"
             />

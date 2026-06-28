@@ -364,9 +364,22 @@ export function formatIDR(value: number): string {
 }
 
 export function formatIDRShort(value: number): string {
-  if (value >= 1_000_000) return `Rp${(value / 1_000_000).toFixed(1).replace('.0', '')}jt`
-  if (value >= 1_000) return `Rp${Math.round(value / 1_000)}rb`
-  return `Rp${value}`
+  // Always use Indonesian thousand-separator dots: 1.000, 10.000, 1.000.000
+  if (value >= 1_000_000_000) return `Rp${new Intl.NumberFormat('id-ID').format(value / 1_000_000)}jt`
+  if (value >= 1_000_000) return `Rp${new Intl.NumberFormat('id-ID').format(value / 1_000)}rb`
+  return `Rp${new Intl.NumberFormat('id-ID').format(value)}`
+}
+
+/** Format a raw number string for display in input fields: "25000" → "25.000" */
+export function formatIDRInput(value: string): string {
+  const num = value.replace(/\D/g, '')
+  if (!num) return ''
+  return new Intl.NumberFormat('id-ID').format(parseInt(num))
+}
+
+/** Parse a formatted input string back to number: "25.000" → 25000 */
+export function parseIDRInput(value: string): number {
+  return parseInt(value.replace(/\D/g, '')) || 0
 }
 
 export function summarize(transactions: Transaction[]) {
