@@ -1,81 +1,73 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { ArrowLeft, Camera, Loader2, Save, Trash2, AlertTriangle, User, Mail, Phone, Calendar, Briefcase, Wallet, Target, Globe, Bell, Moon, Lock, BarChart3 } from "lucide-react"
+import { ArrowLeft, Camera, Loader2, Trash2, AlertTriangle, User, Mail, Phone, Calendar, Briefcase, Wallet, Target, Globe, Bell, Moon, Lock, BarChart3 } from "lucide-react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
+import { FinwiseProvider, useFinwise } from "@/components/finwise-store"
+import { useSession } from "next-auth/react"
 
-interface ProfileData {
-  name: string
-  email: string
-  phone: string
-  birthDate: string
-  gender: string
-  occupation: string
-  monthlyIncome: string
-  savingsTarget: string
-  currency: string
-  notifPush: boolean
-  darkMode: boolean
-  autoLock: boolean
-  weeklyReport: boolean
+export default function ProfilePageWrapper() {
+  return (
+    <FinwiseProvider>
+      <ProfilePage />
+    </FinwiseProvider>
+  )
 }
 
-export default function ProfilePage() {
+function ProfilePage() {
   const router = useRouter()
+  const { data: session } = useSession()
+  const store = useFinwise()
+  
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
-  const [profile, setProfile] = useState<ProfileData>({
+  const [profile, setProfile] = useState({
     name: "",
     email: "",
     phone: "",
     birthDate: "",
     gender: "Laki-laki",
     occupation: "",
-    monthlyIncome: "",
     savingsTarget: "20",
     currency: "IDR",
-    notifPush: true,
-    darkMode: true,
-    autoLock: false,
-    weeklyReport: true,
   })
 
   useEffect(() => {
-    // Load profile from localStorage or API
-    const saved = localStorage.getItem("finwise-profile")
-    if (saved) {
-      try {
-        setProfile(JSON.parse(saved))
-      } catch {}
+    // Load from session
+    if (session?.user) {
+      setProfile(prev => ({
+        ...prev,
+        name: prev.name || session.user?.name || "",
+        email: prev.email || session.user?.email || "",
+      }))
     }
     
-    // Load user info from session
-    const userStr = localStorage.getItem("finwise-user")
-    if (userStr) {
+    // Load saved profile
+    const saved = localStorage.getItem("finwise-profile-data")
+    if (saved) {
       try {
-        const user = JSON.parse(userStr)
-        setProfile(prev => ({
-          ...prev,
-          name: prev.name || user.name || "",
-          email: prev.email || user.email || "",
-        }))
+        setProfile(prev => ({ ...prev, ...JSON.parse(saved) }))
       } catch {}
     }
-  }, [])
+  }, [session])
 
-  function updateField<K extends keyof ProfileData>(key: K, value: ProfileData[K]) {
+  function updateField(key: string, value: string) {
     setProfile(prev => ({ ...prev, [key]: value }))
   }
 
   async function handleSave() {
     setSaving(true)
     try {
-      localStorage.setItem("finwise-profile", JSON.stringify(profile))
+      localStorage.setItem("finwise-profile-data", JSON.stringify(profile))
+      // Update monthly income in store
+      if (profile.savingsTarget) {
+        store.updateMonthlyIncome(parseInt(profile.savingsTarget) || 0)
+      }
       setSaved(true)
       setTimeout(() => setSaved(false), 2000)
     } catch (err) {
-      console.error("Failed to save profile:", err)
+      console.error("Failed to save:", err)
     }
     setSaving(false)
   }
@@ -85,6 +77,11 @@ export default function ProfilePage() {
     if (!num) return ""
     return new Intl.NumberFormat("id-ID").format(parseInt(num))
   }
+
+  // Get real stats from store
+  const txCount = store.transactions.length
+  const activeMonths = new Set(store.transactions.map(tx => tx.date?.slice(0, 7))).size
+  const totalBalance = store.getTotalBalance()
 
   return (
     <div className="min-h-screen bg-background pb-24">
@@ -109,8 +106,12 @@ export default function ProfilePage() {
         {/* Avatar Section */}
         <div className="flex flex-col items-center py-6">
           <div className="relative mb-4">
-            <div className="w-24 h-24 rounded-full bg-gradient-to-br from-teal-400 to-cyan-400 flex items-center justify-center text-4xl">
-              👤
+            <div className="w-24 h-24 rounded-full bg-gradient-to-br from-teal-400 to-cyan-400 flex items-center justify-center text-4xl overflow-hidden">
+              {session?.user?.image ? (
+                <img src={session.user.image} alt="" className="w-full h-full object-cover" />
+              ) : (
+                <span className="text-3xl font-bold text-white">{(profile.name || 'U')[0].toUpperCase()}</span>
+              )}
             </div>
             <button className="absolute -bottom-1 -right-1 w-9 h-9 rounded-full bg-background border-2 border-teal-500 flex items-center justify-center">
               <Camera className="size-4 text-teal-400" />
@@ -221,8 +222,8 @@ export default function ProfilePage() {
                 <Wallet className="absolute left-4 top-1/2 -translate-y-1/2 size-4 text-gray-500" />
                 <input
                   type="text"
-                  value={profile.monthlyIncome}
-                  onChange={(e) => updateField("monthlyIncome", formatCurrencyInput(e.target.value))}
+                  value={store.monthlyIncome ? formatCurrencyInput(String(store.monthlyIncome)) : ""}
+                  onChange={(e) => store.updateMonthlyIncome(parseInt(e.target.value.replace(/\D/g, "")) || 0)}
                   placeholder="Rp 0"
                   className="w-full pl-11 pr-4 py-3 rounded-xl bg-muted border border-border text-white placeholder-gray-500 focus:border-teal-500 focus:ring-1 focus:ring-teal-500 outline-none transition"
                 />
@@ -264,26 +265,28 @@ export default function ProfilePage() {
           </div>
         </section>
 
-        {/* Stats Card */}
+        {/* Stats Card - Real Data */}
         <div className="rounded-2xl bg-gradient-to-br from-teal-500/10 to-cyan-500/10 border border-teal-500/20 p-5">
           <h3 className="text-xs font-semibold text-teal-400 uppercase tracking-wider mb-4">📊 Statistik Akun</h3>
           <div className="grid grid-cols-3 gap-4 text-center">
             <div>
-              <div className="text-2xl font-bold text-white">142</div>
+              <div className="text-2xl font-bold text-white">{txCount}</div>
               <div className="text-xs text-gray-400 mt-1">Transaksi</div>
             </div>
             <div>
-              <div className="text-2xl font-bold text-white">4</div>
+              <div className="text-2xl font-bold text-white">{activeMonths}</div>
               <div className="text-xs text-gray-400 mt-1">Bulan Aktif</div>
             </div>
             <div>
-              <div className="text-2xl font-bold text-white">85</div>
-              <div className="text-xs text-gray-400 mt-1">Health Score</div>
+              <div className="text-2xl font-bold text-white">
+                {new Intl.NumberFormat("id-ID", { notation: "compact", maximumFractionDigits: 1 }).format(totalBalance)}
+              </div>
+              <div className="text-xs text-gray-400 mt-1">Total Saldo</div>
             </div>
           </div>
         </div>
 
-        {/* Preferences */}
+        {/* Preferences - Connected to Store */}
         <section>
           <h3 className="text-xs font-semibold text-teal-400 uppercase tracking-wider mb-4 px-1">Preferensi</h3>
           
@@ -292,29 +295,29 @@ export default function ProfilePage() {
               icon={<Bell className="size-5" />}
               title="Notifikasi Push"
               desc="Pengingat tagihan & budget"
-              active={profile.notifPush}
-              onChange={(v) => updateField("notifPush", v)}
+              active={true}
+              onChange={() => {}}
             />
             <ToggleItem
               icon={<Moon className="size-5" />}
               title="Mode Gelap"
               desc="Tampilan gelap untuk mata"
-              active={profile.darkMode}
-              onChange={(v) => updateField("darkMode", v)}
+              active={store.theme === 'dark'}
+              onChange={store.toggleTheme}
             />
             <ToggleItem
               icon={<Lock className="size-5" />}
               title="Kunci Otomatis"
               desc="Kunci app setelah 5 menit"
-              active={profile.autoLock}
-              onChange={(v) => updateField("autoLock", v)}
+              active={!!store.pin}
+              onChange={() => store.setPin(store.pin ? null : '1234')}
             />
             <ToggleItem
               icon={<BarChart3 className="size-5" />}
-              title="Laporan Mingguan"
-              desc="Kirim ringkasan via email"
-              active={profile.weeklyReport}
-              onChange={(v) => updateField("weeklyReport", v)}
+              title="Sembunyikan Saldo"
+              desc="Sembunyikan angka di dashboard"
+              active={store.hideBalance}
+              onChange={store.toggleHideBalance}
             />
           </div>
         </section>
@@ -324,13 +327,16 @@ export default function ProfilePage() {
           <h3 className="text-xs font-semibold text-red-400 uppercase tracking-wider mb-4 px-1">⚠️ Zona Bahaya</h3>
           
           <div className="space-y-3">
-            <button className="w-full flex items-center gap-3 px-4 py-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500/20 transition">
+            <button 
+              onClick={() => {
+                if (confirm("Yakin hapus semua transaksi? Ini tidak bisa dibatalkan.")) {
+                  store.resetAll()
+                }
+              }}
+              className="w-full flex items-center gap-3 px-4 py-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500/20 transition"
+            >
               <Trash2 className="size-5" />
-              <span className="text-sm font-medium">Hapus Semua Data Transaksi</span>
-            </button>
-            <button className="w-full flex items-center gap-3 px-4 py-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500/20 transition">
-              <AlertTriangle className="size-5" />
-              <span className="text-sm font-medium">Hapus Akun</span>
+              <span className="text-sm font-medium">Reset Semua Data</span>
             </button>
           </div>
         </section>
@@ -346,7 +352,7 @@ function ToggleItem({ icon, title, desc, active, onChange }: {
   title: string
   desc: string
   active: boolean
-  onChange: (v: boolean) => void
+  onChange: () => void
 }) {
   return (
     <div className="flex items-center justify-between p-4 rounded-xl bg-muted/50 border border-border">
@@ -360,7 +366,7 @@ function ToggleItem({ icon, title, desc, active, onChange }: {
         </div>
       </div>
       <button
-        onClick={() => onChange(!active)}
+        onClick={onChange}
         className={`relative w-12 h-7 rounded-full transition-colors ${active ? 'bg-teal-500' : 'bg-gray-600'}`}
       >
         <div className={`absolute top-1 w-5 h-5 rounded-full bg-white shadow transition-transform ${active ? 'left-6' : 'left-1'}`} />
