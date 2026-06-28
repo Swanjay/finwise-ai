@@ -305,13 +305,53 @@ function ProfilePage() {
               active={store.theme === 'dark'}
               onChange={store.toggleTheme}
             />
-            <ToggleItem
-              icon={<Lock className="size-5" />}
-              title="Kunci Otomatis"
-              desc="Kunci app setelah 5 menit"
-              active={!!store.pin}
-              onChange={() => store.setPin(store.pin ? null : '1234')}
-            />
+            <div className="flex items-center justify-between p-4 rounded-xl bg-muted/50 border border-border">
+              <div className="flex items-center gap-3">
+                <div className={`p-2 rounded-lg ${store.pin ? 'bg-teal-500/20 text-teal-400' : 'bg-gray-500/20 text-gray-500'}`}>
+                  <Lock className="size-5" />
+                </div>
+                <div>
+                  <div className="text-sm font-medium text-white">Kunci PIN</div>
+                  <div className="text-xs text-gray-400 mt-0.5">
+                    {store.pin ? '✅ PIN aktif' : '⚪ Tidak aktif'}
+                  </div>
+                </div>
+              </div>
+              <button
+                onClick={() => {
+                  if (store.pin) {
+                    // PIN aktif, tampilkan opsi
+                    const action = confirm('PIN sudah aktif.\n\nOK = Ubah PIN\nCancel = Nonaktifkan PIN')
+                    if (action) {
+                      const newPin = prompt('Masukkan PIN baru (4-6 digit):')
+                      if (newPin && /^\d{4,6}$/.test(newPin)) {
+                        store.setPin(newPin)
+                        alert('✅ PIN berhasil diubah!')
+                      } else if (newPin !== null) {
+                        alert('❌ PIN harus 4-6 digit angka')
+                      }
+                    } else if (action === false) {
+                      if (confirm('Yakin nonaktifkan PIN?')) {
+                        store.setPin(null)
+                        alert('✅ PIN dinonaktifkan')
+                      }
+                    }
+                  } else {
+                    // PIN belum aktif, tampilkan set PIN
+                    const newPin = prompt('Masukkan PIN baru (4-6 digit):')
+                    if (newPin && /^\d{4,6}$/.test(newPin)) {
+                      store.setPin(newPin)
+                      alert('✅ PIN berhasil diaktifkan!')
+                    } else if (newPin !== null) {
+                      alert('❌ PIN harus 4-6 digit angka')
+                    }
+                  }
+                }}
+                className="px-4 py-2 rounded-lg bg-teal-500/20 text-teal-400 text-sm font-medium hover:bg-teal-500/30 transition"
+              >
+                {store.pin ? 'Ubah' : 'Aktifkan'}
+              </button>
+            </div>
             <ToggleItem
               icon={<BarChart3 className="size-5" />}
               title="Sembunyikan Saldo"
