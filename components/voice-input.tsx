@@ -1,7 +1,7 @@
 "use client"
 
-import { useState, useRef } from "react"
-import { Mic, MicOff, Loader2, Check, X } from "lucide-react"
+import { useState, useRef, useCallback } from "react"
+import { Mic, MicOff, Loader2, Check, X, Square, AlertTriangle } from "lucide-react"
 
 interface VoiceInputProps {
   onResult: (parsed: {
@@ -12,10 +12,11 @@ interface VoiceInputProps {
   }) => void
 }
 
+type Status = "idle" | "recording" | "processing" | "result" | "error"
+
 export default function VoiceInput({ onResult }: VoiceInputProps) {
-  const [isListening, setIsListening] = useState(false)
+  const [status, setStatus] = useState<Status>("idle")
   const [transcript, setTranscript] = useState("")
-  const [parsing, setParsing] = useState(false)
   const [parsed, setParsed] = useState<{
     type: "income" | "expense"
     amount: number
@@ -23,111 +24,160 @@ export default function VoiceInput({ onResult }: VoiceInputProps) {
     note: string
   } | null>(null)
   const [error, setError] = useState("")
-  const [debugLog, setDebugLog] = useState<string[]>([])
-  const recognitionRef = useRef<any>(null)
+  const [recordingTime, setRecordingTime] = useState(0)
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null)
+  const chunksRef = useRef<Blob[]>([])
+  const timerRef = useRef<NodeJS.Timeout | null>(null)
+  const streamRef = useRef<MediaStream | null>(null)
 
-  function log(msg: string) {
-    console.log("[voice]", msg)
-    setDebugLog(prev => [...prev, msg])
-  }
+  // Check if browser supports audio recording
+  const canRecord = typeof navigator !== "undefined" && 
+    navigator.mediaDevices && 
+    typeof navigator.mediaDevices.getUserMedia === "function" &&
+    typeof MediaRecorder !== "undefined"
 
-  async function startListening() {
+  const startRecording = useCallback(async () => {
     setError("")
     setTranscript("")
     setParsed(null)
-    setDebugLog([])
+    setRecordingTime(0)
+    chunksRef.current = []
 
-    log("🎤 Starting voice input...")
-
-    // Step 1: Check basic support
-    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-      log("❌ getUserMedia not available")
-      setError("Browser doesn't support microphone access. Use Chrome or Edge.")
-      return
-    }
-    log("✅ getUserMedia available")
-
-    // Step 2: Request microphone
-    log("📞 Requesting microphone permission...")
-    let stream: MediaStream
     try {
-      stream = await navigator.mediaDevices.getUserMedia({ audio: true })
-      log("✅ Microphone access granted!")
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          sampleRate: 16000,
+        }
+      })
+      streamRef.current = stream
+
+      // Use webm/opus if available, otherwise fallback
+      let mimeType = "audio/webm;codecs=opus"
+      if (!MediaRecorder.isTypeSupported(mimeType)) {
+        mimeType = "audio/webm"
+      }
+      if (!MediaRecorder.isTypeSupported(mimeType)) {
+        mimeType = "audio/mp4"
+      }
+      if (!MediaRecorder.isTypeSupported(mimeType)) {
+        mimeType = "" // Let browser choose
+      }
+
+      const recorder = new MediaRecorder(stream, mimeType ? { mimeType } : undefined)
+      mediaRecorderRef.current = recorder
+
+      recorder.ondataavailable = (e) => {
+        if (e.data.size > 0) {
+          chunksRef.current.push(e.data)
+        }
+      }
+
+      recorder.onstop = async () => {
+        stream.getTracks().forEach(t => t.stop())
+        streamRef.current = null
+        
+        if (chunksRef.current.length === 0) {
+          setError("Tidak ada audio terekam")
+          setStatus("error")
+          return
+        }
+
+        const blob = new Blob(chunksRef.current, { type: recorder.mimeType })
+        
+        // Max 25MB
+        if (blob.size > 25 * 1024 * 1024) {
+          setError("Audio terlalu besar (max 25MB)")
+          setStatus("error")
+          return
+        }
+
+        await transcribeAudio(blob)
+      }
+
+      recorder.onerror = (e) => {
+        console.error("[voice] Recorder error:", e)
+        setError("Gagal merekam audio")
+        setStatus("error")
+        stream.getTracks().forEach(t => t.stop())
+      }
+
+      recorder.start(250) // Collect data every 250ms
+      setStatus("recording")
+
+      // Timer
+      let seconds = 0
+      timerRef.current = setInterval(() => {
+        seconds++
+        setRecordingTime(seconds)
+        // Auto-stop after 60 seconds
+        if (seconds >= 60) {
+          stopRecording()
+        }
+      }, 1000)
+
     } catch (err: any) {
-      log(`❌ Microphone error: ${err.name} - ${err.message}`)
-      if (err.name === "NotAllowedError") {
+      console.error("[voice] getUserMedia error:", err)
+      if (err.name === "NotAllowedError" || err.name === "PermissionDeniedError") {
         setError("mic-denied")
       } else if (err.name === "NotFoundError") {
-        setError("No microphone found. Please connect a microphone.")
+        setError("Microphone tidak ditemukan. Pastikan device punya microphone.")
+      } else if (err.name === "NotReadableError") {
+        setError("Microphone sedang dipakai app lain. Tutup app yang pakai mic dulu.")
       } else {
-        setError(`Microphone error: ${err.message}`)
+        setError(`Gagal akses microphone: ${err.message}`)
       }
-      return
+      setStatus("error")
     }
+  }, [])
 
-    // Step 3: Check SpeechRecognition
-    const SR = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
-    if (!SR) {
-      log("❌ SpeechRecognition not available")
-      stream.getTracks().forEach(t => t.stop())
-      setError("Speech recognition not supported. Use Chrome browser.")
-      return
+  const stopRecording = useCallback(() => {
+    if (timerRef.current) {
+      clearInterval(timerRef.current)
+      timerRef.current = null
     }
-    log("✅ SpeechRecognition available")
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state === "recording") {
+      mediaRecorderRef.current.stop()
+    }
+    setStatus("processing")
+  }, [])
 
-    // Step 4: Start recognition
+  async function transcribeAudio(audioBlob: Blob) {
+    setStatus("processing")
     try {
-      const recognition = new SR()
-      recognition.continuous = false
-      recognition.interimResults = true
-      recognition.lang = "id-ID"
+      const formData = new FormData()
+      formData.append("audio", audioBlob, `voice-${Date.now()}.webm`)
 
-      recognition.onresult = (event: any) => {
-        const text = event.results[event.results.length - 1][0].transcript
-        setTranscript(text)
-        if (event.results[event.results.length - 1].isFinal) {
-          log(`✅ Final: "${text}"`)
-          parseTransaction(text)
-        }
+      const res = await fetch("/api/ai/voice-transcribe", {
+        method: "POST",
+        body: formData,
+      })
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}))
+        throw new Error(data.error || `Server error (${res.status})`)
       }
 
-      recognition.onerror = (event: any) => {
-        log(`❌ Recognition error: ${event.error}`)
-        setIsListening(false)
-        stream.getTracks().forEach(t => t.stop())
-        if (event.error === "not-allowed") {
-          setError("mic-denied")
-        } else {
-          setError(`Error: ${event.error}`)
-        }
+      const data = await res.json()
+
+      if (!data.text || data.text.trim().length === 0) {
+        setError("Tidak ada kata terdeteksi. Coba bicara lebih jelas.")
+        setStatus("error")
+        return
       }
 
-      recognition.onend = () => {
-        log("⏹️ Recognition ended")
-        setIsListening(false)
-        stream.getTracks().forEach(t => t.stop())
-      }
+      setTranscript(data.text)
+      await parseTransaction(data.text)
 
-      recognitionRef.current = recognition
-      recognition.start()
-      setIsListening(true)
-      log("✅ Listening started!")
     } catch (err: any) {
-      log(`❌ Failed to start: ${err.message}`)
-      stream.getTracks().forEach(t => t.stop())
-      setError(`Failed to start: ${err.message}`)
+      console.error("[voice] Transcribe error:", err)
+      setError(err.message || "Gagal memproses audio")
+      setStatus("error")
     }
-  }
-
-  function stopListening() {
-    if (recognitionRef.current) {
-      recognitionRef.current.stop()
-    }
-    setIsListening(false)
   }
 
   async function parseTransaction(text: string) {
-    setParsing(true)
     try {
       const res = await fetch("/api/ai/voice-parse", {
         method: "POST",
@@ -137,13 +187,21 @@ export default function VoiceInput({ onResult }: VoiceInputProps) {
       const data = await res.json()
       if (data.ok && data.parsed) {
         setParsed(data.parsed)
+        setStatus("result")
       } else {
-        setError(data.error || "Failed to parse")
+        setError(data.error || "Gagal memahami transaksi")
+        setStatus("error")
       }
     } catch {
-      setError("Connection failed")
+      setError("Gagal memproses transaksi")
+      setStatus("error")
     }
-    setParsing(false)
+  }
+
+  function formatTime(seconds: number) {
+    const m = Math.floor(seconds / 60)
+    const s = seconds % 60
+    return `${m}:${s.toString().padStart(2, "0")}`
   }
 
   function formatCurrency(amount: number) {
@@ -154,37 +212,73 @@ export default function VoiceInput({ onResult }: VoiceInputProps) {
     }).format(amount)
   }
 
+  function handleReset() {
+    setStatus("idle")
+    setError("")
+    setTranscript("")
+    setParsed(null)
+    setRecordingTime(0)
+  }
+
   return (
     <div className="space-y-4">
       {/* Voice Button */}
       <div className="flex flex-col items-center gap-3">
-        <button
-          onClick={isListening ? stopListening : startListening}
-          disabled={parsing}
-          className={`relative size-20 rounded-full flex items-center justify-center transition-all ${
-            isListening
-              ? "bg-red-500/20 border-2 border-red-500 animate-pulse"
-              : "bg-teal-500/20 border-2 border-teal-500 hover:bg-teal-500/30"
-          }`}
-        >
-          {parsing ? (
-            <Loader2 className="size-8 text-teal-400 animate-spin" />
-          ) : isListening ? (
-            <MicOff className="size-8 text-red-400" />
-          ) : (
+        {status === "idle" || status === "error" ? (
+          <button
+            onClick={startRecording}
+            className="relative size-20 rounded-full flex items-center justify-center transition-all bg-teal-500/20 border-2 border-teal-500 hover:bg-teal-500/30 active:scale-95"
+          >
             <Mic className="size-8 text-teal-400" />
+          </button>
+        ) : status === "recording" ? (
+          <button
+            onClick={stopRecording}
+            className="relative size-20 rounded-full flex items-center justify-center transition-all bg-red-500/20 border-2 border-red-500 animate-pulse active:scale-95"
+          >
+            <Square className="size-6 text-red-400 fill-red-400" />
+          </button>
+        ) : status === "processing" ? (
+          <div className="relative size-20 rounded-full flex items-center justify-center bg-teal-500/20 border-2 border-teal-500">
+            <Loader2 className="size-8 text-teal-400 animate-spin" />
+          </div>
+        ) : null}
+
+        <p className="text-xs text-muted-foreground text-center">
+          {status === "idle" && "Klik untuk mulai bicara"}
+          {status === "recording" && (
+            <span className="text-red-400 font-semibold">
+              🔴 Merekam... {formatTime(recordingTime)}
+            </span>
           )}
-        </button>
-        <p className="text-xs text-gray-400 text-center">
-          {isListening ? "Listening... tap to stop" : parsing ? "Processing..." : "Tap to start speaking"}
+          {status === "processing" && "⏳ Memproses audio..."}
+          {status === "result" && "✅ Selesai!"}
+          {status === "error" && (
+            <button onClick={handleReset} className="text-teal-400 underline">
+              Coba lagi
+            </button>
+          )}
         </p>
       </div>
+
+      {/* Browser Support Warning */}
+      {!canRecord && (
+        <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-400 flex items-start gap-2">
+          <AlertTriangle className="size-4 shrink-0 mt-0.5" />
+          <div>
+            <p className="font-semibold">Browser tidak support</p>
+            <p className="text-xs text-muted-foreground mt-1">
+              Gunakan Chrome, Edge, atau Safari untuk voice input.
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Transcript */}
       {transcript && (
         <div className="rounded-xl bg-muted p-4">
-          <p className="text-xs text-gray-400 mb-1">You said:</p>
-          <p className="text-sm text-white">&ldquo;{transcript}&rdquo;</p>
+          <p className="text-xs text-muted-foreground mb-1">Kamu bilang:</p>
+          <p className="text-sm font-medium">&ldquo;{transcript}&rdquo;</p>
         </div>
       )}
 
@@ -193,76 +287,84 @@ export default function VoiceInput({ onResult }: VoiceInputProps) {
         <div className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-400 space-y-2">
           {error === "mic-denied" ? (
             <>
-              <p className="font-semibold">🎤 Microphone Access Denied</p>
-              <p className="text-xs text-gray-400">Please allow microphone access:</p>
-              <ol className="text-xs text-gray-400 list-decimal list-inside space-y-1">
-                <li>Click the 🔒 icon in the address bar</li>
-                <li>Find &quot;Microphone&quot;</li>
-                <li>Set to &quot;Allow&quot;</li>
-                <li>Refresh this page</li>
+              <p className="font-semibold">🎤 Izin Microphone Ditolak</p>
+              <p className="text-xs text-muted-foreground">Untuk voice input, izinkan akses microphone:</p>
+              <ol className="text-xs text-muted-foreground list-decimal list-inside space-y-1">
+                <li>Klik 🔒 atau ⓘ di address bar (atas)</li>
+                <li>Cari &quot;Microphone&quot;</li>
+                <li>Ganti ke &quot;Allow&quot;</li>
+                <li>Refresh halaman ini</li>
               </ol>
+              <button 
+                onClick={() => window.location.reload()} 
+                className="w-full mt-2 px-4 py-2 rounded-lg bg-red-500/20 text-red-400 text-xs font-semibold hover:bg-red-500/30 transition"
+              >
+                🔄 Refresh Halaman
+              </button>
             </>
           ) : (
-            <p>{error}</p>
+            <>
+              <p className="font-semibold">❌ Error</p>
+              <p className="text-xs">{error}</p>
+              <button 
+                onClick={handleReset} 
+                className="w-full mt-2 px-4 py-2 rounded-lg bg-muted text-xs font-semibold hover:bg-muted/80 transition"
+              >
+                Coba Lagi
+              </button>
+            </>
           )}
         </div>
       )}
 
       {/* Parsed Result */}
-      {parsed && (
+      {parsed && status === "result" && (
         <div className="rounded-xl border border-teal-500/30 bg-teal-500/5 p-4 space-y-3">
-          <p className="text-xs text-teal-400 font-semibold">Parsed Result:</p>
+          <p className="text-xs text-teal-400 font-semibold">Hasil Parsing:</p>
           <div className="space-y-2">
             <div className="flex justify-between">
-              <span className="text-xs text-gray-400">Type</span>
+              <span className="text-xs text-muted-foreground">Tipe</span>
               <span className={`text-xs font-semibold ${parsed.type === "income" ? "text-green-400" : "text-red-400"}`}>
-                {parsed.type === "income" ? "📈 Income" : "📉 Expense"}
+                {parsed.type === "income" ? "📈 Pemasukan" : "📉 Pengeluaran"}
               </span>
             </div>
             <div className="flex justify-between">
-              <span className="text-xs text-gray-400">Amount</span>
-              <span className="text-sm font-bold text-white">{formatCurrency(parsed.amount)}</span>
+              <span className="text-xs text-muted-foreground">Jumlah</span>
+              <span className="text-sm font-bold">{formatCurrency(parsed.amount)}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-xs text-gray-400">Category</span>
-              <span className="text-xs text-white">{parsed.category}</span>
+              <span className="text-xs text-muted-foreground">Kategori</span>
+              <span className="text-xs font-medium">{parsed.category}</span>
             </div>
             {parsed.note && (
               <div className="flex justify-between">
-                <span className="text-xs text-gray-400">Note</span>
-                <span className="text-xs text-gray-300">{parsed.note}</span>
+                <span className="text-xs text-muted-foreground">Catatan</span>
+                <span className="text-xs">{parsed.note}</span>
               </div>
             )}
           </div>
           <div className="flex gap-3 pt-2">
-            <button onClick={() => { setParsed(null); setTranscript("") }} className="flex-1 flex items-center justify-center gap-2 rounded-lg border border-border px-4 py-2.5 text-sm text-gray-400 hover:text-white transition">
-              <X className="size-4" /> Cancel
+            <button onClick={handleReset} className="flex-1 flex items-center justify-center gap-2 rounded-lg border border-border px-4 py-2.5 text-sm text-muted-foreground hover:text-foreground transition">
+              <X className="size-4" /> Batal
             </button>
-            <button onClick={() => { onResult(parsed); setParsed(null); setTranscript("") }} className="flex-1 flex items-center justify-center gap-2 rounded-lg bg-teal-500 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-teal-600">
-              <Check className="size-4" /> Confirm
+            <button onClick={() => { onResult(parsed); handleReset() }} className="flex-1 flex items-center justify-center gap-2 rounded-lg bg-teal-500 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-teal-600">
+              <Check className="size-4" /> Catat
             </button>
           </div>
         </div>
       )}
 
       {/* Tips */}
-      <div className="rounded-xl bg-muted p-4 space-y-2">
-        <p className="text-xs text-gray-400 font-semibold">💡 Example commands:</p>
-        <ul className="text-xs text-gray-500 space-y-1">
-          <li>&ldquo;Beli batagor 5 ribu&rdquo;</li>
-          <li>&ldquo;Makan siang 25rb&rdquo;</li>
-          <li>&ldquo;Terima gaji 5 juta&rdquo;</li>
-        </ul>
-      </div>
-
-      {/* Debug Log */}
-      {debugLog.length > 0 && (
-        <details className="rounded-xl bg-muted p-4" open>
-          <summary className="text-xs text-gray-400 font-semibold cursor-pointer">🔧 Debug Log</summary>
-          <div className="mt-2 space-y-1 text-xs text-gray-500 font-mono">
-            {debugLog.map((msg, i) => <p key={i}>{msg}</p>)}
-          </div>
-        </details>
+      {status === "idle" && (
+        <div className="rounded-xl bg-muted p-4 space-y-2">
+          <p className="text-xs text-muted-foreground font-semibold">💡 Contoh perintah:</p>
+          <ul className="text-xs text-muted-foreground/70 space-y-1">
+            <li>&ldquo;Beli batagor 5 ribu&rdquo;</li>
+            <li>&ldquo;Makan siang 25rb&rdquo;</li>
+            <li>&ldquo;Terima gaji 5 juta&rdquo;</li>
+            <li>&ldquo;Grab ke kantor 15rb&rdquo;</li>
+          </ul>
+        </div>
       )}
     </div>
   )
