@@ -1363,7 +1363,7 @@ function AppShell() {
       {/* Content */}
       <main className="flex-1 px-4 pb-32">
         {!tipsDismissed && tab === 'home' && <OnboardingTips onDismiss={dismissTips} />}
-        {tab === 'home' && <DashboardView transactions={monthTx} month={getMonthLabel(monthKey)} />}
+        {tab === 'home' && <DashboardView transactions={monthTx} month={getMonthLabel(monthKey)} onOpenGoals={() => setSheet('goals')} onOpenWallets={() => setSheet('wallets')} onOpenAdd={() => setSheet('add')} onOpenReports={() => router.push('/reports')} />}
         {tab === 'transactions' && <TransactionsView />}
         {tab === 'trends' && <TrendsView />}
         {tab === 'budget' && <BudgetTab transactions={monthTx} />}

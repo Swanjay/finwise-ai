@@ -21,7 +21,7 @@ import { PressableCard, PressEffect } from './pressable-card'
 import { motion } from 'framer-motion'
 import { cn } from '@/lib/utils'
 
-export function DashboardView({ transactions, month, onOpenGoals, onOpenWallets }: { transactions: Transaction[]; month: string; onOpenGoals?: () => void; onOpenWallets?: () => void }) {
+export function DashboardView({ transactions, month, onOpenGoals, onOpenWallets, onOpenAdd, onOpenReports }: { transactions: Transaction[]; month: string; onOpenGoals?: () => void; onOpenWallets?: () => void; onOpenAdd?: () => void; onOpenReports?: () => void }) {
   const { allCategories, hideBalance, toggleHideBalance, getTotalBalance, recurring, budgets, goals, wallets, getWalletBalance } = useFinwise()
   const { stats } = useGamification()
   const { income, expense, surplus } = summarize(transactions)
@@ -145,10 +145,10 @@ export function DashboardView({ transactions, month, onOpenGoals, onOpenWallets 
           </div>
           {/* Quick actions */}
           <div className="flex gap-2 mt-4">
-            <button className="flex-1 py-2.5 rounded-xl bg-primary text-primary-foreground text-xs font-bold hover:opacity-90 transition">
+            <button onClick={() => onOpenAdd?.()} className="flex-1 py-2.5 rounded-xl bg-primary text-primary-foreground text-xs font-bold hover:opacity-90 transition active:scale-95">
               + Tambah
             </button>
-            <button className="flex-1 py-2.5 rounded-xl bg-secondary text-foreground text-xs font-bold hover:bg-secondary/80 transition">
+            <button onClick={() => onOpenReports?.()} className="flex-1 py-2.5 rounded-xl bg-secondary text-foreground text-xs font-bold hover:bg-secondary/80 transition active:scale-95">
               📊 Laporan
             </button>
           </div>
