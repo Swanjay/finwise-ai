@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useRef, useCallback } from "react"
-import { Mic, Loader2, Check, X, Keyboard, Upload } from "lucide-react"
+import { Mic, Loader2, Check, X, Square } from "lucide-react"
 
 interface VoiceInputProps {
   onResult: (parsed: {
@@ -12,8 +12,10 @@ interface VoiceInputProps {
   }) => void
 }
 
+type Status = "idle" | "recording" | "processing" | "result" | "error"
+
 export default function VoiceInput({ onResult }: VoiceInputProps) {
-  const [status, setStatus] = useState<"idle" | "processing" | "result" | "error">("idle")
+  const [status, setStatus] = useState<Status>("idle")
   const [transcript, setTranscript] = useState("")
   const [parsed, setParsed] = useState<{
     type: "income" | "expense"
@@ -22,45 +24,105 @@ export default function VoiceInput({ onResult }: VoiceInputProps) {
     note: string
   } | null>(null)
   const [error, setError] = useState("")
+  const [recordingTime, setRecordingTime] = useState(0)
   const [manualText, setManualText] = useState("")
-  const fileInputRef = useRef<HTMLInputElement>(null)
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null)
+  const chunksRef = useRef<Blob[]>([])
+  const timerRef = useRef<NodeJS.Timeout | null>(null)
+  const streamRef = useRef<MediaStream | null>(null)
 
-  async function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0]
-    if (!file) return
-    
+  // ─── VOICE RECORDING (getUserMedia) ───
+  const startRecording = useCallback(async () => {
     setError("")
     setTranscript("")
     setParsed(null)
-    setStatus("processing")
+    setRecordingTime(0)
+    chunksRef.current = []
 
     try {
-      // Send to transcription API
-      const formData = new FormData()
-      formData.append("audio", file, file.name)
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        audio: { echoCancellation: true, noiseSuppression: true } 
+      })
+      streamRef.current = stream
 
+      let mimeType = ""
+      for (const fmt of ["audio/webm;codecs=opus", "audio/webm", "audio/mp4", "audio/ogg", ""]) {
+        if (!fmt || MediaRecorder.isTypeSupported(fmt)) { mimeType = fmt; break }
+      }
+
+      const recorder = new MediaRecorder(stream, mimeType ? { mimeType } : undefined)
+      mediaRecorderRef.current = recorder
+
+      recorder.ondataavailable = (e) => {
+        if (e.data.size > 0) chunksRef.current.push(e.data)
+      }
+
+      recorder.onstop = async () => {
+        stream.getTracks().forEach(t => t.stop())
+        streamRef.current = null
+        if (chunksRef.current.length === 0) { setError("Tidak ada audio terekam"); setStatus("error"); return }
+        const blob = new Blob(chunksRef.current, { type: recorder.mimeType || "audio/webm" })
+        await transcribeAudio(blob)
+      }
+
+      recorder.onerror = () => {
+        setError("Gagal merekam audio")
+        setStatus("error")
+        stream.getTracks().forEach(t => t.stop())
+      }
+
+      recorder.start(250)
+      setStatus("recording")
+
+      let sec = 0
+      timerRef.current = setInterval(() => {
+        sec++
+        setRecordingTime(sec)
+        if (sec >= 60) stopRecording()
+      }, 1000)
+
+    } catch (err: any) {
+      if (err.name === "NotAllowedError") {
+        setError("Izin microphone ditolak. Klik 🔒 di address bar → Microphone → Allow, lalu refresh halaman.")
+      } else if (err.name === "NotFoundError") {
+        setError("Microphone tidak ditemukan di device ini.")
+      } else if (err.name === "NotReadableError") {
+        setError("Microphone sedang dipakai app lain. Tutup WhatsApp/Zoom dulu.")
+      } else {
+        setError(`Error: ${err.message || err.name}`)
+      }
+      setStatus("error")
+    }
+  }, [])
+
+  const stopRecording = useCallback(() => {
+    if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null }
+    if (mediaRecorderRef.current?.state === "recording") mediaRecorderRef.current.stop()
+    setStatus("processing")
+  }, [])
+
+  async function transcribeAudio(audioBlob: Blob) {
+    setStatus("processing")
+    try {
+      const formData = new FormData()
+      formData.append("audio", audioBlob, `voice-${Date.now()}.webm`)
       const res = await fetch("/api/ai/voice-transcribe", { method: "POST", body: formData })
       if (!res.ok) {
         const data = await res.json().catch(() => ({}))
-        throw new Error(data.error || `Server error (${res.status})`)
+        throw new Error(data.error || `Server error ${res.status}`)
       }
-
       const data = await res.json()
       if (!data.text?.trim()) {
-        setError("Tidak ada kata terdeteksi. Coba rekam lebih jelas.")
+        setError("Tidak ada kata terdeteksi. Coba bicara lebih jelas & dekat mic.")
         setStatus("error")
         return
       }
-
       setTranscript(data.text)
       await doParse(data.text)
     } catch (err: any) {
       setError(err.message || "Gagal memproses audio")
       setStatus("error")
     }
-
-    // Reset file input
-    if (fileInputRef.current) fileInputRef.current.value = ""
   }
 
   async function doParse(text: string) {
@@ -75,11 +137,11 @@ export default function VoiceInput({ onResult }: VoiceInputProps) {
         setParsed(data.parsed)
         setStatus("result")
       } else {
-        setError(data.error || "Gagal memahami")
+        setError(data.error || "Gagal memahami transaksi")
         setStatus("error")
       }
     } catch {
-      setError("Gagal memproses")
+      setError("Gagal memproses transaksi")
       setStatus("error")
     }
   }
@@ -94,102 +156,77 @@ export default function VoiceInput({ onResult }: VoiceInputProps) {
     doParse(text)
   }
 
-  function formatCurrency(n: number) {
-    return new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", minimumFractionDigits: 0 }).format(n)
-  }
-
+  function formatTime(s: number) { return `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, "0")}` }
+  function formatCurrency(n: number) { return new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", minimumFractionDigits: 0 }).format(n) }
+  
   function reset() {
-    setStatus("idle")
-    setError("")
-    setTranscript("")
-    setParsed(null)
-    setManualText("")
+    setStatus("idle"); setError(""); setTranscript(""); setParsed(null)
+    setRecordingTime(0); setManualText("")
+    if (streamRef.current) { streamRef.current.getTracks().forEach(t => t.stop()); streamRef.current = null }
   }
 
   return (
     <div className="space-y-4">
-      {/* ─── Text Input (ALWAYS VISIBLE) ─── */}
+      {/* Text Input */}
       <form onSubmit={handleManualSubmit} className="flex gap-2">
         <input
           value={manualText}
           onChange={(e) => setManualText(e.target.value)}
           placeholder="ketik: beli kopi 25rb"
-          className="flex-1 px-4 py-3 rounded-xl bg-muted border border-border text-sm placeholder:text-muted-foreground/50 focus:border-teal-500 focus:ring-1 focus:ring-teal-500 outline-none transition"
-          disabled={status === "processing"}
+          className="flex-1 px-4 py-3 rounded-xl bg-teal-500/10 border border-teal-500/30 text-sm placeholder:text-teal-400/50 focus:border-teal-500 focus:ring-1 focus:ring-teal-500 outline-none transition"
+          disabled={status === "processing" || status === "recording"}
         />
         <button
           type="submit"
-          disabled={!manualText.trim() || status === "processing"}
-          className="px-4 py-3 rounded-xl bg-teal-500 text-white text-sm font-semibold hover:bg-teal-600 transition disabled:opacity-50 disabled:cursor-not-allowed active:scale-95"
+          disabled={!manualText.trim() || status === "processing" || status === "recording"}
+          className="px-4 py-3 rounded-xl bg-teal-500 text-white text-sm font-semibold hover:bg-teal-600 transition disabled:opacity-50 active:scale-95"
         >
-          <Keyboard className="size-4" />
+          <KeyboardIcon />
         </button>
       </form>
 
-      {/* ─── Divider ─── */}
+      {/* Divider */}
       <div className="flex items-center gap-3">
         <div className="flex-1 h-px bg-border" />
         <span className="text-[10px] text-muted-foreground uppercase tracking-wider">atau rekam suara</span>
         <div className="flex-1 h-px bg-border" />
       </div>
 
-      {/* ─── Voice Section ─── */}
-      <div className="flex flex-col items-center gap-4">
-        {/* System Recorder Button (always works!) */}
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept="audio/*"
-          capture="user"
-          onChange={handleFileSelect}
-          className="hidden"
-        />
-        
-        <button
-          onClick={() => fileInputRef.current?.click()}
-          disabled={status === "processing"}
-          className="w-full flex items-center justify-center gap-3 px-6 py-4 rounded-2xl bg-teal-500/10 border-2 border-teal-500/30 hover:bg-teal-500/20 active:scale-[0.98] transition disabled:opacity-50"
-        >
-          {status === "processing" ? (
-            <>
-              <Loader2 className="size-6 text-teal-400 animate-spin" />
-              <span className="text-sm font-semibold text-teal-400">Memproses audio...</span>
-            </>
-          ) : (
-            <>
-              <Mic className="size-6 text-teal-400" />
-              <div className="text-left">
-                <p className="text-sm font-semibold text-teal-400">🎤 Rekam dari Mic</p>
-                <p className="text-[10px] text-muted-foreground mt-0.5">Buka recorder HP → rekam → otomatis diproses</p>
-              </div>
-            </>
-          )}
-        </button>
+      {/* Mic Button — getUserMedia langsung */}
+      <div className="flex flex-col items-center gap-3">
+        {(status === "idle" || status === "error") && (
+          <button
+            onClick={startRecording}
+            className="relative size-20 rounded-full flex items-center justify-center bg-teal-500/20 border-2 border-teal-500 hover:bg-teal-500/30 active:scale-95 transition"
+          >
+            <Mic className="size-8 text-teal-400" />
+          </button>
+        )}
 
-        {/* Upload existing audio */}
-        <button
-          onClick={() => {
-            const input = document.createElement("input")
-            input.type = "file"
-            input.accept = "audio/*"
-            input.onchange = (e) => {
-              const file = (e.target as HTMLInputElement).files?.[0]
-              if (file) {
-                const fakeEvent = { target: { files: [file] } } as any
-                handleFileSelect(fakeEvent)
-              }
-            }
-            input.click()
-          }}
-          disabled={status === "processing"}
-          className="w-full flex items-center justify-center gap-3 px-6 py-3 rounded-2xl bg-muted border border-border hover:bg-muted/80 active:scale-[0.98] transition disabled:opacity-50"
-        >
-          <Upload className="size-4 text-muted-foreground" />
-          <span className="text-xs text-muted-foreground">Upload file audio yang sudah ada</span>
-        </button>
+        {status === "recording" && (
+          <button
+            onClick={stopRecording}
+            className="relative size-20 rounded-full flex items-center justify-center bg-red-500/20 border-2 border-red-500 animate-pulse active:scale-95 transition"
+          >
+            <Square className="size-6 text-red-400 fill-red-400" />
+          </button>
+        )}
+
+        {status === "processing" && (
+          <div className="relative size-20 rounded-full flex items-center justify-center bg-teal-500/20 border-2 border-teal-500">
+            <Loader2 className="size-8 text-teal-400 animate-spin" />
+          </div>
+        )}
+
+        <p className="text-xs text-muted-foreground text-center">
+          {status === "idle" && "Klik mic untuk mulai bicara"}
+          {status === "recording" && <span className="text-red-400 font-semibold">🔴 Merekam {formatTime(recordingTime)} — klik untuk stop</span>}
+          {status === "processing" && "⏳ Memproses..."}
+          {status === "error" && <button onClick={reset} className="text-teal-400 underline underline-offset-2">Coba lagi</button>}
+        </p>
       </div>
 
-      {/* ─── Transcript ─── */}
+      {/* Transcript */}
       {transcript && (
         <div className="rounded-xl bg-muted p-3">
           <p className="text-xs text-muted-foreground mb-1">Kamu bilang:</p>
@@ -197,14 +234,24 @@ export default function VoiceInput({ onResult }: VoiceInputProps) {
         </div>
       )}
 
-      {/* ─── Error ─── */}
+      {/* Error */}
       {error && (
-        <div className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-400">
-          <p>{error}</p>
+        <div className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 space-y-2">
+          <p className="text-sm text-red-400">{error}</p>
+          {error.includes("ditolak") && (
+            <ol className="text-xs text-muted-foreground list-decimal list-inside space-y-1">
+              <li>Klik <strong>🔒</strong> di address bar</li>
+              <li>Cari <strong>Microphone</strong> → <strong>Allow</strong></li>
+              <li>Refresh halaman</li>
+            </ol>
+          )}
+          <button onClick={reset} className="w-full px-4 py-2 rounded-lg bg-red-500/20 text-red-400 text-xs font-semibold hover:bg-red-500/30 transition">
+            Coba Lagi
+          </button>
         </div>
       )}
 
-      {/* ─── Parsed Result ─── */}
+      {/* Parsed Result */}
       {parsed && status === "result" && (
         <div className="rounded-xl border border-teal-500/30 bg-teal-500/5 p-4 space-y-3">
           <p className="text-xs text-teal-400 font-semibold">Hasil Parsing:</p>
@@ -241,18 +288,34 @@ export default function VoiceInput({ onResult }: VoiceInputProps) {
         </div>
       )}
 
-      {/* ─── Tips ─── */}
+      {/* Tips */}
       {status === "idle" && (
-        <div className="rounded-xl bg-muted p-4 space-y-2">
-          <p className="text-xs text-muted-foreground font-semibold">💡 Contoh perintah:</p>
-          <ul className="text-xs text-muted-foreground/70 space-y-1">
-            <li>&ldquo;Beli batagor 5 ribu&rdquo;</li>
-            <li>&ldquo;Makan siang 25rb&rdquo;</li>
-            <li>&ldquo;Terima gaji 5 juta&rdquo;</li>
-            <li>&ldquo;Grab ke kantor 15rb&rdquo;</li>
-          </ul>
+        <div className="rounded-xl bg-teal-500/5 border border-teal-500/20 p-4 space-y-2">
+          <p className="text-xs text-teal-400 font-semibold">💡 Contoh perintah:</p>
+          <div className="grid grid-cols-2 gap-1.5">
+            {['"Beli batagor 5 ribu"', '"Makan siang 25rb"', '"Terima gaji 5 juta"', '"Grab ke kantor 15rb"'].map((ex, i) => (
+              <button
+                key={i}
+                onClick={() => { setManualText(ex.replace(/"/g, '')); }}
+                className="text-left text-[11px] text-teal-400/70 hover:text-teal-400 transition px-2 py-1.5 rounded-lg hover:bg-teal-500/10"
+              >
+                {ex}
+              </button>
+            ))}
+          </div>
         </div>
       )}
     </div>
+  )
+}
+
+function KeyboardIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <rect width="20" height="16" x="2" y="4" rx="2" />
+      <path d="M6 8h.001" /><path d="M10 8h.001" /><path d="M14 8h.001" /><path d="M18 8h.001" />
+      <path d="M8 12h.001" /><path d="M12 12h.001" /><path d="M16 12h.001" />
+      <path d="M7 16h10" />
+    </svg>
   )
 }

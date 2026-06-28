@@ -1272,7 +1272,7 @@ function UserAvatar({ onOpenSettings }: { onOpenSettings?: () => void }) {
 
 // ─── Main App Shell ───
 function AppShell() {
-  const { transactions, isLocked, pin, tipsDismissed, dismissTips, allCategories, addTransaction, theme, toggleTheme } = useFinwise()
+  const { transactions, isLocked, pin, tipsDismissed, dismissTips, allCategories, addTransaction, wallets, theme, toggleTheme } = useFinwise()
   const { stats, newBadge, clearNewBadge } = useGamification()
   const router = useRouter()
   const [tab, setTab] = useState<Tab>('home')
@@ -1459,7 +1459,18 @@ function AppShell() {
       <BottomSheet open={sheet === 'smart-budget'} onClose={() => setSheet(null)} title="🤖 Smart Budget"><SmartBudgetSheet onClose={() => setSheet(null)} /></BottomSheet>
       <BottomSheet open={sheet === 'split-bill'} onClose={() => setSheet(null)} title="👥 Split Bill"><SplitBillSheet onClose={() => setSheet(null)} /></BottomSheet>
       <BottomSheet open={sheet === 'notifications'} onClose={() => setSheet(null)} title="🔔 Notifikasi"><NotificationCenter onClose={() => setSheet(null)} /></BottomSheet>
-      <BottomSheet open={sheet === 'voice'} onClose={() => setSheet(null)} title="🎤 Voice Input"><VoiceInput onResult={(parsed) => { setSheet(null); setSheet('add') }} /></BottomSheet>
+      <BottomSheet open={sheet === 'voice'} onClose={() => setSheet(null)} title="🎤 Voice Input"><VoiceInput onResult={(parsed) => {
+          const defaultWallet = wallets[0]?.id || 'cash'
+          addTransaction({
+            type: parsed.type,
+            category: parsed.category,
+            amount: parsed.amount,
+            description: parsed.note,
+            date: new Date().toISOString().slice(0, 10),
+            walletId: defaultWallet,
+          })
+          setSheet(null)
+        }} /></BottomSheet>
 
       {/* Badge unlock toast */}
       {newBadge && <BadgeUnlockToast badge={newBadge} onClose={clearNewBadge} />}
