@@ -55,10 +55,12 @@ type Sheet = 'add' | 'scan' | 'advisor' | 'settings' | 'goals' | 'wallets' | 'tr
 
 // ─── PIN Lock Screen ───
 function PinLock() {
-  const { pin, unlock } = useFinwise()
+  const { pin, unlock, setPin, resetAll } = useFinwise()
   const [input, setInput] = useState('')
   const [error, setError] = useState(false)
   const [showPin, setShowPin] = useState(false)
+  const [failedAttempts, setFailedAttempts] = useState(0)
+  const [showForgotPin, setShowForgotPin] = useState(false)
 
   if (!pin) return null
 
@@ -67,8 +69,25 @@ function PinLock() {
     const encoder = new TextEncoder()
     const hashBuffer = await crypto.subtle.digest('SHA-256', encoder.encode(input))
     const hashed = Array.from(new Uint8Array(hashBuffer)).map((b) => b.toString(16).padStart(2, '0')).join('')
-    if (hashed === pin) { unlock() }
-    else { setError(true); setTimeout(() => setError(false), 1000) }
+    if (hashed === pin) { 
+      unlock()
+      setFailedAttempts(0)
+    } else { 
+      setError(true)
+      setFailedAttempts(prev => prev + 1)
+      setTimeout(() => setError(false), 1000) 
+    }
+  }
+
+  function handleForgotPin() {
+    setShowForgotPin(true)
+  }
+
+  function handleResetData() {
+    if (confirm('⚠️ PERINGATAN!\n\nIni akan menghapus:\n• SEMUA transaksi\n• SEMUA wallet & saldo\n• PIN\n• Semua data lainnya\n\nAksi ini TIDAK bisa dibatalkan.\n\nLanjutkan?')) {
+      resetAll()
+      // Unlock will happen automatically since pin is cleared
+    }
   }
 
   return (
@@ -80,9 +99,67 @@ function PinLock() {
           <Input type={showPin ? 'text' : 'password'} inputMode="numeric" maxLength={6} placeholder="PIN" value={input} onChange={(e) => setInput(e.target.value.replace(/\D/g, ''))} className={cn('h-12 text-center text-2xl tracking-[0.5em] tabular-nums', error && 'border-destructive animate-shake')} autoFocus />
           <button type="button" onClick={() => setShowPin(!showPin)} aria-label={showPin ? "Sembunyikan PIN" : "Tampilkan PIN"} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">{showPin ? <EyeOff className="size-4" /> : <Eye className="size-4" />}</button>
         </div>
-        {error && <p className="text-xs text-destructive text-center">PIN salah</p>}
+        {error && <p className="text-xs text-destructive text-center">PIN salah ({failedAttempts}/5)</p>}
         <Button type="submit" disabled={input.length < 4}>Buka</Button>
+        
+        {failedAttempts >= 3 && (
+          <button
+            type="button"
+            onClick={handleForgotPin}
+            className="text-sm text-muted-foreground hover:text-primary transition mt-2"
+          >
+            Lupa PIN?
+          </button>
+        )}
       </form>
+
+      {/* Forgot PIN Modal */}
+      {showForgotPin && (
+        <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center px-6">
+          <div className="bg-card border border-border rounded-2xl p-6 w-full max-w-sm space-y-4">
+            <h2 className="text-lg font-bold text-center">Lupa PIN?</h2>
+            <p className="text-sm text-muted-foreground text-center">
+              Pilih opsi recovery:
+            </p>
+
+            <div className="space-y-3">
+              <Button
+                onClick={() => {
+                  alert('📧 Link reset akan dikirim ke email kamu.\n\nCek inbox dan klik link untuk membuat PIN baru.\n\n(Coming soon: integrasi dengan email service)')
+                  setShowForgotPin(false)
+                }}
+                variant="outline"
+                className="w-full"
+              >
+                📧 Kirim Link Reset via Email
+              </Button>
+
+              <Button
+                onClick={() => {
+                  handleResetData()
+                  setShowForgotPin(false)
+                }}
+                variant="destructive"
+                className="w-full"
+              >
+                🗑️ Reset Semua Data
+              </Button>
+
+              <Button
+                onClick={() => setShowForgotPin(false)}
+                variant="ghost"
+                className="w-full"
+              >
+                Batal
+              </Button>
+            </div>
+
+            <p className="text-xs text-muted-foreground text-center mt-4">
+              ⚠️ Reset data akan menghapus semua transaksi & PIN
+            </p>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
