@@ -12,7 +12,7 @@ import {
   ToggleRight, CalendarClock, Shield, Eye, EyeOff, Moon, Sun,
   PiggyBank, ReceiptText, ShieldCheck, Upload, LogOut,
   ArrowDownUp, ArrowLeftRight, Pencil,
-  Users, CreditCard, Mic, Heart,
+  Users, CreditCard, Mic, Heart, User,
 } from 'lucide-react'
 import { useSession, signOut } from 'next-auth/react'
 import { FinwiseProvider, useFinwise } from '@/components/finwise-store'
@@ -1176,6 +1176,9 @@ function UserAvatar({ onOpenSettings }: { onOpenSettings?: () => void }) {
             </div>
             {/* Settings & Logout */}
             <div className="p-2 border-t border-border">
+              <Link href="/profile" onClick={() => setShowMenu(false)} className="flex items-center gap-2.5 rounded-lg px-2 py-2 text-sm hover:bg-muted transition">
+                <User className="size-4 text-blue-400" /> Edit Profil
+              </Link>
               <button onClick={() => { setShowMenu(false); onOpenSettings?.() }} className="flex w-full items-center gap-2.5 rounded-lg px-2 py-2 text-sm hover:bg-muted transition">
                 <Settings className="size-4 text-muted-foreground" /> Pengaturan
               </button>
