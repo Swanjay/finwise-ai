@@ -1,7 +1,7 @@
 "use client"
 
-import { useState, useRef, useCallback, useEffect } from "react"
-import { Mic, MicOff, Loader2, Check, X, Square, Keyboard } from "lucide-react"
+import { useState, useRef, useCallback } from "react"
+import { Mic, Loader2, Check, X, Keyboard, Upload } from "lucide-react"
 
 interface VoiceInputProps {
   onResult: (parsed: {
@@ -12,10 +12,8 @@ interface VoiceInputProps {
   }) => void
 }
 
-type Status = "idle" | "requesting" | "recording" | "processing" | "result" | "error"
-
 export default function VoiceInput({ onResult }: VoiceInputProps) {
-  const [status, setStatus] = useState<Status>("idle")
+  const [status, setStatus] = useState<"idle" | "processing" | "result" | "error">("idle")
   const [transcript, setTranscript] = useState("")
   const [parsed, setParsed] = useState<{
     type: "income" | "expense"
@@ -24,129 +22,45 @@ export default function VoiceInput({ onResult }: VoiceInputProps) {
     note: string
   } | null>(null)
   const [error, setError] = useState("")
-  const [recordingTime, setRecordingTime] = useState(0)
-  const [micAvailable, setMicAvailable] = useState<boolean | null>(null)
   const [manualText, setManualText] = useState("")
-  const mediaRecorderRef = useRef<MediaRecorder | null>(null)
-  const chunksRef = useRef<Blob[]>([])
-  const timerRef = useRef<NodeJS.Timeout | null>(null)
-  const streamRef = useRef<MediaStream | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
-  // Check mic availability on mount
-  useEffect(() => {
-    async function checkMic() {
-      try {
-        if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === "undefined") {
-          setMicAvailable(false)
-          return
-        }
-        // Try to check permission state
-        if (navigator.permissions) {
-          const result = await navigator.permissions.query({ name: "microphone" as PermissionName })
-          setMicAvailable(result.state !== "denied")
-          result.onchange = () => setMicAvailable(result.state !== "denied")
-        } else {
-          setMicAvailable(true)
-        }
-      } catch {
-        setMicAvailable(true) // Assume available, will fail gracefully
-      }
-    }
-    checkMic()
-  }, [])
-
-  const startRecording = useCallback(async () => {
+  async function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    
     setError("")
     setTranscript("")
     setParsed(null)
-    setRecordingTime(0)
-    chunksRef.current = []
+    setStatus("processing")
 
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
-      streamRef.current = stream
-
-      let mimeType = ""
-      for (const fmt of ["audio/webm;codecs=opus", "audio/webm", "audio/mp4", ""]) {
-        if (!fmt || MediaRecorder.isTypeSupported(fmt)) { mimeType = fmt; break }
-      }
-
-      const recorder = new MediaRecorder(stream, mimeType ? { mimeType } : undefined)
-      mediaRecorderRef.current = recorder
-
-      recorder.ondataavailable = (e) => {
-        if (e.data.size > 0) chunksRef.current.push(e.data)
-      }
-
-      recorder.onstop = async () => {
-        stream.getTracks().forEach(t => t.stop())
-        streamRef.current = null
-        if (chunksRef.current.length === 0) { setError("Tidak ada audio"); setStatus("error"); return }
-        const blob = new Blob(chunksRef.current, { type: recorder.mimeType || "audio/webm" })
-        await transcribeAudio(blob)
-      }
-
-      recorder.onerror = () => {
-        setError("Gagal merekam")
-        setStatus("error")
-        stream.getTracks().forEach(t => t.stop())
-      }
-
-      recorder.start(250)
-      setStatus("recording")
-
-      let sec = 0
-      timerRef.current = setInterval(() => {
-        sec++
-        setRecordingTime(sec)
-        if (sec >= 60) stopRecording()
-      }, 1000)
-
-    } catch (err: any) {
-      console.error("[voice] Error:", err.name, err.message)
-      setMicAvailable(false)
-      
-      if (err.name === "NotAllowedError" || err.name === "PermissionDeniedError") {
-        setError("mic-denied")
-      } else if (err.name === "NotFoundError") {
-        setError("Microphone tidak ditemukan")
-      } else if (err.name === "NotReadableError") {
-        setError("Microphone sedang dipakai app lain (WhatsApp, Zoom, dll)")
-      } else {
-        setError(`Error: ${err.message || err.name}`)
-      }
-      setStatus("error")
-    }
-  }, [])
-
-  const stopRecording = useCallback(() => {
-    if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null }
-    if (mediaRecorderRef.current?.state === "recording") mediaRecorderRef.current.stop()
-    setStatus("processing")
-  }, [])
-
-  async function transcribeAudio(audioBlob: Blob) {
-    setStatus("processing")
-    try {
+      // Send to transcription API
       const formData = new FormData()
-      formData.append("audio", audioBlob, `voice-${Date.now()}.webm`)
+      formData.append("audio", file, file.name)
+
       const res = await fetch("/api/ai/voice-transcribe", { method: "POST", body: formData })
       if (!res.ok) {
         const data = await res.json().catch(() => ({}))
         throw new Error(data.error || `Server error (${res.status})`)
       }
+
       const data = await res.json()
       if (!data.text?.trim()) {
-        setError("Tidak ada kata terdeteksi. Coba bicara lebih jelas.")
+        setError("Tidak ada kata terdeteksi. Coba rekam lebih jelas.")
         setStatus("error")
         return
       }
+
       setTranscript(data.text)
       await doParse(data.text)
     } catch (err: any) {
       setError(err.message || "Gagal memproses audio")
       setStatus("error")
     }
+
+    // Reset file input
+    if (fileInputRef.current) fileInputRef.current.value = ""
   }
 
   async function doParse(text: string) {
@@ -176,12 +90,21 @@ export default function VoiceInput({ onResult }: VoiceInputProps) {
     if (!text) return
     setTranscript(text)
     setParsed(null)
+    setStatus("processing")
     doParse(text)
   }
 
-  function formatTime(s: number) { return `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, "0")}` }
-  function formatCurrency(n: number) { return new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", minimumFractionDigits: 0 }).format(n) }
-  function reset() { setStatus("idle"); setError(""); setTranscript(""); setParsed(null); setRecordingTime(0); setManualText("") }
+  function formatCurrency(n: number) {
+    return new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", minimumFractionDigits: 0 }).format(n)
+  }
+
+  function reset() {
+    setStatus("idle")
+    setError("")
+    setTranscript("")
+    setParsed(null)
+    setManualText("")
+  }
 
   return (
     <div className="space-y-4">
@@ -190,14 +113,14 @@ export default function VoiceInput({ onResult }: VoiceInputProps) {
         <input
           value={manualText}
           onChange={(e) => setManualText(e.target.value)}
-          placeholder="contoh: beli kopi 25rb"
+          placeholder="ketik: beli kopi 25rb"
           className="flex-1 px-4 py-3 rounded-xl bg-muted border border-border text-sm placeholder:text-muted-foreground/50 focus:border-teal-500 focus:ring-1 focus:ring-teal-500 outline-none transition"
-          disabled={status === "processing" || status === "recording"}
+          disabled={status === "processing"}
         />
         <button
           type="submit"
-          disabled={!manualText.trim() || status === "processing" || status === "recording"}
-          className="px-4 py-3 rounded-xl bg-teal-500 text-white text-sm font-semibold hover:bg-teal-600 transition disabled:opacity-50 disabled:cursor-not-allowed"
+          disabled={!manualText.trim() || status === "processing"}
+          className="px-4 py-3 rounded-xl bg-teal-500 text-white text-sm font-semibold hover:bg-teal-600 transition disabled:opacity-50 disabled:cursor-not-allowed active:scale-95"
         >
           <Keyboard className="size-4" />
         </button>
@@ -206,47 +129,64 @@ export default function VoiceInput({ onResult }: VoiceInputProps) {
       {/* ─── Divider ─── */}
       <div className="flex items-center gap-3">
         <div className="flex-1 h-px bg-border" />
-        <span className="text-[10px] text-muted-foreground">ATAU PAKAI SUARA</span>
+        <span className="text-[10px] text-muted-foreground uppercase tracking-wider">atau rekam suara</span>
         <div className="flex-1 h-px bg-border" />
       </div>
 
-      {/* ─── Voice Button ─── */}
-      <div className="flex flex-col items-center gap-3">
-        {(status === "idle" || status === "error") && (
-          <button
-            onClick={startRecording}
-            className="relative size-20 rounded-full flex items-center justify-center transition-all bg-teal-500/20 border-2 border-teal-500 hover:bg-teal-500/30 active:scale-95"
-          >
-            <Mic className="size-8 text-teal-400" />
-          </button>
-        )}
+      {/* ─── Voice Section ─── */}
+      <div className="flex flex-col items-center gap-4">
+        {/* System Recorder Button (always works!) */}
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="audio/*"
+          capture="user"
+          onChange={handleFileSelect}
+          className="hidden"
+        />
+        
+        <button
+          onClick={() => fileInputRef.current?.click()}
+          disabled={status === "processing"}
+          className="w-full flex items-center justify-center gap-3 px-6 py-4 rounded-2xl bg-teal-500/10 border-2 border-teal-500/30 hover:bg-teal-500/20 active:scale-[0.98] transition disabled:opacity-50"
+        >
+          {status === "processing" ? (
+            <>
+              <Loader2 className="size-6 text-teal-400 animate-spin" />
+              <span className="text-sm font-semibold text-teal-400">Memproses audio...</span>
+            </>
+          ) : (
+            <>
+              <Mic className="size-6 text-teal-400" />
+              <div className="text-left">
+                <p className="text-sm font-semibold text-teal-400">🎤 Rekam dari Mic</p>
+                <p className="text-[10px] text-muted-foreground mt-0.5">Buka recorder HP → rekam → otomatis diproses</p>
+              </div>
+            </>
+          )}
+        </button>
 
-        {status === "requesting" && (
-          <div className="relative size-20 rounded-full flex items-center justify-center bg-amber-500/20 border-2 border-amber-500 animate-pulse">
-            <Loader2 className="size-8 text-amber-400 animate-spin" />
-          </div>
-        )}
-
-        {status === "recording" && (
-          <button onClick={stopRecording} className="relative size-20 rounded-full flex items-center justify-center bg-red-500/20 border-2 border-red-500 animate-pulse active:scale-95">
-            <Square className="size-6 text-red-400 fill-red-400" />
-          </button>
-        )}
-
-        {status === "processing" && (
-          <div className="relative size-20 rounded-full flex items-center justify-center bg-teal-500/20 border-2 border-teal-500">
-            <Loader2 className="size-8 text-teal-400 animate-spin" />
-          </div>
-        )}
-
-        <p className="text-xs text-muted-foreground text-center">
-          {status === "idle" && "Klik mic untuk bicara"}
-          {status === "requesting" && <span className="text-amber-400">Meminta izin mic...</span>}
-          {status === "recording" && <span className="text-red-400 font-semibold">🔴 {formatTime(recordingTime)} — klik untuk stop</span>}
-          {status === "processing" && "⏳ Memproses..."}
-          {status === "result" && "✅ Selesai!"}
-          {status === "error" && <button onClick={reset} className="text-teal-400 underline">Coba lagi</button>}
-        </p>
+        {/* Upload existing audio */}
+        <button
+          onClick={() => {
+            const input = document.createElement("input")
+            input.type = "file"
+            input.accept = "audio/*"
+            input.onchange = (e) => {
+              const file = (e.target as HTMLInputElement).files?.[0]
+              if (file) {
+                const fakeEvent = { target: { files: [file] } } as any
+                handleFileSelect(fakeEvent)
+              }
+            }
+            input.click()
+          }}
+          disabled={status === "processing"}
+          className="w-full flex items-center justify-center gap-3 px-6 py-3 rounded-2xl bg-muted border border-border hover:bg-muted/80 active:scale-[0.98] transition disabled:opacity-50"
+        >
+          <Upload className="size-4 text-muted-foreground" />
+          <span className="text-xs text-muted-foreground">Upload file audio yang sudah ada</span>
+        </button>
       </div>
 
       {/* ─── Transcript ─── */}
@@ -259,28 +199,12 @@ export default function VoiceInput({ onResult }: VoiceInputProps) {
 
       {/* ─── Error ─── */}
       {error && (
-        <div className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-400 space-y-2">
-          {error === "mic-denied" ? (
-            <>
-              <p className="font-semibold">🎤 Izin Microphone Ditolak</p>
-              <p className="text-xs text-muted-foreground">Coba langkah ini:</p>
-              <ol className="text-xs text-muted-foreground list-decimal list-inside space-y-1">
-                <li>Buka <strong>Settings HP</strong> → <strong>Apps</strong> → <strong>Chrome</strong></li>
-                <li>Klik <strong>Permissions</strong> → <strong>Microphone</strong></li>
-                <li>Pilih <strong>&quot;Allow&quot;</strong></li>
-                <li>Kembali ke sini & refresh</li>
-              </ol>
-              <button onClick={() => window.location.reload()} className="w-full mt-2 px-4 py-2.5 rounded-lg bg-red-500/20 text-red-400 text-xs font-semibold hover:bg-red-500/30 transition">
-                🔄 Refresh Halaman
-              </button>
-            </>
-          ) : (
-            <p>{error}</p>
-          )}
+        <div className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-400">
+          <p>{error}</p>
         </div>
       )}
 
-      {/* ─── Parsed Result ─���─ */}
+      {/* ─── Parsed Result ─── */}
       {parsed && status === "result" && (
         <div className="rounded-xl border border-teal-500/30 bg-teal-500/5 p-4 space-y-3">
           <p className="text-xs text-teal-400 font-semibold">Hasil Parsing:</p>
