@@ -3,6 +3,7 @@
 import { useCallback, useMemo } from 'react'
 import { ArrowDownRight, ArrowUpRight, Eye, EyeOff, TrendingUp, Wallet, ShieldCheck, PiggyBank, Sparkles, Heart } from 'lucide-react'
 import { formatIDR, formatIDRShort, spendingByCategory, summarize, type Transaction, type Goal } from '@/lib/finwise'
+import { detectLogo } from '@/lib/brand-logos'
 import { useFinwise } from '@/components/finwise-store'
 import { SpendingDonut } from './spending-donut'
 import { BudgetProgress } from './budget-progress'
@@ -294,7 +295,13 @@ export function DashboardView({ transactions, month, onOpenGoals, onOpenWallets,
                 {walletBalances.slice(0, 3).map((w, i) => (
                   <div key={w.id} className="flex-1 text-center">
                     {i > 0 && <div className="hidden" />}
-                    <div className="text-base mb-1">{w.icon}</div>
+                    <div className="text-base mb-1">
+                      {detectLogo(w.name) ? (
+                        <img src={detectLogo(w.name)} alt="" className="w-6 h-6 mx-auto object-contain dark:rounded-md dark:bg-white/20 dark:p-0.5" />
+                      ) : (
+                        w.icon
+                      )}
+                    </div>
                     <p className="text-[10px] text-muted-foreground truncate">{w.name}</p>
                     <p className="text-sm font-bold tabular-nums">{hideBalance ? '••••' : formatIDRShort(w.balance)}</p>
                   </div>
