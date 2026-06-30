@@ -80,7 +80,7 @@ export default function LandingPage() {
       <header className="sticky top-0 z-50 border-b border-border/40 bg-background/80 backdrop-blur-xl">
         <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3">
           <div className="flex items-center gap-2">
-            <Image src="/mascot-64.png" alt="FinWise" width={28} height={28} className="drop-shadow-sm" />
+            <Image src="/mascot-64.png?v=2" alt="FinWise" width={28} height={28} className="drop-shadow-sm" />
             <span className="text-base font-bold tracking-tight">
               <span className="text-primary">Fin</span>Wise
             </span>
@@ -107,7 +107,7 @@ export default function LandingPage() {
       <section className="px-4 pt-12 pb-10 text-center">
         <div className="mx-auto max-w-lg">
           <div className="mx-auto mb-6 w-fit">
-            <Image src="/mascot-128.png" alt="FinWise Mascot" width={96} height={96} className="drop-shadow-lg" />
+            <Image src="/mascot-128.png?v=2" alt="FinWise Mascot" width={96} height={96} className="drop-shadow-lg" />
           </div>
           <h1 className="text-3xl font-extrabold tracking-tight sm:text-4xl">
             Catat Keuangan

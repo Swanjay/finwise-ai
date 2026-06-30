@@ -1545,7 +1545,7 @@ export default function Page() {
     return (
       <div className="flex min-h-dvh items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-3">
-          <Image src="/mascot-128.png" alt="FinWise" width={64} height={64} className="animate-pulse drop-shadow-lg" />
+          <Image src="/mascot-128.png?v=2" alt="FinWise" width={64} height={64} className="animate-pulse drop-shadow-lg" />
           <div className="h-1.5 w-24 rounded-full bg-muted animate-pulse" />
         </div>
       </div>
