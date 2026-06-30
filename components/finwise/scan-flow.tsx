@@ -592,8 +592,18 @@ export function ScanFlow({ onDone }: { onDone: () => void }) {
                 className="hidden"
                 onChange={handleFileChange}
               />
+              <input
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handleFileChange}
+                id="gallery-input"
+              />
               <Button onClick={() => fileRef.current?.click()} className="h-12">
-                <Camera className="size-5" /> Ambil / Pilih Foto
+                <Camera className="size-5" /> Ambil Foto Struk
+              </Button>
+              <Button onClick={() => document.getElementById('gallery-input')?.click()} variant="secondary" className="h-12">
+                <ImageIcon className="size-5" /> Pilih dari Galeri
               </Button>
             </>
           )}
