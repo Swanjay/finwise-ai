@@ -272,6 +272,47 @@ export function FinwiseProvider({ children }: { children: ReactNode }) {
 
         cloudSyncedRef.current = true
         console.log('[store] Cloud data loaded')
+
+        // MERGE: Always ensure localStorage data is synced to cloud
+        // This handles: first-time migration, partial syncs, and data loss recovery
+        const localTx = loadJSON(KEYS.tx, [])
+        const localGoals = loadJSON(KEYS.goals, [])
+        const cloudTxCount = (data.transactions || []).length
+        const cloudGoalCount = (data.goals || []).length
+        const cloudRecurringCount = (data.recurring || []).length
+        const localRecurring = loadJSON(KEYS.recurring, [])
+
+        if (localTx.length > cloudTxCount || localGoals.length > cloudGoalCount || localRecurring.length > cloudRecurringCount) {
+          console.log(`[store] Merging localStorage → cloud (local tx:${localTx.length} cloud:${cloudTxCount})`)
+          try {
+            const migratePayload = {
+              transactions: localTx,
+              wallets: loadJSON(KEYS.wallets, DEFAULT_WALLETS),
+              goals: localGoals,
+              budgets: loadJSON(KEYS.budgets, {}),
+              recurring: localRecurring,
+              settings: {
+                income: String(loadJSON(KEYS.income, 0)),
+                initialBalance: String(loadJSON(KEYS.initialBalance, 0)),
+                theme: loadJSON(KEYS.theme, 'light'),
+                accentColor: loadJSON(KEYS.accent, 'purple'),
+                fontSize: loadJSON(KEYS.fontSize, 'base'),
+                compactMode: String(loadJSON(KEYS.compactMode, false)),
+                setupDone: localStorage.getItem('fw.setupDone.v1') || 'false',
+                hideBalance: String(loadJSON(KEYS.hideBalance, false)),
+              },
+            }
+            const migrateRes = await fetch('/api/data', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(migratePayload),
+            })
+            const migrateData = await migrateRes.json()
+            if (migrateData.ok) console.log('[store] Merged localStorage → cloud:', migrateData.results)
+          } catch (err) {
+            console.warn('[store] Merge failed:', err)
+          }
+        }
       } catch (err) {
         console.warn('[store] Failed to load cloud data:', err)
       }
