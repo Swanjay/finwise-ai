@@ -1,14 +1,7 @@
 import { NextResponse } from "next/server"
-import { getServerSession } from "next-auth"
-import { authOptions } from "@/auth"
 
 // POST /api/ai/voice-parse — Parse voice input to transaction
 export async function POST(req: Request) {
-  const session = await getServerSession(authOptions)
-  if (!session?.user?.email) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-  }
-
   try {
     const body = await req.json()
     const { text } = body
@@ -49,38 +42,50 @@ function parseIndonesianTransaction(text: string): ParsedTransaction {
 
   // Extract amount
   let amount = 0
-  const amountPatterns = [
-    /(\d+[\.,]?\d*)\s*(?:rb|ribu)/i,        // 25rb, 25 ribu
-    /rp\.?\s*(\d+[\.,]?\d*)/i,               // Rp 25000, Rp. 25.000
-    /(\d+[\.,]?\d*)\s*(?:k|jt|juta)/i,       // 25k, 1jt, 1 juta
-    /(\d+[\.,]?\d*)/i,                        // 25000
+  // First try patterns with suffix (rb/ribu/jt/juta/k)
+  const suffixPatterns = [
+    /(\d+[.,]?\d*)\s*(?:rb|ribu)\b/i,        // 25rb, 25 ribu
+    /rp\.?\s*(\d+[.,]?\d*)/i,                // Rp 25000, Rp. 25.000
+    /(\d+[.,]?\d*)\s*(?:jt|juta)\b/i,        // 1jt, 1 juta, 2jt
+    /(\d+[.,]?\d*)(?:jt|juta)\b/i,           // 2jt (no space)
+    /(\d+[.,]?\d*)\s*k\b/i,                  // 25k
+    /(\d+[.,]?\d*)k\b/i,                     // 25k (no space)
   ]
+  const plainNumberPattern = /(\d+[.,]?\d*)/i
 
-  for (const pattern of amountPatterns) {
+  for (const pattern of suffixPatterns) {
     const match = lower.match(pattern)
     if (match) {
       let raw = match[1].replace(/[.,]/g, "")
       amount = parseInt(raw, 10)
       
-      // Apply multipliers
-      if (lower.match(/rb|ribu/i)) amount *= 1000
-      else if (lower.match(/\bjt\b|juta/i)) amount *= 1000000
-      else if (lower.match(/\bk\b/i) && amount < 1000) amount *= 1000
+      // Apply multipliers based on what matched
+      const fullMatch = match[0].toLowerCase()
+      if (/rb|ribu/.test(fullMatch)) amount *= 1000
+      else if (/jt|juta/.test(fullMatch)) amount *= 1000000
+      else if (/k\b/.test(fullMatch) && amount < 1000) amount *= 1000
       
       break
     }
+  }
+  // Fallback: plain number (e.g. "beli kopi 15000")
+  if (amount === 0) {
+    const match = lower.match(plainNumberPattern)
+    if (match) amount = parseInt(match[1].replace(/[.,]/g, ""), 10) || 0
   }
 
   // Detect category
   const categoryMap: Record<string, string[]> = {
     "Makanan": ["makan", "makanan", "food", "nasi", "ayam", "ikan", "sayur", "buah", "snack", "cemilan", "batagor", "bakso", "sate", "mie", "kopi", "teh", "jus", "minum", "minuman", "sarapan", "makan siang", "makan malam"],
-    "Transportasi": ["transport", "transportasi", "bensin", "bbm", "ojek", "grab", "gojek", "taxi", "bus", "kereta", "mrt", "transjakarta", "parkir", "tol"],
+    "Transportasi": ["transport", "transportasi", "bensin", "bbm", "ojek", "ojol", "grab", "gojek", "taxi", "bus", "kereta", "mrt", "transjakarta", "parkir", "tol"],
     "Belanja": ["belanja", "shopping", "beli", "belanja", "supermarket", "minimarket", "indomaret", "alfamart", "mall"],
     "Tagihan": ["tagihan", "listrik", "air", "pdam", "internet", "wifi", "pulsa", "token", "pln"],
     "Hiburan": ["hiburan", "entertainment", "nonton", "bioskop", "film", "game", "spotify", "netflix", "youtube"],
     "Kesehatan": ["kesehatan", "health", "obat", "dokter", "rumah sakit", "apotek", "vitamin"],
     "Pendidikan": ["pendidikan", "sekolah", "kuliah", "buku", "kursus", "les", "seminar"],
     "Transfer": ["transfer", "kirim", "pindah"],
+    "Gaji": ["gaji", "salary", "gajian"],
+    "Pendapatan": ["pendapatan", "bonus", "thr", "terima", "dapat", "masuk"],
   }
 
   let category = "Lainnya"

@@ -1,7 +1,7 @@
 "use client"
 
-import { useState, useRef, useCallback } from "react"
-import { Mic, Loader2, Check, X, Square } from "lucide-react"
+import { useState, useRef, useCallback, useEffect } from "react"
+import { Mic, Loader2, Check, X, Square, Keyboard } from "lucide-react"
 import { formatIDR } from "@/lib/finwise"
 
 interface VoiceInputProps {
@@ -27,12 +27,104 @@ export default function VoiceInput({ onResult }: VoiceInputProps) {
   const [error, setError] = useState("")
   const [recordingTime, setRecordingTime] = useState(0)
   const [manualText, setManualText] = useState("")
+  const [inputMode, setInputMode] = useState<"voice" | "text">("text")
   const mediaRecorderRef = useRef<MediaRecorder | null>(null)
   const chunksRef = useRef<Blob[]>([])
   const timerRef = useRef<NodeJS.Timeout | null>(null)
   const streamRef = useRef<MediaStream | null>(null)
+  const recognitionRef = useRef<any>(null)
+  const [webSpeechSupported, setWebSpeechSupported] = useState(false)
+  const [interimText, setInterimText] = useState("")
 
-  // ─── VOICE RECORDING (getUserMedia) ───
+  // Check Web Speech API support
+  useEffect(() => {
+    const SR = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
+    setWebSpeechSupported(!!SR)
+    // Default to voice on mobile if supported, text on desktop
+    if (SR && /Mobi|Android|iPhone/i.test(navigator.userAgent)) {
+      setInputMode("voice")
+    }
+  }, [])
+
+  // ─── WEB SPEECH API (realtime, free, no server) ───
+  const startWebSpeech = useCallback(() => {
+    const SR = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
+    if (!SR) { setError("Browser tidak mendukung speech recognition"); setStatus("error"); return }
+
+    setError("")
+    setTranscript("")
+    setParsed(null)
+    setInterimText("")
+    setRecordingTime(0)
+
+    const recognition = new SR()
+    recognition.lang = "id-ID"
+    recognition.continuous = false
+    recognition.interimResults = true
+    recognition.maxAlternatives = 1
+    recognitionRef.current = recognition
+
+    let sec = 0
+    timerRef.current = setInterval(() => {
+      sec++
+      setRecordingTime(sec)
+      if (sec >= 60) recognition.stop()
+    }, 1000)
+
+    recognition.onresult = (event: any) => {
+      let interim = ""
+      let final = ""
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        const t = event.results[i][0].transcript
+        if (event.results[i].isFinal) final += t
+        else interim += t
+      }
+      if (interim) setInterimText(interim)
+      if (final) {
+        setTranscript(final)
+        setInterimText("")
+      }
+    }
+
+    recognition.onerror = (event: any) => {
+      if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null }
+      setStatus("error")
+      if (event.error === "not-allowed") {
+        setError("Izin microphone ditolak. Klik 🔒 di address bar → Microphone → Allow.")
+      } else if (event.error === "no-speech") {
+        setError("Tidak ada suara terdeteksi. Coba bicara lebih dekat ke mic.")
+      } else {
+        setError(`Error: ${event.error}`)
+      }
+    }
+
+    recognition.onend = () => {
+      if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null }
+      const finalText = transcript || recognitionRef.current?._lastResult || ""
+      // If we got text, parse it
+      if (transcript) {
+        setStatus("processing")
+        doParse(transcript)
+      } else if (status === "recording") {
+        setError("Tidak ada kata terdeteksi. Coba bicara lebih jelas.")
+        setStatus("error")
+      }
+    }
+
+    recognition.start()
+    setStatus("recording")
+  }, [transcript, status])
+
+  const stopWebSpeech = useCallback(() => {
+    if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null }
+    if (recognitionRef.current) {
+      // Save current transcript before stopping
+      recognitionRef.current._lastResult = transcript
+      recognitionRef.current.stop()
+    }
+  }, [transcript])
+
+  // ─── MEDIA RECORDER FALLBACK (server transcription) ───
   const startRecording = useCallback(async () => {
     setError("")
     setTranscript("")
@@ -41,8 +133,8 @@ export default function VoiceInput({ onResult }: VoiceInputProps) {
     chunksRef.current = []
 
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ 
-        audio: { echoCancellation: true, noiseSuppression: true } 
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: { echoCancellation: true, noiseSuppression: true }
       })
       streamRef.current = stream
 
@@ -159,75 +251,131 @@ export default function VoiceInput({ onResult }: VoiceInputProps) {
 
   function formatTime(s: number) { return `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, "0")}` }
   function formatCurrency(n: number) { return formatIDR(n) }
-  
+
   function reset() {
     setStatus("idle"); setError(""); setTranscript(""); setParsed(null)
-    setRecordingTime(0); setManualText("")
+    setRecordingTime(0); setManualText(""); setInterimText("")
     if (streamRef.current) { streamRef.current.getTracks().forEach(t => t.stop()); streamRef.current = null }
+    if (recognitionRef.current) { try { recognitionRef.current.stop() } catch {} }
   }
+
+  const startVoice = webSpeechSupported ? startWebSpeech : startRecording
+  const stopVoice = webSpeechSupported ? stopWebSpeech : stopRecording
 
   return (
     <div className="space-y-4">
-      {/* Text Input */}
-      <form onSubmit={handleManualSubmit} className="flex gap-2">
-        <input
-          value={manualText}
-          onChange={(e) => setManualText(e.target.value)}
-          placeholder="ketik: beli kopi 25rb"
-          className="flex-1 px-4 py-3 rounded-xl bg-teal-500/10 border border-teal-500/30 text-sm placeholder:text-teal-400/50 focus:border-teal-500 focus:ring-1 focus:ring-teal-500 outline-none transition"
-          disabled={status === "processing" || status === "recording"}
-        />
+      {/* Mode Toggle */}
+      <div className="flex rounded-xl bg-muted p-1 gap-1">
         <button
-          type="submit"
-          disabled={!manualText.trim() || status === "processing" || status === "recording"}
-          className="px-4 py-3 rounded-xl bg-teal-500 text-white text-sm font-semibold hover:bg-teal-600 transition disabled:opacity-50 active:scale-95"
+          onClick={() => { reset(); setInputMode("text") }}
+          className={`flex-1 flex items-center justify-center gap-2 rounded-lg py-2.5 text-sm font-medium transition ${
+            inputMode === "text" ? "bg-teal-500 text-white shadow-sm" : "text-muted-foreground"
+          }`}
         >
-          <KeyboardIcon />
+          <Keyboard className="size-4" /> Ketik
         </button>
-      </form>
-
-      {/* Divider */}
-      <div className="flex items-center gap-3">
-        <div className="flex-1 h-px bg-border" />
-        <span className="text-[10px] text-muted-foreground uppercase tracking-wider">atau rekam suara</span>
-        <div className="flex-1 h-px bg-border" />
+        <button
+          onClick={() => { reset(); setInputMode("voice") }}
+          className={`flex-1 flex items-center justify-center gap-2 rounded-lg py-2.5 text-sm font-medium transition ${
+            inputMode === "voice" ? "bg-teal-500 text-white shadow-sm" : "text-muted-foreground"
+          }`}
+        >
+          <Mic className="size-4" /> Suara
+        </button>
       </div>
 
-      {/* Mic Button — getUserMedia langsung */}
-      <div className="flex flex-col items-center gap-3">
-        {(status === "idle" || status === "error") && (
-          <button
-            onClick={startRecording}
-            className="relative size-20 rounded-full flex items-center justify-center bg-teal-500/20 border-2 border-teal-500 hover:bg-teal-500/30 active:scale-95 transition"
-          >
-            <Mic className="size-8 text-teal-400" />
-          </button>
-        )}
+      {/* ─── TEXT INPUT MODE ─── */}
+      {inputMode === "text" && (
+        <div className="space-y-3">
+          <form onSubmit={handleManualSubmit} className="flex gap-2">
+            <input
+              value={manualText}
+              onChange={(e) => setManualText(e.target.value)}
+              placeholder='ketik: beli kopi 25rb, terima gaji 5jt'
+              className="flex-1 px-4 py-3 rounded-xl bg-teal-500/10 border border-teal-500/30 text-sm placeholder:text-teal-400/50 focus:border-teal-500 focus:ring-1 focus:ring-teal-500 outline-none transition"
+              disabled={status === "processing"}
+            />
+            <button
+              type="submit"
+              disabled={!manualText.trim() || status === "processing"}
+              className="px-4 py-3 rounded-xl bg-teal-500 text-white text-sm font-semibold hover:bg-teal-600 transition disabled:opacity-50 active:scale-95"
+            >
+              {status === "processing" ? <Loader2 className="size-4 animate-spin" /> : "→"}
+            </button>
+          </form>
 
-        {status === "recording" && (
-          <button
-            onClick={stopRecording}
-            className="relative size-20 rounded-full flex items-center justify-center bg-red-500/20 border-2 border-red-500 animate-pulse active:scale-95 transition"
-          >
-            <Square className="size-6 text-red-400 fill-red-400" />
-          </button>
-        )}
+          {/* Quick examples */}
+          {status === "idle" && (
+            <div className="rounded-xl bg-teal-500/5 border border-teal-500/20 p-4 space-y-2">
+              <p className="text-xs text-teal-400 font-semibold">💡 Contoh:</p>
+              <div className="grid grid-cols-2 gap-1.5">
+                {['"Beli batagor 5 ribu"', '"Makan siang 25rb"', '"Terima gaji 5 juta"', '"Grab ke kantor 15rb"'].map((ex, i) => (
+                  <button
+                    key={i}
+                    onClick={() => { setManualText(ex.replace(/"/g, '')); }}
+                    className="text-left text-[11px] text-teal-400/70 hover:text-teal-400 transition px-2 py-1.5 rounded-lg hover:bg-teal-500/10"
+                  >
+                    {ex}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
-        {status === "processing" && (
-          <div className="relative size-20 rounded-full flex items-center justify-center bg-teal-500/20 border-2 border-teal-500">
-            <Loader2 className="size-8 text-teal-400 animate-spin" />
+      {/* ─── VOICE INPUT MODE ─── */}
+      {inputMode === "voice" && (
+        <div className="space-y-4">
+          {/* Mic Button */}
+          <div className="flex flex-col items-center gap-3">
+            {(status === "idle" || status === "error") && (
+              <button
+                onClick={startVoice}
+                className="relative size-20 rounded-full flex items-center justify-center bg-teal-500/20 border-2 border-teal-500 hover:bg-teal-500/30 active:scale-95 transition"
+              >
+                <Mic className="size-8 text-teal-400" />
+              </button>
+            )}
+
+            {status === "recording" && (
+              <button
+                onClick={stopVoice}
+                className="relative size-20 rounded-full flex items-center justify-center bg-red-500/20 border-2 border-red-500 animate-pulse active:scale-95 transition"
+              >
+                <Square className="size-6 text-red-400 fill-red-400" />
+              </button>
+            )}
+
+            {status === "processing" && (
+              <div className="relative size-20 rounded-full flex items-center justify-center bg-teal-500/20 border-2 border-teal-500">
+                <Loader2 className="size-8 text-teal-400 animate-spin" />
+              </div>
+            )}
+
+            <p className="text-xs text-muted-foreground text-center">
+              {status === "idle" && (webSpeechSupported ? "Klik mic untuk mulai bicara" : "Klik mic untuk mulai merekam")}
+              {status === "recording" && <span className="text-red-400 font-semibold">🔴 Merekam {formatTime(recordingTime)} — klik untuk stop</span>}
+              {status === "processing" && "⏳ Memproses..."}
+              {status === "error" && <button onClick={reset} className="text-teal-400 underline underline-offset-2">Coba lagi</button>}
+            </p>
+
+            {webSpeechSupported && (
+              <p className="text-[10px] text-muted-foreground/50">Web Speech API • Bahasa Indonesia</p>
+            )}
           </div>
-        )}
 
-        <p className="text-xs text-muted-foreground text-center">
-          {status === "idle" && "Klik mic untuk mulai bicara"}
-          {status === "recording" && <span className="text-red-400 font-semibold">🔴 Merekam {formatTime(recordingTime)} — klik untuk stop</span>}
-          {status === "processing" && "⏳ Memproses..."}
-          {status === "error" && <button onClick={reset} className="text-teal-400 underline underline-offset-2">Coba lagi</button>}
-        </p>
-      </div>
+          {/* Interim text (realtime speech recognition) */}
+          {interimText && status === "recording" && (
+            <div className="rounded-xl bg-teal-500/5 border border-teal-500/20 p-3">
+              <p className="text-xs text-teal-400/50 mb-1">Mendengarkan...</p>
+              <p className="text-sm text-teal-300 italic">{interimText}</p>
+            </div>
+          )}
+        </div>
+      )}
 
-      {/* Transcript */}
+      {/* ─── SHARED: Transcript ─── */}
       {transcript && (
         <div className="rounded-xl bg-muted p-3">
           <p className="text-xs text-muted-foreground mb-1">Kamu bilang:</p>
@@ -235,7 +383,7 @@ export default function VoiceInput({ onResult }: VoiceInputProps) {
         </div>
       )}
 
-      {/* Error */}
+      {/* ─── SHARED: Error ─── */}
       {error && (
         <div className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 space-y-2">
           <p className="text-sm text-red-400">{error}</p>
@@ -252,7 +400,7 @@ export default function VoiceInput({ onResult }: VoiceInputProps) {
         </div>
       )}
 
-      {/* Parsed Result */}
+      {/* ─── SHARED: Parsed Result ─── */}
       {parsed && status === "result" && (
         <div className="rounded-xl border border-teal-500/30 bg-teal-500/5 p-4 space-y-3">
           <p className="text-xs text-teal-400 font-semibold">Hasil Parsing:</p>
@@ -288,35 +436,6 @@ export default function VoiceInput({ onResult }: VoiceInputProps) {
           </div>
         </div>
       )}
-
-      {/* Tips */}
-      {status === "idle" && (
-        <div className="rounded-xl bg-teal-500/5 border border-teal-500/20 p-4 space-y-2">
-          <p className="text-xs text-teal-400 font-semibold">💡 Contoh perintah:</p>
-          <div className="grid grid-cols-2 gap-1.5">
-            {['"Beli batagor 5 ribu"', '"Makan siang 25rb"', '"Terima gaji 5 juta"', '"Grab ke kantor 15rb"'].map((ex, i) => (
-              <button
-                key={i}
-                onClick={() => { setManualText(ex.replace(/"/g, '')); }}
-                className="text-left text-[11px] text-teal-400/70 hover:text-teal-400 transition px-2 py-1.5 rounded-lg hover:bg-teal-500/10"
-              >
-                {ex}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
     </div>
-  )
-}
-
-function KeyboardIcon() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <rect width="20" height="16" x="2" y="4" rx="2" />
-      <path d="M6 8h.001" /><path d="M10 8h.001" /><path d="M14 8h.001" /><path d="M18 8h.001" />
-      <path d="M8 12h.001" /><path d="M12 12h.001" /><path d="M16 12h.001" />
-      <path d="M7 16h10" />
-    </svg>
   )
 }

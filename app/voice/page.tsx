@@ -1,18 +1,26 @@
 "use client"
 
 import { useState } from "react"
-import { useSession } from "next-auth/react"
 import { useRouter } from "next/navigation"
 import { ArrowLeft, Mic, Loader2 } from "lucide-react"
 import VoiceInput from "@/components/voice-input"
+import { FinwiseProvider, useFinwise } from "@/components/finwise-store"
 
 export default function VoicePage() {
-  const { data: session, status } = useSession()
+  return (
+    <FinwiseProvider>
+      <VoicePageInner />
+    </FinwiseProvider>
+  )
+}
+
+function VoicePageInner() {
   const router = useRouter()
+  const { wallets, addTransaction } = useFinwise()
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState("")
 
-  async function handleVoiceResult(parsed: {
+  function handleVoiceResult(parsed: {
     type: "income" | "expense"
     amount: number
     category: string
@@ -22,46 +30,32 @@ export default function VoicePage() {
     setMessage("")
 
     try {
-      const res = await fetch("/api/expenses", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          type: parsed.type,
-          amount: parsed.amount,
-          category: parsed.category,
-          note: parsed.note,
-          date: new Date().toISOString().split("T")[0],
-          wallet: "cash",
-        }),
+      const defaultWallet = wallets[0]?.id || "cash"
+      addTransaction({
+        type: parsed.type,
+        category: parsed.category,
+        amount: parsed.amount,
+        description: parsed.note,
+        date: new Date().toISOString().slice(0, 10),
+        walletId: defaultWallet,
       })
-      const data = await res.json()
-
-      if (data.ok || res.ok) {
-        setMessage("✅ Transaksi berhasil disimpan!")
-        setTimeout(() => setMessage(""), 3000)
-      } else {
-        setMessage("❌ Gagal menyimpan transaksi")
-      }
+      setMessage("✅ Transaksi berhasil disimpan!")
+      setTimeout(() => setMessage(""), 3000)
     } catch {
-      setMessage("❌ Koneksi gagal")
+      setMessage("❌ Gagal menyimpan transaksi")
     }
     setSaving(false)
   }
 
-  if (status === "unauthenticated") {
-    router.push("/login")
-    return null
-  }
-
   return (
-    <div className="min-h-dvh bg-[#0F172A] p-4 pb-20">
+    <div className="min-h-dvh bg-background p-4 pb-20">
       <div className="mx-auto max-w-md space-y-6">
         {/* Header */}
         <div className="flex items-center gap-3">
-          <button onClick={() => router.push("/")} className="text-gray-400 hover:text-white">
+          <button onClick={() => router.push("/")} className="text-muted-foreground hover:text-foreground">
             <ArrowLeft className="size-5" />
           </button>
-          <h1 className="text-xl font-bold text-white flex items-center gap-2">
+          <h1 className="text-xl font-bold text-foreground flex items-center gap-2">
             <Mic className="size-5 text-teal-400" />
             Voice Input
           </h1>
@@ -70,14 +64,14 @@ export default function VoicePage() {
         {/* Description */}
         <div className="rounded-xl bg-teal-500/10 border border-teal-500/30 p-4">
           <p className="text-sm text-teal-300">
-            🎤 Catat transaksi dengan suara! Cukup bilang apa yang kamu beli atau terima.
+            🎤 Catat transaksi dengan suara atau ketik! Cukup bilang apa yang kamu beli atau terima.
           </p>
         </div>
 
         {/* Status Message */}
         {message && (
           <div className={`rounded-xl px-4 py-3 text-sm ${
-            message.startsWith("✅") 
+            message.startsWith("✅")
               ? "bg-green-500/10 border border-green-500/30 text-green-400"
               : "bg-red-500/10 border border-red-500/30 text-red-400"
           }`}>
