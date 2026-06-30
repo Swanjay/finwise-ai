@@ -43,7 +43,7 @@ function Confetti() {
   }>>([])
 
   useEffect(() => {
-    const colors = ['#8A6ECF', '#F9A8D4', '#F97316', '#4CAF50', '#5B9BD5', '#EC4899', '#EAB308', '#14B8A6']
+    const colors = ['#2ead4b', '#F9A8D4', '#F97316', '#4CAF50', '#5B9BD5', '#EC4899', '#EAB308', '#14B8A6']
     const newParticles = Array.from({ length: 60 }, (_, i) => ({
       id: i,
       x: Math.random() * 100,
@@ -188,7 +188,7 @@ function WalletStepContent({
       name: '',
       icon: '💳',
       balance: '',
-      color: '#8A6ECF',
+      color: '#2ead4b',
       type: 'bank',
     }
     const updated = [...wallets, newWallet]
@@ -820,7 +820,7 @@ export function OnboardingWizard({ onComplete }: { onComplete: (data: {
               : 'bg-secondary text-muted-foreground cursor-not-allowed'
           )}
           style={canProceed[step] ? {
-            boxShadow: '0 8px 24px var(--theme-shadow-strong, rgba(138,110,207,0.3)), inset 0 1px 0 rgba(255,255,255,0.2)',
+            boxShadow: '0 8px 24px var(--theme-shadow-strong, rgba(46,173,75,0.3)), inset 0 1px 0 rgba(255,255,255,0.2)',
           } : {}}
         >
           {buttonLabels[step]}

@@ -174,7 +174,7 @@ export const WALLET_ICON_OPTIONS: { emoji: string; label: string }[] = [
 
 // ─── Wallet Color Presets ───
 export const WALLET_COLOR_PRESETS = [
-  '#8A6ECF', // purple
+  '#2ead4b', // wise green
   '#5B9BD5', // blue
   '#4CAF50', // green
   '#F97316', // orange

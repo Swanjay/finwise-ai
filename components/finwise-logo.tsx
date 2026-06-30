@@ -30,7 +30,7 @@ export default function FinWiseLogo({
           style={{ fontSize: size * 0.4 }}
         >
           <span className="text-primary">Fin</span>
-          <span className="text-[#2D2057] opacity-80">Wise</span>
+          <span className="text-foreground opacity-80">Wise</span>
         </span>
       )}
     </div>

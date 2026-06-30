@@ -52,7 +52,7 @@ export function NotificationBell({ onClick }: { onClick: () => void }) {
       onClick={onClick}
       aria-label={`Notifikasi${count > 0 ? ` (${count} baru)` : ''}`}
       className="relative flex size-9 items-center justify-center rounded-full bg-card text-muted-foreground shadow-md hover:text-primary transition"
-      style={{ boxShadow: '0 4px 12px var(--theme-shadow, rgba(138,110,207,0.15))' }}
+      style={{ boxShadow: '0 4px 12px var(--theme-shadow, rgba(46,173,75,0.15))' }}
     >
       <Bell className="size-4" />
       {count > 0 && (

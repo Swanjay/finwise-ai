@@ -48,13 +48,13 @@
   --color-warning-foreground: var(--warning-foreground);
 
   /* Clay colors */
-  --color-clay-purple: #D0BFF5;
-  --color-clay-purple-deep: #8A6ECF;
+  --color-clay-purple: #e8ebe6;
+  --color-clay-purple-deep: #2ead4b;
   --color-clay-pink: #FFDCDC;
   --color-clay-yellow: #FFF8DC;
   --color-clay-blue: #DCEEFF;
   --color-clay-green: #C8E6C9;
-  --color-clay-bg: #F5F3FF;
+  --color-clay-bg: #e8ebe6;
 
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
@@ -252,8 +252,8 @@ html, html * {
   background: #FFDCDC;
   border-radius: 24px;
   box-shadow:
-    0 8px 32px rgba(249, 168, 212, 0.3),
-    0 2px 8px rgba(249, 168, 212, 0.2),
+    0 8px 32px rgba(249, 168, 212, 0.15),
+    0 2px 8px rgba(249, 168, 212, 0.08),
     inset 0 1px 0 rgba(255, 255, 255, 0.6);
 }
 
@@ -268,8 +268,8 @@ html, html * {
   background: #FFF8DC;
   border-radius: 24px;
   box-shadow:
-    0 8px 32px rgba(253, 230, 138, 0.35),
-    0 2px 8px rgba(253, 230, 138, 0.2),
+    0 8px 32px rgba(253, 230, 138, 0.15),
+    0 2px 8px rgba(253, 230, 138, 0.08),
     inset 0 1px 0 rgba(255, 255, 255, 0.7);
 }
 
@@ -284,8 +284,8 @@ html, html * {
   background: #DCEEFF;
   border-radius: 24px;
   box-shadow:
-    0 8px 32px rgba(125, 211, 252, 0.3),
-    0 2px 8px rgba(125, 211, 252, 0.2),
+    0 8px 32px rgba(125, 211, 252, 0.15),
+    0 2px 8px rgba(125, 211, 252, 0.08),
     inset 0 1px 0 rgba(255, 255, 255, 0.7);
 }
 
@@ -300,8 +300,8 @@ html, html * {
   background: #C8E6C9;
   border-radius: 24px;
   box-shadow:
-    0 8px 32px rgba(134, 239, 172, 0.3),
-    0 2px 8px rgba(134, 239, 172, 0.2),
+    0 8px 32px rgba(134, 239, 172, 0.15),
+    0 2px 8px rgba(134, 239, 172, 0.08),
     inset 0 1px 0 rgba(255, 255, 255, 0.7);
 }
 
@@ -314,12 +314,12 @@ html, html * {
 
 /* ─── Clay Button ─── */
 .clay-btn {
-  background: var(--primary, #8A6ECF);
+  background: var(--primary, #2ead4b);
   color: white;
   border-radius: 9999px;
   box-shadow:
-    0 6px 20px rgba(138, 110, 207, 0.4),
-    0 2px 6px rgba(138, 110, 207, 0.3),
+    0 6px 20px rgba(46, 173, 75, 0.4),
+    0 2px 6px rgba(46, 173, 75, 0.3),
     inset 0 1px 0 rgba(255, 255, 255, 0.25);
   font-weight: 600;
   transition-property: transform, box-shadow, background-color, opacity;
@@ -330,23 +330,23 @@ html, html * {
 .clay-btn:hover {
   transform: translateY(-2px);
   box-shadow:
-    0 10px 28px rgba(138, 110, 207, 0.5),
-    0 4px 10px rgba(138, 110, 207, 0.35);
+    0 10px 28px rgba(46, 173, 75, 0.5),
+    0 4px 10px rgba(46, 173, 75, 0.35);
 }
 
 .clay-btn:active {
   transform: translateY(0px);
   box-shadow:
-    0 4px 12px rgba(138, 110, 207, 0.3);
+    0 4px 12px rgba(46, 173, 75, 0.3);
 }
 
 /* ─── Clay Sidebar ─── */
 .clay-sidebar {
-  background: var(--color-clay-purple, #D0BFF5);
+  background: var(--color-clay-purple, #e8ebe6);
   border-radius: 32px;
   box-shadow:
-    8px 0 32px rgba(138, 110, 207, 0.15),
-    2px 0 8px rgba(138, 110, 207, 0.1);
+    8px 0 32px rgba(46, 173, 75, 0.15),
+    2px 0 8px rgba(46, 173, 75, 0.1);
 }
 
 /* ─── Nav Item ─── */
@@ -355,7 +355,7 @@ html, html * {
   transition-property: background-color, color, box-shadow;
   transition-duration: 0.2s;
   transition-timing-function: ease;
-  color: var(--primary, #6B4EBF);
+  color: var(--primary, #2ead4b);
   font-weight: 500;
 }
 
@@ -364,21 +364,21 @@ html, html * {
 }
 
 .clay-nav-item.active {
-  background: #8A6ECF;
+  background: var(--primary, #2ead4b);
   color: white;
   box-shadow:
-    0 4px 16px rgba(138, 110, 207, 0.4),
+    0 4px 16px rgba(46, 173, 75, 0.4),
     inset 0 1px 0 rgba(255, 255, 255, 0.25);
 }
 
 /* ─── Clay Input ─── */
 .clay-input {
-  background: #EDE9FF;
+  background: var(--surface-2, #e8ebe6);
   border-radius: 9999px;
   border: none;
   box-shadow:
-    inset 0 2px 8px rgba(138, 110, 207, 0.15),
-    inset 0 1px 3px rgba(138, 110, 207, 0.1);
+    inset 0 2px 8px rgba(46, 173, 75, 0.15),
+    inset 0 1px 3px rgba(46, 173, 75, 0.1);
 }
 .dark .clay-input {
   background: var(--surface-2);
@@ -389,7 +389,7 @@ html, html * {
 
 /* ─── Neon glow (legacy compat) ─── */
 .neon-glow {
-  box-shadow: 0 8px 32px rgba(138, 110, 207, 0.2), 0 2px 8px rgba(138, 110, 207, 0.1);
+  box-shadow: 0 8px 32px rgba(46, 173, 75, 0.2), 0 2px 8px rgba(46, 173, 75, 0.1);
 }
 
 /* ─── Bottom nav pill ─── */
@@ -397,8 +397,8 @@ html, html * {
   background: #FFFFFF;
   border-radius: 28px;
   box-shadow:
-    0 -4px 24px rgba(138, 110, 207, 0.15),
-    0 8px 32px rgba(138, 110, 207, 0.1),
+    0 -4px 24px rgba(46, 173, 75, 0.15),
+    0 8px 32px rgba(46, 173, 75, 0.1),
     inset 0 1px 0 rgba(255, 255, 255, 0.9);
 }
 .dark .clay-bottom-nav {

@@ -101,7 +101,7 @@ function CategoryDonut({
               border: 'none',
               boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
               fontSize: 12,
-              fontFamily: 'Poppins',
+              fontFamily: 'Inter',
             }}
           />
         </PieChart>
@@ -303,7 +303,7 @@ function WeekdayChart({ transactions }: { transactions: Transaction[] }) {
                 border: 'none',
                 boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
                 fontSize: 11,
-                fontFamily: 'Poppins',
+                fontFamily: 'Inter',
               }}
             />
             <Bar dataKey="avg" name="Rata-rata" radius={[6, 6, 0, 0]}>
@@ -563,7 +563,7 @@ function NetWorthChart({
                 border: 'none',
                 boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
                 fontSize: 11,
-                fontFamily: 'Poppins',
+                fontFamily: 'Inter',
               }}
             />
             <Area
@@ -1114,7 +1114,7 @@ export function TrendsView() {
                         border: 'none',
                         boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
                         fontSize: 11,
-                        fontFamily: 'Poppins',
+                        fontFamily: 'Inter',
                       }}
                     />
                     <Bar
@@ -1469,7 +1469,7 @@ export function TrendsView() {
                         border: 'none',
                         boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
                         fontSize: 11,
-                        fontFamily: 'Poppins',
+                        fontFamily: 'Inter',
                       }}
                     />
                     <Bar

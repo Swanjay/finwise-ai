@@ -1215,7 +1215,7 @@ function UserAvatar({ onOpenSettings }: { onOpenSettings?: () => void }) {
 
   return (
     <div className="relative">
-      <button onClick={() => setShowMenu(!showMenu)} aria-label="Menu profil" className="flex size-9 items-center justify-center overflow-hidden rounded-full bg-primary/20 ring-2 ring-primary/30 shadow-md hover:ring-primary/50 transition" style={{ boxShadow: '0 4px 12px var(--theme-shadow, rgba(138,110,207,0.15))' }}>
+      <button onClick={() => setShowMenu(!showMenu)} aria-label="Menu profil" className="flex size-9 items-center justify-center overflow-hidden rounded-full bg-primary/20 ring-2 ring-primary/30 shadow-md hover:ring-primary/50 transition" style={{ boxShadow: '0 4px 12px var(--theme-shadow, rgba(46,173,75,0.15))' }}>
         {user.image ? (
           <img src={user.image} alt="" className="size-full object-cover" />
         ) : (
@@ -1353,7 +1353,7 @@ function AppShell() {
               key={a.label}
               onClick={() => setSheet(a.sheet)}
               className="flex shrink-0 items-center gap-1.5 rounded-full bg-card px-3 py-1.5 text-[11px] font-semibold text-primary hover:bg-muted transition"
-              style={{ boxShadow: '0 3px 10px var(--theme-shadow, rgba(138,110,207,0.15))' }}
+              style={{ boxShadow: '0 3px 10px var(--theme-shadow, rgba(46,173,75,0.15))' }}
             >
               <Icon className="size-3.5" />{a.label}
             </button>
@@ -1380,7 +1380,7 @@ function AppShell() {
               className={cn(
                 'flex flex-col items-center gap-0.5 rounded-2xl py-1.5 px-2 text-[10px] font-semibold transition',
                 tab === item.id
-                  ? 'bg-[var(--color-clay-purple,#D0BFF5)] text-primary'
+                  ? 'bg-[var(--color-clay-purple,#9fe870)] text-primary'
                   : 'text-muted-foreground hover:text-primary'
               )}
             >
@@ -1403,7 +1403,7 @@ function AppShell() {
               className={cn(
                 'flex flex-col items-center gap-0.5 rounded-2xl py-1.5 px-2 text-[10px] font-semibold transition',
                 tab === item.id
-                  ? 'bg-[var(--color-clay-purple,#D0BFF5)] text-primary'
+                  ? 'bg-[var(--color-clay-purple,#9fe870)] text-primary'
                   : 'text-muted-foreground hover:text-primary'
               )}
             >
