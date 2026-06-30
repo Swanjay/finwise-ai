@@ -827,6 +827,20 @@ export function OnboardingWizard({ onComplete }: { onComplete: (data: {
           {step < 4 && <ChevronRight className="size-4" />}
         </motion.button>
 
+        {step === 0 && (
+          <button
+            onClick={() => onComplete({
+              selectedCategories: ['food', 'transport', 'shopping'],
+              wallets: [{ id: 'wallet-1', name: 'Tunai', icon: '💵', balance: '', color: '#4CAF50', type: 'cash' }],
+              salaryAmount: 0,
+              salaryDay: 1,
+            })}
+            className="mt-3 w-full text-center text-xs text-muted-foreground hover:text-foreground transition py-1"
+          >
+            Lewati saja →
+          </button>
+        )}
+
         {step === 3 && (
           <button
             onClick={() => {

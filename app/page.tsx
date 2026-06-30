@@ -1499,31 +1499,35 @@ function OnboardingGate() {
     salaryAmount: number
     salaryDay: number
   }) => {
-    // Set up all wallets
-    for (const w of data.wallets) {
-      const balance = Number(w.balance.replace(/\D/g, '')) || 0
-      const existing = wallets.find(e => e.name.toLowerCase() === w.name.toLowerCase())
-      if (existing) {
-        updateWallet(existing.id, { balance, logo: w.logo })
-      } else {
-        addWallet({ id: generateId(), name: w.name, icon: w.icon, balance, color: w.color, type: w.type, logo: w.logo })
-      }
-    }
-
-    // Set salary config
-    if (data.salaryAmount > 0) {
-      updateMonthlyIncome(data.salaryAmount)
-      try {
-        localStorage.setItem('fw.salary', JSON.stringify({ amount: data.salaryAmount, day: data.salaryDay }))
-      } catch {}
-    }
-
-    // Mark setup done
-    localStorage.setItem('fw.setupDone.v1', 'true')
-    setSetupDone(true) // Update store state immediately
+    // Persist setupDone FIRST so it survives even if wallet creation fails
+    try {
+      localStorage.setItem('fw.setupDone.v1', 'true')
+    } catch {}
+    setSetupDone(true)
     setShowWizard(false)
-    // Don't reload — let the sync debounce fire naturally
-    // The store will sync to cloud within 3 seconds
+
+    // Set up all wallets (wrapped in try-catch for safety)
+    try {
+      for (const w of data.wallets) {
+        const balance = Number(String(w.balance || '').replace(/\D/g, '')) || 0
+        const existing = wallets.find(e => e.name.toLowerCase() === w.name.toLowerCase())
+        if (existing) {
+          updateWallet(existing.id, { balance, logo: w.logo })
+        } else {
+          addWallet({ id: generateId(), name: w.name, icon: w.icon, balance, color: w.color, type: w.type, logo: w.logo })
+        }
+      }
+
+      // Set salary config
+      if (data.salaryAmount > 0) {
+        updateMonthlyIncome(data.salaryAmount)
+        try {
+          localStorage.setItem('fw.salary', JSON.stringify({ amount: data.salaryAmount, day: data.salaryDay }))
+        } catch {}
+      }
+    } catch (err) {
+      console.error('[Onboarding] Error saving data:', err)
+    }
   }, [wallets, addWallet, updateWallet, updateMonthlyIncome, setSetupDone])
 
   if (showWizard) {
