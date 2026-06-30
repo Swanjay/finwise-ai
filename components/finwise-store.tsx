@@ -320,7 +320,8 @@ export function FinwiseProvider({ children }: { children: ReactNode }) {
         if (data.settings?.initialBalance && Number(data.settings.initialBalance) > 0) setInitialBalance(Number(data.settings.initialBalance))
         else if (localInitBal > 0) setInitialBalance(localInitBal)
         if (data.settings?.theme) setTheme(data.settings.theme as 'dark' | 'light')
-        if (data.settings?.setupDone) setSetupDone(data.settings.setupDone === 'true')
+        // Only upgrade setupDone from cloud (never downgrade to false)
+        if (data.settings?.setupDone === 'true') setSetupDone(true)
 
         cloudSyncedRef.current = true
         // Cloud data loaded & merged
