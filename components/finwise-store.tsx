@@ -151,9 +151,9 @@ interface FinwiseStore {
 
   // Reset
   resetAll: () => void
-
-  // State
   loaded: boolean
+  setSetupDone: (v: boolean) => void
+  syncNow: (reason?: string) => Promise<void>
 }
 
 const Ctx = createContext<FinwiseStore | null>(null)
@@ -288,20 +288,33 @@ export function FinwiseProvider({ children }: { children: ReactNode }) {
         const localIncome = loadJSON(KEYS.income, 0)
         const localInitBal = loadJSON(KEYS.initialBalance, 0)
 
-        // ALWAYS merge: use whichever has MORE data (prevents data loss)
-        const useTx = localTx.length > cloudTx.length ? localTx : cloudTx
-        const useGoals = localGoals.length > cloudGoals.length ? localGoals : cloudGoals
-        const useRecurring = localRecurring.length > cloudRecurring.length ? localRecurring : cloudRecurring
-        const useBudgets = Object.keys(localBudgets).length > Object.keys(data.budgets || {}).length ? localBudgets : (data.budgets || {})
+        // MERGE STRATEGY: ID-based merge (not count-based!)
+        // Cloud is source of truth, but add any local-only items
+        function mergeById<T extends { id: string }>(cloud: T[], local: T[]): T[] {
+          if (cloud.length === 0 && local.length === 0) return []
+          if (cloud.length === 0) return local
+          if (local.length === 0) return cloud
+          const cloudIds = new Set(cloud.map(c => c.id))
+          const localOnly = local.filter(l => !cloudIds.has(l.id))
+          return [...cloud, ...localOnly]
+        }
 
-        // Wallets: use cloud if it has more, but recalculate balance from transactions
-        const useWallets = cloudWallets.length > 0 ? cloudWallets : localWallets
+        const useTx = mergeById(cloudTx, localTx)
+        const useGoals = mergeById(cloudGoals, localGoals)
+        const useRecurring = mergeById(cloudRecurring, localRecurring)
+        const useWallets = mergeById(cloudWallets, localWallets)
+        // Budgets: merge objects (local keys not in cloud)
+        const useBudgets = { ...(data.budgets || {}), ...localBudgets }
+
+        // Detect if merge added items (local had data cloud didn't)
+        const mergedExtra = (useTx.length > cloudTx.length) || (useGoals.length > cloudGoals.length) || (useRecurring.length > cloudRecurring.length) || (useWallets.length > cloudWallets.length)
 
         if (useTx.length) setTransactions(useTx)
         if (useWallets.length) setWallets(useWallets)
         if (useGoals.length) setGoals(useGoals)
         if (Object.keys(useBudgets).length) setBudgets(useBudgets)
         if (useRecurring.length) setRecurring(useRecurring)
+        // Settings: prefer cloud if it has values, else use local
         if (data.settings?.income && Number(data.settings.income) > 0) setMonthlyIncomeState(Number(data.settings.income))
         else if (localIncome > 0) setMonthlyIncomeState(localIncome)
         if (data.settings?.initialBalance && Number(data.settings.initialBalance) > 0) setInitialBalance(Number(data.settings.initialBalance))
@@ -312,11 +325,9 @@ export function FinwiseProvider({ children }: { children: ReactNode }) {
         cloudSyncedRef.current = true
         console.log('[store] Cloud data loaded & merged')
 
-        // If local had more data, sync back to cloud
-        const needsSyncBack = localTx.length > cloudTx.length || localGoals.length > cloudGoals.length || localRecurring.length > cloudRecurring.length
-        if (needsSyncBack) {
-          console.log('[store] Local has more data — syncing back to cloud...')
-          // Small delay to let state updates settle
+        // If merge added local-only items, sync back to cloud
+        if (mergedExtra) {
+          console.log('[store] Local had extra data — syncing back to cloud...')
           setTimeout(() => syncToCloudNow('merge-back'), 500)
         }
       } catch (err) {
@@ -553,6 +564,8 @@ export function FinwiseProvider({ children }: { children: ReactNode }) {
         tags, addTag, deleteTag,
         resetAll,
         loaded,
+        setSetupDone,
+        syncNow: syncToCloudNow,
       }}
     >
       {children}

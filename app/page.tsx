@@ -1480,14 +1480,18 @@ function AppShell() {
 }
 
 function OnboardingGate() {
-  const { setupDone, wallets, addWallet, updateWallet, updateMonthlyIncome, loaded } = useFinwise()
+  const { setupDone, setSetupDone, wallets, addWallet, updateWallet, updateMonthlyIncome, loaded } = useFinwise()
   const [showWizard, setShowWizard] = useState(false)
 
   useEffect(() => {
     if (loaded && !setupDone) {
       setShowWizard(true)
     }
-  }, [loaded, setupDone])
+    // Auto-close wizard if cloud says setupDone=true
+    if (setupDone && showWizard) {
+      setShowWizard(false)
+    }
+  }, [loaded, setupDone, showWizard])
 
   const handleComplete = useCallback((data: {
     selectedCategories: string[]
@@ -1516,9 +1520,11 @@ function OnboardingGate() {
 
     // Mark setup done
     localStorage.setItem('fw.setupDone.v1', 'true')
+    setSetupDone(true) // Update store state immediately
     setShowWizard(false)
-    window.location.reload()
-  }, [wallets, addWallet, updateWallet, updateMonthlyIncome])
+    // Don't reload — let the sync debounce fire naturally
+    // The store will sync to cloud within 3 seconds
+  }, [wallets, addWallet, updateWallet, updateMonthlyIncome, setSetupDone])
 
   if (showWizard) {
     return <OnboardingWizard onComplete={handleComplete} />
