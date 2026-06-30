@@ -6,8 +6,10 @@ import {
   useEffect,
   useState,
   useCallback,
+  useRef,
   type ReactNode,
 } from 'react'
+import { useSession } from 'next-auth/react'
 import {
   BUILTIN_CATEGORIES,
   DEFAULT_WALLETS,
@@ -57,7 +59,6 @@ function saveJSON(key: string, value: unknown) {
 }
 
 async function hashPin(pin: string): Promise<string> {
-  // Salted hash using PBKDF2 (100k iterations) — much stronger than plain SHA-256 for short PINs
   const encoder = new TextEncoder()
   const salt = encoder.encode("finwise-pin-v1-" + pin.length)
   const keyMaterial = await crypto.subtle.importKey("raw", encoder.encode(pin), "PBKDF2", false, ["deriveBits"])
@@ -158,6 +159,7 @@ interface FinwiseStore {
 const Ctx = createContext<FinwiseStore | null>(null)
 
 export function FinwiseProvider({ children }: { children: ReactNode }) {
+  const { data: session, status: authStatus } = useSession()
   const [transactions, setTransactions] = useState<Transaction[]>([])
   const [customCategories, setCustomCategories] = useState<Record<string, Category>>({})
   const [budgets, setBudgets] = useState<Partial<Record<string, number>>>({})
@@ -171,15 +173,19 @@ export function FinwiseProvider({ children }: { children: ReactNode }) {
   const [accentColor, setAccentColorState] = useState('purple')
   const [fontSize, setFontSizeState] = useState<'sm' | 'base' | 'lg'>('base')
   const [compactMode, setCompactModeState] = useState(false)
-  const [setupDone, setSetupDone] = useState(true) // Will be overwritten in useEffect
+  const [setupDone, setSetupDone] = useState(true)
   const [tipsDismissed, setTipsDismissed] = useState(false)
   const [initialBalance, setInitialBalance] = useState(0)
   const [hideBalance, setHideBalance] = useState(false)
   const [tags, setTags] = useState<string[]>([])
   const [loaded, setLoaded] = useState(false)
+  const cloudSyncedRef = useRef(false)
+  const syncTimerRef = useRef<NodeJS.Timeout | null>(null)
+  const changeCountRef = useRef(0)
 
-  // Load all data
+  // ─── LOAD: localStorage first, then Supabase if logged in ───
   useEffect(() => {
+    // Always load from localStorage first (instant)
     setTransactions(loadJSON(KEYS.tx, []))
     setCustomCategories(loadJSON(KEYS.categories, {}))
     setBudgets(loadJSON(KEYS.budgets, {}))
@@ -201,7 +207,80 @@ export function FinwiseProvider({ children }: { children: ReactNode }) {
     setLoaded(true)
   }, [])
 
-  // Persist helpers
+  // ─── FETCH FROM SUPABASE when logged in ───
+  useEffect(() => {
+    if (authStatus !== 'authenticated' || !session?.user?.email || cloudSyncedRef.current) return
+
+    async function fetchCloud() {
+      try {
+        const res = await fetch('/api/data')
+        if (!res.ok) return
+        const data = await res.json()
+        if (!data.ok) return
+
+        // If cloud has data, use it (override localStorage)
+        if (data.transactions?.length || data.wallets?.length || data.goals?.length) {
+          // Map cloud data back to local format
+          const cloudTx = (data.transactions || []).map((t: any) => ({
+            id: t.id,
+            type: t.type,
+            amount: Number(t.amount),
+            category: t.category,
+            description: t.note || '',
+            date: t.date,
+            walletId: t.wallet || 'cash',
+          }))
+          const cloudWallets = (data.wallets || []).map((w: any) => ({
+            id: w.id,
+            name: w.name,
+            initialBalance: Number(w.balance || 0),
+            color: w.color || '#00ff9d',
+            icon: w.icon || '💵',
+            balance: Number(w.balance || 0),
+          }))
+          const cloudGoals = (data.goals || []).map((g: any) => ({
+            id: g.id,
+            name: g.name,
+            targetAmount: Number(g.target || 0),
+            currentAmount: Number(g.saved || 0),
+            color: g.color || '#a78bfa',
+            emoji: g.emoji || '🎯',
+            deadline: g.deadline || undefined,
+          }))
+          const cloudRecurring = (data.recurring || []).map((r: any) => ({
+            id: r.id,
+            type: r.type,
+            amount: Number(r.amount),
+            category: r.category,
+            description: r.note || '',
+            frequency: r.frequency || 'monthly',
+            walletId: r.wallet || 'cash',
+            active: true,
+          }))
+
+          // Only override if cloud has actual data
+          if (cloudTx.length) setTransactions(cloudTx)
+          if (cloudWallets.length) setWallets(cloudWallets)
+          if (cloudGoals.length) setGoals(cloudGoals)
+          if (Object.keys(data.budgets || {}).length) setBudgets(data.budgets)
+          if (cloudRecurring.length) setRecurring(cloudRecurring)
+          if (data.settings?.income) setMonthlyIncomeState(Number(data.settings.income))
+          if (data.settings?.initialBalance) setInitialBalance(Number(data.settings.initialBalance))
+          if (data.settings?.theme) setTheme(data.settings.theme as 'dark' | 'light')
+          if (data.settings?.setupDone) setSetupDone(data.settings.setupDone === 'true')
+        }
+
+        cloudSyncedRef.current = true
+        console.log('[store] Cloud data loaded')
+      } catch (err) {
+        console.warn('[store] Failed to load cloud data:', err)
+      }
+    }
+
+    fetchCloud()
+  }, [authStatus, session])
+
+  // ─── SAVE: localStorage always + debounce sync to Supabase ───
   useEffect(() => { if (loaded) saveJSON(KEYS.tx, transactions) }, [transactions, loaded])
   useEffect(() => { if (loaded) saveJSON(KEYS.categories, customCategories) }, [customCategories, loaded])
   useEffect(() => { if (loaded) saveJSON(KEYS.budgets, budgets) }, [budgets, loaded])
@@ -219,7 +298,53 @@ export function FinwiseProvider({ children }: { children: ReactNode }) {
   useEffect(() => { if (loaded) saveJSON(KEYS.compactMode, compactMode) }, [compactMode, loaded])
   useEffect(() => { if (loaded) { document.documentElement.classList.toggle('dark', theme === 'dark'); document.documentElement.classList.toggle('light', theme === 'light') } }, [theme, loaded])
 
-  // Apply font size CSS variable and compact class
+  // ─── DEBOUNCE SYNC TO SUPABASE ───
+  // Track data changes and schedule a debounced sync
+  const scheduleSync = useCallback(() => {
+    if (authStatus !== 'authenticated' || !cloudSyncedRef.current) return
+
+    changeCountRef.current++
+    if (syncTimerRef.current) clearTimeout(syncTimerRef.current)
+    syncTimerRef.current = setTimeout(async () => {
+      try {
+        const payload = {
+          transactions,
+          wallets,
+          goals,
+          budgets,
+          recurring,
+          categories: Object.values(customCategories).filter((c: any) => c.isCustom),
+          settings: {
+            income: String(monthlyIncome),
+            initialBalance: String(initialBalance),
+            theme,
+            accentColor,
+            fontSize,
+            compactMode: String(compactMode),
+            setupDone: String(setupDone),
+            hideBalance: String(hideBalance),
+          },
+        }
+        const res = await fetch('/api/data', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        })
+        const data = await res.json()
+        if (data.ok) {
+          console.log(`[store] Synced to cloud (${changeCountRef.current} changes)`)
+          changeCountRef.current = 0
+        }
+      } catch (err) {
+        console.warn('[store] Cloud sync failed:', err)
+      }
+    }, 3000) // 3 second debounce
+  }, [authStatus, transactions, wallets, goals, budgets, recurring, customCategories, monthlyIncome, initialBalance, theme, accentColor, fontSize, compactMode, setupDone, hideBalance])
+
+  // Trigger sync on data changes (after initial cloud load)
+  useEffect(() => { if (loaded && cloudSyncedRef.current) scheduleSync() }, [transactions, wallets, goals, budgets, recurring, monthlyIncome, initialBalance, loaded, scheduleSync])
+
+  // Apply font size
   useEffect(() => {
     if (!loaded) return
     const root = document.documentElement
@@ -228,34 +353,11 @@ export function FinwiseProvider({ children }: { children: ReactNode }) {
     root.classList.toggle('compact', compactMode)
   }, [fontSize, compactMode, loaded])
 
-  // Apply accent color CSS variables — DISABLED: handled by ThemePicker system (lib/themes.ts)
-  // The ThemePicker in Settings handles all theme CSS variables now.
-  // useEffect(() => {
-  //   if (!loaded) return
-  //   ... (old override removed to prevent conflict with theme system)
-  // }, [accentColor, loaded])
-
-  const setAccentColor = useCallback((color: string) => {
-    setAccentColorState(color)
-  }, [])
-
-  const setFontSize = useCallback((size: 'sm' | 'base' | 'lg') => {
-    setFontSizeState(size)
-  }, [])
-
-  const toggleCompactMode = useCallback(() => {
-    setCompactModeState(prev => !prev)
-  }, [])
-
-  // Initial Balance
-  const updateInitialBalance = useCallback((amount: number) => {
-    setInitialBalance(amount)
-  }, [])
-
-  // Hide Balance
-  const toggleHideBalance = useCallback(() => {
-    setHideBalance(prev => !prev)
-  }, [])
+  const setAccentColor = useCallback((color: string) => setAccentColorState(color), [])
+  const setFontSize = useCallback((size: 'sm' | 'base' | 'lg') => setFontSizeState(size), [])
+  const toggleCompactMode = useCallback(() => setCompactModeState(prev => !prev), [])
+  const updateInitialBalance = useCallback((amount: number) => setInitialBalance(amount), [])
+  const toggleHideBalance = useCallback(() => setHideBalance(prev => !prev), [])
 
   // Merge categories
   const allCategories: Record<string, Category> = { ...BUILTIN_CATEGORIES, ...customCategories }
@@ -264,17 +366,13 @@ export function FinwiseProvider({ children }: { children: ReactNode }) {
   const addTransaction = useCallback((tx: Omit<Transaction, 'id'>) => {
     const finalTx = { ...tx, id: generateId(), category: tx.category || autoCategoryWithWallet(tx.description, tx.walletId) }
     setTransactions((prev) => [finalTx, ...prev])
-    // Log audit (async, non-blocking)
     logTransactionAudit('guest', 'create', finalTx.id, undefined, finalTx as unknown as Record<string, unknown>)
   }, [])
 
   const deleteTransaction = useCallback((id: string) => {
     setTransactions((prev) => {
       const tx = prev.find(t => t.id === id)
-      if (tx) {
-        // Log audit (async, non-blocking)
-        logTransactionAudit('guest', 'delete', id, tx as unknown as Record<string, unknown>, undefined)
-      }
+      if (tx) logTransactionAudit('guest', 'delete', id, tx as unknown as Record<string, unknown>, undefined)
       return prev.filter((t) => t.id !== id)
     })
   }, [])
@@ -284,7 +382,6 @@ export function FinwiseProvider({ children }: { children: ReactNode }) {
       prev.map((t) => {
         if (t.id !== id) return t
         const updated = { ...t, ...data }
-        // Log audit (async, non-blocking)
         logTransactionAudit('guest', 'update', id, t as unknown as Record<string, unknown>, updated as unknown as Record<string, unknown>)
         return updated
       })
@@ -297,42 +394,29 @@ export function FinwiseProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const deleteCustomCategory = useCallback((id: string) => {
-    setCustomCategories((prev) => {
-      const next = { ...prev }
-      delete next[id]
-      return next
-    })
+    setCustomCategories((prev) => { const next = { ...prev }; delete next[id]; return next })
   }, [])
 
   // Budgets
   const setBudget = useCallback((id: string, amount: number) => {
     setBudgets((prev) => {
       const oldAmount = prev[id] || 0
-      // Log audit (async, non-blocking)
       logBudgetAudit('guest', oldAmount > 0 ? 'update' : 'create', id, { amount: oldAmount }, { amount })
       return { ...prev, [id]: amount }
     })
   }, [])
 
   // Income
-  const updateMonthlyIncome = useCallback((amount: number) => {
-    setMonthlyIncomeState(amount)
-  }, [])
+  const updateMonthlyIncome = useCallback((amount: number) => setMonthlyIncomeState(amount), [])
 
   // Wallets
-  const addWallet = useCallback((w: Wallet) => {
-    setWallets((prev) => [...prev, w])
-  }, [])
-
+  const addWallet = useCallback((w: Wallet) => setWallets((prev) => [...prev, w]), [])
   const updateWallet = useCallback((id: string, data: Partial<Wallet>) => {
     setWallets((prev) => prev.map((w) => w.id === id ? { ...w, ...data } : w))
   }, [])
+  const deleteWallet = useCallback((id: string) => setWallets((prev) => prev.filter((w) => w.id !== id)), [])
 
-  const deleteWallet = useCallback((id: string) => {
-    setWallets((prev) => prev.filter((w) => w.id !== id))
-  }, [])
-
-  // Computed wallet balance: initialBalance + income - expenses for that wallet
+  // Computed wallet balance
   const getWalletBalance = useCallback((walletId: string): number => {
     const wallet = wallets.find(w => w.id === walletId)
     if (!wallet) return 0
@@ -343,52 +427,33 @@ export function FinwiseProvider({ children }: { children: ReactNode }) {
     return wallet.balance + txTotal
   }, [wallets, transactions])
 
-  // Total saldo across all wallets
   const getTotalBalance = useCallback((): number => {
     return wallets.reduce((sum, w) => sum + getWalletBalance(w.id), 0)
   }, [wallets, getWalletBalance])
 
   // Goals
-  const addGoal = useCallback((g: Goal) => {
-    setGoals((prev) => [...prev, g])
-  }, [])
-
+  const addGoal = useCallback((g: Goal) => setGoals((prev) => [...prev, g]), [])
   const updateGoal = useCallback((id: string, data: Partial<Goal>) => {
     setGoals((prev) => prev.map((g) => g.id === id ? { ...g, ...data } : g))
   }, [])
-
-  const deleteGoal = useCallback((id: string) => {
-    setGoals((prev) => prev.filter((g) => g.id !== id))
-  }, [])
-
+  const deleteGoal = useCallback((id: string) => setGoals((prev) => prev.filter((g) => g.id !== id)), [])
   const addToGoal = useCallback((id: string, amount: number) => {
     setGoals((prev) => prev.map((g) => g.id === id ? { ...g, currentAmount: g.currentAmount + amount } : g))
   }, [])
 
   // Recurring
-  const addRecurring = useCallback((r: RecurringItem) => {
-    setRecurring((prev) => [r, ...prev])
-  }, [])
-
+  const addRecurring = useCallback((r: RecurringItem) => setRecurring((prev) => [r, ...prev]), [])
   const toggleRecurring = useCallback((id: string) => {
     setRecurring((prev) => prev.map((r) => r.id === id ? { ...r, active: !r.active } : r))
   }, [])
-
-  const deleteRecurring = useCallback((id: string) => {
-    setRecurring((prev) => prev.filter((r) => r.id !== id))
-  }, [])
-
+  const deleteRecurring = useCallback((id: string) => setRecurring((prev) => prev.filter((r) => r.id !== id)), [])
   const updateRecurring = useCallback((id: string, data: Partial<RecurringItem>) => {
     setRecurring((prev) => prev.map((r) => r.id === id ? { ...r, ...data } : r))
   }, [])
 
   // PIN
   const setPin = useCallback(async (newPin: string | null) => {
-    if (newPin === null) {
-      setPinState(null)
-      setIsLocked(false)
-      return
-    }
+    if (newPin === null) { setPinState(null); setIsLocked(false); return }
     const hashed = await hashPin(newPin)
     setPinState(hashed)
     if (!newPin) setIsLocked(false)
@@ -397,15 +462,10 @@ export function FinwiseProvider({ children }: { children: ReactNode }) {
   const unlock = useCallback(() => setIsLocked(false), [])
 
   // Theme
-  const toggleTheme = useCallback(() => {
-    setTheme((prev) => prev === 'dark' ? 'light' : 'dark')
-  }, [])
+  const toggleTheme = useCallback(() => setTheme((prev) => prev === 'dark' ? 'light' : 'dark'), [])
 
   // Tips
-  const dismissTips = useCallback(() => {
-    setTipsDismissed(true)
-    saveJSON(KEYS.tipsDismissed, true)
-  }, [])
+  const dismissTips = useCallback(() => { setTipsDismissed(true); saveJSON(KEYS.tipsDismissed, true) }, [])
 
   // Tags
   const addTag = useCallback((tag: string) => {
@@ -413,35 +473,15 @@ export function FinwiseProvider({ children }: { children: ReactNode }) {
     if (!clean) return
     setTags((prev) => prev.includes(clean) ? prev : [...prev, clean])
   }, [])
+  const deleteTag = useCallback((tag: string) => setTags((prev) => prev.filter((t) => t !== tag)), [])
 
-  const deleteTag = useCallback((tag: string) => {
-    setTags((prev) => prev.filter((t) => t !== tag))
-  }, [])
-
-  // Reset all data
+  // Reset
   const resetAll = useCallback(() => {
-    // Clear all localStorage keys
-    Object.values(KEYS).forEach(key => {
-      try { localStorage.removeItem(key) } catch { /* ignore */ }
-    })
-
-    // Reset state to defaults
-    setTransactions([])
-    setCustomCategories({})
-    setBudgets({})
-    setMonthlyIncomeState(0)
-    setWallets(DEFAULT_WALLETS)
-    setGoals([])
-    setRecurring([])
-    setPinState(null)
-    setIsLocked(false)
-    setTheme('light')
-    setAccentColorState('purple')
-    setFontSizeState('base')
-    setCompactModeState(false)
-    setSetupDone(false)
-    setTipsDismissed(false)
-    setTags([])
+    Object.values(KEYS).forEach(key => { try { localStorage.removeItem(key) } catch { /* ignore */ } })
+    setTransactions([]); setCustomCategories({}); setBudgets({}); setMonthlyIncomeState(0)
+    setWallets(DEFAULT_WALLETS); setGoals([]); setRecurring([]); setPinState(null)
+    setIsLocked(false); setTheme('light'); setAccentColorState('purple'); setFontSizeState('base')
+    setCompactModeState(false); setSetupDone(false); setTipsDismissed(false); setTags([])
   }, [])
 
   return (
