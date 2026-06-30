@@ -369,7 +369,11 @@ export default function LoginPage() {
   const [authPassword, setAuthPassword] = useState("")
   const [showPassword, setShowPassword] = useState(false)
 
-  // ─── Registration uses email OTP flow (shared state above) ───
+  // ─── Registration (OTP + password) ───
+  const [regPassword, setRegPassword] = useState("")
+  const [regConfirm, setRegConfirm] = useState("")
+  const [showRegPassword, setShowRegPassword] = useState(false)
+  const [regStep, setRegStep] = useState<"form" | "otp" | "done">("form")
 
   // ─── Telegram OTP ───
   const [tgStep, setTgStep] = useState<"idle" | "code" | "done">("idle")
@@ -415,7 +419,59 @@ export default function LoginPage() {
     } catch { setError("Koneksi gagal. Periksa internet kamu."); setLoading(null) }
   }
 
-  // Registration now uses handleEmailRequest (email OTP)
+  // Registration: validate form → send OTP → verify → create account
+  async function handleRegisterRequest() {
+    if (!email.trim()) return setError("Masukkan email kamu")
+    if (!regPassword.trim()) return setError("Masukkan password")
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(email.trim())) return setError("Format email tidak valid")
+    if (regPassword.length < 6) return setError("Password minimal 6 karakter")
+    if (regPassword !== regConfirm) return setError("Password tidak cocok")
+    setLoading("email"); setError("")
+    try {
+      const res = await fetch("/api/email-login", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "request", email: email.trim() }) })
+      const data = await res.json()
+      if (res.status === 429) { setError(data.error || "Terlalu banyak percobaan"); setLoading(null); return }
+      if (data.ok) setRegStep("otp")
+      else setError(data.error || "Gagal mengirim kode")
+    } catch { setError("Koneksi gagal.") }
+    setLoading(null)
+  }
+
+  async function handleRegisterVerify() {
+    if (!emailCode.trim()) return setError("Masukkan kode verifikasi")
+    if (emailCode.trim().length < 6) return setError("Kode harus 6 digit")
+    setLoading("register"); setError("")
+    try {
+      // 1. Verify OTP
+      const verifyRes = await fetch("/api/email-login", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "verify", email: email.trim(), code: emailCode }) })
+      const verifyData = await verifyRes.json()
+      if (verifyRes.status === 429) { setError(verifyData.error || "Terlalu banyak percobaan"); setLoading(null); return }
+      if (!verifyData.ok) { setError(verifyData.error || "Kode salah"); setLoading(null); return }
+
+      // 2. Create account with password
+      const regRes = await fetch("/api/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: email.trim().toLowerCase(), password: regPassword, name: email.trim().split("@")[0] }),
+      })
+      const regData = await regRes.json()
+      if (regRes.status === 409) {
+        // Email already exists → just login with password
+        const loginResult = await signIn("email-password", { email: email.trim().toLowerCase(), password: regPassword, redirect: false })
+        if (loginResult?.ok) { router.push("/"); router.refresh() }
+        else { setError("Email sudah terdaftar. Coba masuk dengan password."); setRegStep("form"); setLoading(null) }
+        return
+      }
+      if (!regRes.ok) { setError(regData.error || "Gagal mendaftar"); setLoading(null); return }
+
+      // 3. Auto-login
+      setRegStep("done")
+      const loginResult = await signIn("email-password", { email: email.trim().toLowerCase(), password: regPassword, redirect: false })
+      if (loginResult?.ok) { router.push("/"); router.refresh() }
+      else { setView("login"); setAuthEmail(email.trim().toLowerCase()); setLoading(null) }
+    } catch { setError("Koneksi gagal."); setLoading(null) }
+  }
 
   async function handleGoogleLogin() {
     setLoading("google"); setError("")
@@ -487,7 +543,7 @@ export default function LoginPage() {
 
   function resetTelegram() { setTgStep("idle"); setTgCode(""); setError(""); setBotUrl(""); setChannelUrl("") }
   function resetEmail() { setEmailStep("idle"); setEmailCode(""); setError("") }
-  function goBack() { setView("login"); setError(""); resetTelegram(); resetEmail() }
+  function goBack() { setView("login"); setError(""); resetTelegram(); resetEmail(); setRegStep("form"); setRegPassword(""); setRegConfirm("") }
 
   // ═══════════════════════════════════════════
   //  RENDER
@@ -628,26 +684,45 @@ export default function LoginPage() {
           )}
 
           {/* ═══════════════════════════════════════
-              REGISTER VIEW (Email OTP)
+              REGISTER VIEW (Email + Password + OTP)
           ═══════════════════════════════════════ */}
-          {view === "register" && emailStep === "idle" && (
-            <div className="space-y-4">
-              <p className="text-sm text-center text-[#6b9a91]">Masukkan email untuk mendaftar ✉️</p>
+          {view === "register" && regStep === "form" && (
+            <div className="space-y-0">
+              <p className="text-sm text-center text-[#6b9a91] mb-3">Daftar dengan email & password ✉️</p>
               <div className="clay-input-group">
                 <div className="clay-input-icon">
                   <svg viewBox="0 0 24 24"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z" /></svg>
                 </div>
-                <input type="email" className="clay-input-field" placeholder="Email kamu"
+                <input type="email" className="clay-input-field" placeholder="Email"
                   value={email} onChange={(e) => { setEmail(e.target.value); setError("") }}
-                  onKeyDown={(e) => e.key === "Enter" && handleEmailRequest()} disabled={isLoading}
-                  autoFocus
+                  onKeyDown={(e) => e.key === "Enter" && handleRegisterRequest()} disabled={isLoading} autoFocus
                 />
               </div>
-              <button className="clay-btn" onClick={() => handleEmailRequest()} disabled={isLoading || !email.trim()}>
-                {loading === "email" ? <Loader2 className="size-5 animate-spin mx-auto" /> : "Kirim Kode OTP"}
+              <div className="clay-input-group">
+                <div className="clay-input-icon">
+                  <svg viewBox="0 0 24 24"><path d="M18 8h-1V6c0-2.8-2.2-5-5-5S7 3.2 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.7 1.3-3 3.1-3s3.1 1.3 3.1 3v2z" /></svg>
+                </div>
+                <input type={showRegPassword ? "text" : "password"} className="clay-input-field" placeholder="Password (min 6 karakter)"
+                  value={regPassword} onChange={(e) => { setRegPassword(e.target.value); setError("") }} disabled={isLoading}
+                />
+                <button type="button" className="clay-pwd-toggle" onClick={() => setShowRegPassword(!showRegPassword)}>
+                  {showRegPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                </button>
+              </div>
+              <div className="clay-input-group">
+                <div className="clay-input-icon">
+                  <svg viewBox="0 0 24 24"><path d="M18 8h-1V6c0-2.8-2.2-5-5-5S7 3.2 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.7 1.3-3 3.1-3s3.1 1.3 3.1 3v2z" /></svg>
+                </div>
+                <input type={showRegPassword ? "text" : "password"} className="clay-input-field" placeholder="Konfirmasi password"
+                  value={regConfirm} onChange={(e) => { setRegConfirm(e.target.value); setError("") }}
+                  onKeyDown={(e) => e.key === "Enter" && handleRegisterRequest()} disabled={isLoading}
+                />
+              </div>
+              <button className="clay-btn mt-2" onClick={handleRegisterRequest} disabled={isLoading}>
+                {loading === "email" ? <Loader2 className="size-5 animate-spin mx-auto" /> : "Daftar 🚀"}
               </button>
               <div className="text-center mt-4">
-                <button onClick={goBack}
+                <button onClick={() => { setView("login"); setError(""); setRegStep("form"); setRegPassword(""); setRegConfirm("") }}
                   className="text-xs text-[#6b9a91] hover:text-[#1a3d36] transition flex items-center justify-center gap-1 mx-auto font-600">
                   <ArrowLeft className="size-3" /> Sudah punya akun? Masuk
                 </button>
@@ -655,30 +730,30 @@ export default function LoginPage() {
             </div>
           )}
 
-          {view === "register" && emailStep === "sent" && (
+          {view === "register" && regStep === "otp" && (
             <div className="space-y-4">
               <div className="text-center space-y-1">
-                <p className="text-sm text-[#6b9a91]">Kode OTP dikirim ke email ✨</p>
-                <p className="text-xs text-[#82b0a6] font-medium">{email}</p>
+                <p className="text-sm text-[#6b9a91]">Verifikasi email kamu ✨</p>
+                <p className="text-xs text-[#82b0a6] font-medium">Kode dikirim ke {email}</p>
               </div>
               <div className="flex gap-2">
                 <input ref={emailOtpRef} type="text" placeholder="• • • • • •" maxLength={6} inputMode="numeric"
                   value={emailCode} onChange={(e) => { setEmailCode(e.target.value.replace(/\D/g, "")); setError("") }}
-                  onKeyDown={(e) => e.key === "Enter" && handleEmailVerify()}
+                  onKeyDown={(e) => e.key === "Enter" && handleRegisterVerify()}
                   className="flex-1 rounded-xl border border-[#8eddd0]/50 bg-[#e2f3ef] px-4 py-3.5 text-center text-xl tracking-[0.5em] font-mono outline-none transition-all focus:border-[#2cb5a0] focus:ring-2 focus:ring-[#2cb5a0]/20" />
-                <button onClick={handleEmailVerify} disabled={isLoading || emailCode.length < 6}
+                <button onClick={handleRegisterVerify} disabled={isLoading || emailCode.length < 6}
                   className="flex items-center justify-center rounded-xl bg-[#2cb5a0] px-4 py-3.5 text-white transition-all hover:bg-[#1a8f7d] disabled:opacity-50">
-                  {loading === "email" ? <Loader2 className="size-5 animate-spin" /> : <CheckCircle className="size-5" />}
+                  {loading === "register" ? <Loader2 className="size-5 animate-spin" /> : <CheckCircle className="size-5" />}
                 </button>
               </div>
-              <button onClick={() => { setEmailStep("idle"); setEmailCode(""); setError("") }}
+              <button onClick={() => { setRegStep("form"); setEmailCode(""); setError("") }}
                 className="flex w-full items-center justify-center gap-1.5 text-xs text-[#6b9a91] hover:text-[#1a3d36] transition py-1">
-                <ArrowLeft className="size-3" /> Ubah email
+                <ArrowLeft className="size-3" /> Ubah data
               </button>
             </div>
           )}
 
-          {view === "register" && emailStep === "done" && (
+          {view === "register" && regStep === "done" && (
             <div className="text-center space-y-3 py-6 animate-[slideUp_0.3s_ease]">
               <CheckCircle className="size-14 mx-auto text-[#2cb5a0]" />
               <p className="text-sm font-bold text-[#1a8f7d]">Akun berhasil dibuat! 🎉</p>
