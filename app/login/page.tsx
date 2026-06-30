@@ -5,11 +5,11 @@ import { Loader2, MessageCircle, CheckCircle, ArrowLeft, Send, HelpCircle, Eye, 
 import { useRouter } from "next/navigation"
 
 /* ═══════════════════════════════════════════
-   CLAYMORPHISM STYLES
+   WISE STYLE DESIGN SYSTEM
 ═══════════════════════════════════════════ */
 const clayStyles = `
 /* ─── Background ─── */
-.clay-bg { background: #d5f5f0; min-height: 100vh; position: relative; overflow: hidden; }
+.clay-bg { background: #f0f5e8; min-height: 100vh; position: relative; overflow: hidden; }
 
 /* ─── Clouds ─── */
 .clay-cloud {
@@ -79,7 +79,7 @@ const clayStyles = `
 .clay-leaf {
   position: absolute;
   width: 30px; height: 55px;
-  background: #6ab04c;
+  background: #2ead4b;
   border-radius: 50% 50% 50% 50% / 70% 70% 30% 30%;
   box-shadow: inset 0 -5px 10px rgba(0,0,0,0.1);
   transform-origin: bottom center;
@@ -104,14 +104,14 @@ const clayStyles = `
 }
 .clay-fstem {
   position: absolute; bottom: 40px; left: 50%; transform: translateX(-50%);
-  width: 4px; height: 50px; background: #6ab04c; border-radius: 2px;
+  width: 4px; height: 50px; background: #2ead4b; border-radius: 2px;
 }
 
 /* ─── Card ─── */
 .clay-card {
   position: relative; z-index: 10;
   width: 100%; max-width: 380px;
-  background: #f0faf8;
+  background: #FFFFFF;
   border-radius: 45px;
   padding: 40px 32px 32px;
   box-shadow: 0 25px 60px rgba(0,0,0,0.08), 0 8px 20px rgba(0,0,0,0.05), inset 0 2px 0 rgba(255,255,255,0.8);
@@ -133,7 +133,7 @@ const clayStyles = `
 .clay-heart { font-size: 18px; display: block; margin-bottom: 4px; }
 .clay-header h1 {
   font-size: 22px; font-weight: 900;
-  color: #1a3d36;
+  color: #0e0f0c;
   letter-spacing: -0.5px;
   display: flex;
   align-items: center;
@@ -153,7 +153,7 @@ const clayStyles = `
   50% { opacity: 0.5; transform: scale(0.7); }
 }
 .clay-subtitle {
-  font-size: 13px; color: #6b9a91;
+  font-size: 13px; color: #868685;
   margin-top: 2px; font-weight: 600;
 }
 
@@ -162,49 +162,49 @@ const clayStyles = `
 .clay-input-icon {
   position: absolute; left: 12px; top: 50%; transform: translateY(-50%);
   width: 34px; height: 34px;
-  background: #d5efe9;
+  background: #e2f6d5;
   border-radius: 50%;
   display: flex; align-items: center; justify-content: center;
   box-shadow: 0 3px 8px rgba(0,0,0,0.06);
   z-index: 2;
 }
-.clay-input-icon svg { width: 15px; height: 15px; fill: #1a8f7d; }
+.clay-input-icon svg { width: 15px; height: 15px; fill: #2ead4b; }
 .clay-input-field {
   width: 100%; height: 52px;
-  background: #e2f3ef;
+  background: #e8ebe6;
   border: 2px solid transparent;
   border-radius: 16px;
   padding: 0 44px 0 54px;
-  font-size: 14px; color: #1a3d36;
+  font-size: 14px; color: #0e0f0c;
   font-family: inherit; font-weight: 600;
   box-shadow: inset 0 3px 8px rgba(0,0,0,0.06), inset 0 1px 2px rgba(0,0,0,0.04);
   transition: all 0.25s;
   outline: none;
 }
-.clay-input-field::placeholder { color: #82b0a6; font-weight: 500; }
+.clay-input-field::placeholder { color: #868685; font-weight: 500; }
 .clay-input-field:focus {
-  border-color: #8eddd0;
-  background: #e8f7f3;
+  border-color: #9fe870;
+  background: #e2f6d5;
   box-shadow: inset 0 3px 8px rgba(0,0,0,0.04), 0 0 0 4px rgba(44,181,160,0.1);
 }
 .clay-pwd-toggle {
   position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
   width: 30px; height: 30px;
-  background: #d5efe9;
+  background: #e2f6d5;
   border: none; border-radius: 50%;
   display: flex; align-items: center; justify-content: center;
   cursor: pointer;
   box-shadow: 0 2px 6px rgba(0,0,0,0.06);
   transition: all 0.2s;
   z-index: 2;
-  color: #1a8f7d;
+  color: #2ead4b;
 }
 .clay-pwd-toggle:hover { transform: translateY(-50%) scale(1.1); }
 
 /* ─── Forgot ─── */
 .clay-forgot-row { text-align: right; margin-bottom: 16px; margin-top: -6px; }
 .clay-forgot-link {
-  font-size: 12px; color: #2cb5a0;
+  font-size: 12px; color: #2ead4b;
   font-weight: 700; text-decoration: none;
   transition: opacity 0.2s;
 }
@@ -213,7 +213,7 @@ const clayStyles = `
 /* ─── Button ─── */
 .clay-btn {
   width: 100%; height: 52px;
-  background: linear-gradient(135deg, #8eddd0 0%, #2cb5a0 100%);
+  background: linear-gradient(135deg, #9fe870 0%, #2ead4b 100%);
   color: white;
   border: none; border-radius: 16px;
   font-size: 16px; font-weight: 800;
@@ -230,12 +230,12 @@ const clayStyles = `
 .clay-divider {
   display: flex; align-items: center;
   margin: 20px 0;
-  color: #82b0a6;
+  color: #868685;
   font-size: 12px; font-weight: 600;
 }
 .clay-divider::before, .clay-divider::after {
   content: ''; flex: 1; height: 1.5px;
-  background: linear-gradient(90deg, transparent, #8eddd0, transparent);
+  background: linear-gradient(90deg, transparent, #9fe870, transparent);
 }
 .clay-divider::before { margin-right: 14px; }
 .clay-divider::after { margin-left: 14px; }
@@ -244,53 +244,53 @@ const clayStyles = `
 .clay-social-btn {
   width: 100%; height: 48px;
   background: white;
-  border: 2px solid #e2f3ef;
+  border: 2px solid #e8ebe6;
   border-radius: 14px;
   display: flex; align-items: center; justify-content: center; gap: 10px;
   cursor: pointer;
-  font-size: 14px; font-weight: 700; color: #1a3d36; font-family: inherit;
+  font-size: 14px; font-weight: 700; color: #0e0f0c; font-family: inherit;
   box-shadow: 0 4px 12px rgba(0,0,0,0.05);
   transition: all 0.25s;
 }
-.clay-social-btn:hover { transform: translateY(-2px); border-color: #8eddd0; box-shadow: 0 6px 18px rgba(0,0,0,0.08); }
+.clay-social-btn:hover { transform: translateY(-2px); border-color: #9fe870; box-shadow: 0 6px 18px rgba(0,0,0,0.08); }
 .clay-social-btn svg { width: 20px; height: 20px; }
 
 /* ─── Footer ─── */
-.clay-footer { text-align: center; font-size: 13px; color: #6b9a91; font-weight: 600; }
-.clay-footer a { color: #2cb5a0; font-weight: 800; text-decoration: none; }
+.clay-footer { text-align: center; font-size: 13px; color: #868685; font-weight: 600; }
+.clay-footer a { color: #2ead4b; font-weight: 800; text-decoration: none; }
 .clay-footer a:hover { opacity: 0.7; text-decoration: underline; }
 
 /* ─── OTP Input ─── */
 .clay-otp-input {
   flex: 1; rounded-xl;
   border-radius: 14px;
-  border: 2px solid #e2f3ef;
-  background: #e2f3ef;
+  border: 2px solid #e8ebe6;
+  background: #e8ebe6;
   padding: 0.875rem 1rem;
   text-align: center; text-xl;
   font-size: 20px;
   letter-spacing: 0.5em;
   font-family: monospace;
-  color: #1a3d36;
+  color: #0e0f0c;
   outline: none;
   transition: all 0.25s;
   box-shadow: inset 0 3px 8px rgba(0,0,0,0.06);
 }
 .clay-otp-input:focus {
-  border-color: #8eddd0;
+  border-color: #9fe870;
   box-shadow: inset 0 3px 8px rgba(0,0,0,0.04), 0 0 0 4px rgba(44,181,160,0.1);
 }
 
 /* ─── Alt method link ─── */
 .clay-alt-link {
-  font-size: 12px; color: #6b9a91;
+  font-size: 12px; color: #868685;
   font-weight: 600; cursor: pointer;
   background: none; border: none;
   display: flex; align-items: center; justify-content: center; gap: 4px;
   margin: 0 auto;
   transition: color 0.2s;
 }
-.clay-alt-link:hover { color: #1a3d36; }
+.clay-alt-link:hover { color: #0e0f0c; }
 
 @media (max-width: 480px) {
   .clay-card { padding: 32px 24px 28px; border-radius: 36px; }
@@ -301,12 +301,12 @@ const clayStyles = `
 
 // ─── FinWise Cat SVG Component ───
 function FinWiseCat({ theme = "teal" }: { theme?: string }) {
-  const bodyColor = "#E8F4F0"
-  const hoodieColor = "#A8DDD0"
-  const hoodieShadow = "#8EDDD0"
-  const skinColor = "#F0FAF8"
-  const earInner = "#E0F5F0"
-  const eyeColor = "#1a3d36"
+  const bodyColor = "#f0f5e8"
+  const hoodieColor = "#9fe870"
+  const hoodieShadow = "#cdffad"
+  const skinColor = "#f8faf5"
+  const earInner = "#e2f6d5"
+  const eyeColor = "#0e0f0c"
   const cheekColor = "#FFB8C8"
 
   return (
@@ -343,7 +343,7 @@ function StepDots({ current, total }: { current: number; total: number }) {
       {Array.from({ length: total }, (_, i) => (
         <div key={i}
           className={`h-1.5 rounded-full transition-all duration-300 ${
-            i + 1 < current ? "w-4 bg-[#2cb5a0]" : i + 1 === current ? "w-6 bg-[#2cb5a0]" : "w-1.5 bg-[#c5ddd6]"
+            i + 1 < current ? "w-4 bg-[#2ead4b]" : i + 1 === current ? "w-6 bg-[#2ead4b]" : "w-1.5 bg-[#e8ebe6]"
           }`}
         />
       ))}
@@ -668,7 +668,7 @@ export default function LoginPage() {
                 </button>
                 <button className="clay-social-btn flex-1" style={{ height: 42, fontSize: 13 }}
                   onClick={() => { setView("email-otp"); setError("") }} disabled={isLoading}>
-                  <svg viewBox="0 0 24 24" fill="none" stroke="#1a8f7d" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: 18, height: 18 }}>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="#2ead4b" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: 18, height: 18 }}>
                     <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
                     <polyline points="22,6 12,13 2,6" />
                   </svg>
@@ -688,7 +688,7 @@ export default function LoginPage() {
           ═══════════════════════════════════════ */}
           {view === "register" && regStep === "form" && (
             <div className="space-y-0">
-              <p className="text-sm text-center text-[#6b9a91] mb-3">Daftar dengan email & password ✉️</p>
+              <p className="text-sm text-center text-[#868685] mb-3">Daftar dengan email & password ✉️</p>
               <div className="clay-input-group">
                 <div className="clay-input-icon">
                   <svg viewBox="0 0 24 24"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z" /></svg>
@@ -723,7 +723,7 @@ export default function LoginPage() {
               </button>
               <div className="text-center mt-4">
                 <button onClick={() => { setView("login"); setError(""); setRegStep("form"); setRegPassword(""); setRegConfirm("") }}
-                  className="text-xs text-[#6b9a91] hover:text-[#1a3d36] transition flex items-center justify-center gap-1 mx-auto font-600">
+                  className="text-xs text-[#868685] hover:text-[#0e0f0c] transition flex items-center justify-center gap-1 mx-auto font-600">
                   <ArrowLeft className="size-3" /> Sudah punya akun? Masuk
                 </button>
               </div>
@@ -733,21 +733,21 @@ export default function LoginPage() {
           {view === "register" && regStep === "otp" && (
             <div className="space-y-4">
               <div className="text-center space-y-1">
-                <p className="text-sm text-[#6b9a91]">Verifikasi email kamu ✨</p>
-                <p className="text-xs text-[#82b0a6] font-medium">Kode dikirim ke {email}</p>
+                <p className="text-sm text-[#868685]">Verifikasi email kamu ✨</p>
+                <p className="text-xs text-[#868685] font-medium">Kode dikirim ke {email}</p>
               </div>
               <div className="flex gap-2">
                 <input ref={emailOtpRef} type="text" placeholder="• • • • • •" maxLength={6} inputMode="numeric"
                   value={emailCode} onChange={(e) => { setEmailCode(e.target.value.replace(/\D/g, "")); setError("") }}
                   onKeyDown={(e) => e.key === "Enter" && handleRegisterVerify()}
-                  className="flex-1 rounded-xl border border-[#8eddd0]/50 bg-[#e2f3ef] px-4 py-3.5 text-center text-xl tracking-[0.5em] font-mono outline-none transition-all focus:border-[#2cb5a0] focus:ring-2 focus:ring-[#2cb5a0]/20" />
+                  className="flex-1 rounded-xl border border-[#9fe870]/50 bg-[#e8ebe6] px-4 py-3.5 text-center text-xl tracking-[0.5em] font-mono outline-none transition-all focus:border-[#2ead4b] focus:ring-2 focus:ring-[#2ead4b]/20" />
                 <button onClick={handleRegisterVerify} disabled={isLoading || emailCode.length < 6}
-                  className="flex items-center justify-center rounded-xl bg-[#2cb5a0] px-4 py-3.5 text-white transition-all hover:bg-[#1a8f7d] disabled:opacity-50">
+                  className="flex items-center justify-center rounded-xl bg-[#2ead4b] px-4 py-3.5 text-white transition-all hover:bg-[#2ead4b] disabled:opacity-50">
                   {loading === "register" ? <Loader2 className="size-5 animate-spin" /> : <CheckCircle className="size-5" />}
                 </button>
               </div>
               <button onClick={() => { setRegStep("form"); setEmailCode(""); setError("") }}
-                className="flex w-full items-center justify-center gap-1.5 text-xs text-[#6b9a91] hover:text-[#1a3d36] transition py-1">
+                className="flex w-full items-center justify-center gap-1.5 text-xs text-[#868685] hover:text-[#0e0f0c] transition py-1">
                 <ArrowLeft className="size-3" /> Ubah data
               </button>
             </div>
@@ -755,9 +755,9 @@ export default function LoginPage() {
 
           {view === "register" && regStep === "done" && (
             <div className="text-center space-y-3 py-6 animate-[slideUp_0.3s_ease]">
-              <CheckCircle className="size-14 mx-auto text-[#2cb5a0]" />
-              <p className="text-sm font-bold text-[#1a8f7d]">Akun berhasil dibuat! 🎉</p>
-              <p className="text-xs text-[#6b9a91]">Mengalihkan ke dashboard...</p>
+              <CheckCircle className="size-14 mx-auto text-[#2ead4b]" />
+              <p className="text-sm font-bold text-[#2ead4b]">Akun berhasil dibuat! 🎉</p>
+              <p className="text-xs text-[#868685]">Mengalihkan ke dashboard...</p>
             </div>
           )}
 
@@ -766,10 +766,10 @@ export default function LoginPage() {
           ═══════════════════════════════════════ */}
           {view === "forgot" && (
             <div className="text-center space-y-4 py-4">
-              <div className="rounded-xl border border-[#8eddd0]/30 bg-[#e8f7f3] p-4">
-                <p className="text-sm text-[#6b9a91]">Reset password segera hadir! 🛠️</p>
-                <p className="text-xs text-[#82b0a6] mt-2">
-                  Sementara, hubungi admin via <a href="https://t.me/ainsyir" target="_blank" rel="noopener noreferrer" className="text-[#2cb5a0] font-bold hover:underline">@ainsyir</a>
+              <div className="rounded-xl border border-[#9fe870]/30 bg-[#e2f6d5] p-4">
+                <p className="text-sm text-[#868685]">Reset password segera hadir! 🛠️</p>
+                <p className="text-xs text-[#868685] mt-2">
+                  Sementara, hubungi admin via <a href="https://t.me/ainsyir" target="_blank" rel="noopener noreferrer" className="text-[#2ead4b] font-bold hover:underline">@ainsyir</a>
                 </p>
               </div>
               <button onClick={goBack}
@@ -785,34 +785,34 @@ export default function LoginPage() {
           {view === "telegram" && tgStep === "idle" && (
             <div className="space-y-4">
               <StepDots current={1} total={3} />
-              <p className="text-sm text-center text-[#6b9a91]">Masukkan username Telegram kamu 📱</p>
+              <p className="text-sm text-center text-[#868685]">Masukkan username Telegram kamu 📱</p>
               <div className="flex gap-2">
                 <input type="text" placeholder="Username (tanpa @)"
                   value={tgUsername} onChange={(e) => { setTgUsername(e.target.value.replace(/[^a-zA-Z0-9_]/g, '')); setError("") }}
                   onKeyDown={(e) => e.key === "Enter" && handleTelegramRequest()} maxLength={50}
-                  className="flex-1 rounded-xl border-2 border-[#e2f3ef] bg-[#e2f3ef] px-4 py-3 text-sm outline-none transition-all focus:border-[#8eddd0] focus:ring-2 focus:ring-[#2cb5a0]/20"
-                  style={{ fontFamily: "inherit", color: "#1a3d36", fontWeight: 600, boxShadow: "inset 0 3px 8px rgba(0,0,0,0.06)" }}
+                  className="flex-1 rounded-xl border-2 border-[#e8ebe6] bg-[#e8ebe6] px-4 py-3 text-sm outline-none transition-all focus:border-[#9fe870] focus:ring-2 focus:ring-[#2ead4b]/20"
+                  style={{ fontFamily: "inherit", color: "#0e0f0c", fontWeight: 600, boxShadow: "inset 0 3px 8px rgba(0,0,0,0.06)" }}
                 />
                 <button onClick={handleTelegramRequest} disabled={isLoading}
-                  className="flex items-center justify-center rounded-xl bg-[#229ED9] px-4 py-3 text-white transition-all hover:bg-[#1d8ec4] disabled:opacity-50">
+                  className="flex items-center justify-center rounded-xl bg-[#229ED9] px-4 py-3 text-white transition-all hover:bg-[#229ED9] disabled:opacity-50">
                   {loading === "telegram" ? <Loader2 className="size-5 animate-spin" /> : <Send className="size-4" />}
                 </button>
               </div>
               {botUrl && (
-                <div className="rounded-xl border border-[#2cb5a0]/30 bg-[#e8f7f3] p-4">
-                  <p className="text-sm font-medium text-[#1a3d36]">🤖 Bot belum aktif!</p>
-                  <p className="text-xs text-[#6b9a91] mt-1">Mulai chat dengan bot FinWise dulu ya.</p>
+                <div className="rounded-xl border border-[#2ead4b]/30 bg-[#e2f6d5] p-4">
+                  <p className="text-sm font-medium text-[#0e0f0c]">🤖 Bot belum aktif!</p>
+                  <p className="text-xs text-[#868685] mt-1">Mulai chat dengan bot FinWise dulu ya.</p>
                   <a href={botUrl} target="_blank" rel="noopener noreferrer"
-                    className="flex w-full items-center justify-center gap-2 rounded-lg bg-[#229ED9] px-4 py-2.5 text-sm font-medium text-white mt-2 transition hover:bg-[#1d8ec4]">
+                    className="flex w-full items-center justify-center gap-2 rounded-lg bg-[#229ED9] px-4 py-2.5 text-sm font-medium text-white mt-2 transition hover:bg-[#229ED9]">
                     <MessageCircle className="size-4" /> Buka Bot
                   </a>
                 </div>
               )}
               {channelUrl && (
-                <div className="rounded-xl border border-[#2cb5a0]/30 bg-[#e8f7f3] p-4">
-                  <p className="text-sm font-medium text-[#1a3d36]">📢 Gabung channel dulu!</p>
+                <div className="rounded-xl border border-[#2ead4b]/30 bg-[#e2f6d5] p-4">
+                  <p className="text-sm font-medium text-[#0e0f0c]">📢 Gabung channel dulu!</p>
                   <a href={channelUrl} target="_blank" rel="noopener noreferrer"
-                    className="flex w-full items-center justify-center gap-2 rounded-lg bg-[#229ED9] px-4 py-2.5 text-sm font-medium text-white mt-2 transition hover:bg-[#1d8ec4]">
+                    className="flex w-full items-center justify-center gap-2 rounded-lg bg-[#229ED9] px-4 py-2.5 text-sm font-medium text-white mt-2 transition hover:bg-[#229ED9]">
                     <MessageCircle className="size-4" /> Gabung Channel
                   </a>
                 </div>
@@ -827,8 +827,8 @@ export default function LoginPage() {
             <div className="space-y-4">
               <StepDots current={2} total={3} />
               <div className="text-center space-y-1">
-                <p className="text-sm text-[#6b9a91]">Kode 6 digit dikirim via Telegram ✨</p>
-                <p className="text-xs text-[#82b0a6]">@{tgUsername}</p>
+                <p className="text-sm text-[#868685]">Kode 6 digit dikirim via Telegram ✨</p>
+                <p className="text-xs text-[#868685]">@{tgUsername}</p>
               </div>
               <div className="flex gap-2">
                 <input ref={otpRef} type="text" placeholder="• • • • • •" maxLength={6} inputMode="numeric"
@@ -836,7 +836,7 @@ export default function LoginPage() {
                   onKeyDown={(e) => e.key === "Enter" && handleTelegramVerify()}
                   className="clay-otp-input flex-1" />
                 <button onClick={handleTelegramVerify} disabled={isLoading || tgCode.length < 6}
-                  className="flex items-center justify-center rounded-xl bg-[#2cb5a0] px-4 py-3.5 text-white transition-all hover:bg-[#1a8f7d] disabled:opacity-50">
+                  className="flex items-center justify-center rounded-xl bg-[#2ead4b] px-4 py-3.5 text-white transition-all hover:bg-[#2ead4b] disabled:opacity-50">
                   {loading === "telegram" ? <Loader2 className="size-5 animate-spin" /> : <CheckCircle className="size-5" />}
                 </button>
               </div>
@@ -849,8 +849,8 @@ export default function LoginPage() {
           {view === "telegram" && tgStep === "done" && (
             <div className="text-center space-y-3 py-6">
               <StepDots current={3} total={3} />
-              <CheckCircle className="size-12 mx-auto text-[#2cb5a0]" />
-              <p className="text-sm font-medium text-[#1a8f7d]">Terverifikasi! Mengalihkan...</p>
+              <CheckCircle className="size-12 mx-auto text-[#2ead4b]" />
+              <p className="text-sm font-medium text-[#2ead4b]">Terverifikasi! Mengalihkan...</p>
             </div>
           )}
 
@@ -860,16 +860,16 @@ export default function LoginPage() {
           {view === "email-otp" && emailStep === "idle" && (
             <div className="space-y-4">
               <StepDots current={1} total={2} />
-              <p className="text-sm text-center text-[#6b9a91]">Masukkan alamat email ✉️</p>
+              <p className="text-sm text-center text-[#868685]">Masukkan alamat email ✉️</p>
               <div className="flex gap-2">
                 <input type="email" placeholder="email@contoh.com"
                   value={email} onChange={(e) => { setEmail(e.target.value); setError("") }}
                   onKeyDown={(e) => e.key === "Enter" && handleEmailRequest()}
-                  className="flex-1 rounded-xl border-2 border-[#e2f3ef] bg-[#e2f3ef] px-4 py-3 text-sm outline-none transition-all focus:border-[#8eddd0] focus:ring-2 focus:ring-[#2cb5a0]/20"
-                  style={{ fontFamily: "inherit", color: "#1a3d36", fontWeight: 600, boxShadow: "inset 0 3px 8px rgba(0,0,0,0.06)" }}
+                  className="flex-1 rounded-xl border-2 border-[#e8ebe6] bg-[#e8ebe6] px-4 py-3 text-sm outline-none transition-all focus:border-[#9fe870] focus:ring-2 focus:ring-[#2ead4b]/20"
+                  style={{ fontFamily: "inherit", color: "#0e0f0c", fontWeight: 600, boxShadow: "inset 0 3px 8px rgba(0,0,0,0.06)" }}
                 />
                 <button onClick={handleEmailRequest} disabled={isLoading}
-                  className="flex items-center justify-center gap-1.5 rounded-xl bg-[#2cb5a0] px-3 py-3 text-sm font-semibold text-white transition-all hover:bg-[#1a8f7d] disabled:opacity-50">
+                  className="flex items-center justify-center gap-1.5 rounded-xl bg-[#2ead4b] px-3 py-3 text-sm font-semibold text-white transition-all hover:bg-[#2ead4b] disabled:opacity-50">
                   {loading === "email" ? <Loader2 className="size-5 animate-spin" /> : <Send className="size-4 shrink-0" />}
                 </button>
               </div>
@@ -882,15 +882,15 @@ export default function LoginPage() {
           {view === "email-otp" && emailStep === "sent" && (
             <div className="space-y-4">
               <StepDots current={2} total={2} />
-              <p className="text-sm text-center text-[#6b9a91]">Kode dikirim ke email ✨</p>
-              <p className="text-xs text-center text-[#82b0a6] font-medium">{email}</p>
+              <p className="text-sm text-center text-[#868685]">Kode dikirim ke email ✨</p>
+              <p className="text-xs text-center text-[#868685] font-medium">{email}</p>
               <div className="flex gap-2">
                 <input ref={emailOtpRef} type="text" placeholder="• • • • • •" maxLength={6} inputMode="numeric"
                   value={emailCode} onChange={(e) => { setEmailCode(e.target.value.replace(/\D/g, "")); setError("") }}
                   onKeyDown={(e) => e.key === "Enter" && handleEmailVerify()}
                   className="clay-otp-input flex-1" />
                 <button onClick={handleEmailVerify} disabled={isLoading || emailCode.length < 6}
-                  className="flex items-center justify-center rounded-xl bg-[#2cb5a0] px-4 py-3.5 text-white transition-all hover:bg-[#1a8f7d] disabled:opacity-50">
+                  className="flex items-center justify-center rounded-xl bg-[#2ead4b] px-4 py-3.5 text-white transition-all hover:bg-[#2ead4b] disabled:opacity-50">
                   {loading === "email" ? <Loader2 className="size-5 animate-spin" /> : <CheckCircle className="size-5" />}
                 </button>
               </div>
@@ -903,20 +903,20 @@ export default function LoginPage() {
           {view === "email-otp" && emailStep === "done" && (
             <div className="text-center space-y-3 py-6">
               <StepDots current={2} total={2} />
-              <CheckCircle className="size-12 mx-auto text-[#2cb5a0]" />
-              <p className="text-sm font-medium text-[#1a8f7d]">Login berhasil! Mengalihkan...</p>
+              <CheckCircle className="size-12 mx-auto text-[#2ead4b]" />
+              <p className="text-sm font-medium text-[#2ead4b]">Login berhasil! Mengalihkan...</p>
             </div>
           )}
 
           {/* ─── Footer ─── */}
-          <div className="text-center mt-5 pt-4 border-t border-[#8eddd0]/30">
-            <p className="flex items-center justify-center gap-1.5 text-xs text-[#82b0a6]">
+          <div className="text-center mt-5 pt-4 border-t border-[#9fe870]/30">
+            <p className="flex items-center justify-center gap-1.5 text-xs text-[#868685]">
               🔒 Terenkripsi & aman
             </p>
-            <p className="text-xs text-[#a0c8be] mt-1">
+            <p className="text-xs text-[#868685] mt-1">
               Akun otomatis dibuat saat login pertama ·{" "}
               <a href="https://t.me/ainsyir" target="_blank" rel="noopener noreferrer"
-                className="inline-flex items-center gap-1 text-[#2cb5a0] font-bold hover:underline">
+                className="inline-flex items-center gap-1 text-[#2ead4b] font-bold hover:underline">
                 <HelpCircle className="size-3" /> Butuh bantuan?
               </a>
             </p>
