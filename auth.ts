@@ -140,9 +140,20 @@ export const authOptions: NextAuthOptions = {
     },
   },
   callbacks: {
+    async jwt({ token, user, account }) {
+      // Persist image from Google OAuth into JWT
+      if (user) {
+        token.image = user.image || token.image || null
+      }
+      return token
+    },
     async session({ session, token }) {
       if (token.sub) {
         (session.user as Record<string, unknown>).id = token.sub
+      }
+      // Pass image from JWT to session
+      if (token.image) {
+        (session.user as Record<string, unknown>).image = token.image as string
       }
       return session
     },
