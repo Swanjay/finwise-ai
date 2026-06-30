@@ -1,16 +1,16 @@
 import { Analytics } from '@vercel/analytics/next'
 import type { Metadata, Viewport } from 'next'
-import { Poppins, Geist_Mono } from 'next/font/google'
+import { Inter, Geist_Mono } from 'next/font/google'
 import Script from 'next/script'
 import './globals.css'
 import { Providers } from './providers'
 import { OfflineBanner } from '@/components/ui/offline-banner'
 import { ServiceWorkerRegistration } from '@/components/ui/sw-registration'
 
-const poppins = Poppins({
+const inter = Inter({
   variable: '--font-sans',
   subsets: ['latin'],
-  weight: ['400', '500', '600', '700', '800'],
+  weight: ['400', '500', '600', '700', '800', '900'],
 })
 
 const geistMono = Geist_Mono({
@@ -61,6 +61,10 @@ export const viewport: Viewport = {
 
 // Theme color map — must be kept in sync with lib/themes.ts
 const THEME_MAP: Record<string, { dark: Record<string, string>; light: Record<string, string> }> = {
+  wise: {
+    dark: { bg: '#111110', card: '#1a1a18', surface2: '#242420', primary: '#9fe870', pl: '#cdffad', greeting: '#1a2e12', border: 'rgba(159, 232, 112, 0.15)', mutedFg: '#707070' },
+    light: { bg: '#FFFFFF', card: '#FFFFFF', surface2: '#e8ebe6', primary: '#2ead4b', pl: '#9fe870', greeting: '#e2f6d5', border: 'rgba(0, 0, 0, 0.08)', mutedFg: '#868685' },
+  },
   purple: {
     dark: { bg: '#1a1625', card: '#231e30', surface2: '#2a2438', primary: '#9b7fd4', pl: '#c4a0e8', greeting: '#3a2d5a', border: 'rgba(155, 127, 212, 0.15)', mutedFg: '#9b8ab8' },
     light: { bg: '#F5F3FF', card: '#FFFFFF', surface2: '#EDE9FF', primary: '#8A6ECF', pl: '#D0BFF5', greeting: '#EDE9FF', border: 'rgba(138, 110, 207, 0.15)', mutedFg: '#7C7A8A' },
@@ -87,7 +91,7 @@ const THEME_MAP: Record<string, { dark: Record<string, string>; light: Record<st
 const themeScript = `
 (function(){
   try {
-    var id = localStorage.getItem('fw.colorTheme.v1') || 'emerald';
+    var id = localStorage.getItem('fw.colorTheme.v1') || 'wise';
     var dark = document.documentElement.classList.contains('dark');
     var m = ${JSON.stringify(THEME_MAP)};
     var t = m[id] || m.emerald;
@@ -135,7 +139,7 @@ export default function RootLayout({
     <html
       lang="id"
       suppressHydrationWarning
-      className={`${poppins.variable} ${geistMono.variable}`}
+      className={`${inter.variable} ${geistMono.variable}`}
     >
       <head>
         <Script

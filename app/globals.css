@@ -65,37 +65,37 @@
   --radius-4xl: calc(var(--radius) * 3);
 }
 
-/* FinWise — Claymorphism Light Design System */
+/* FinWise — Wise Style Design System (Lime Green / Sage) */
 :root {
   color-scheme: light;
 
-  /* Background: soft off-white/lavender tint */
-  --background: #F5F3FF;
-  --foreground: #2D2057;
+  /* Background: clean white, sage soft sections */
+  --background: #FFFFFF;
+  --foreground: #0e0f0c;
 
-  /* Cards: white with soft shadow */
+  /* Cards: white with subtle shadow */
   --card: #FFFFFF;
-  --card-foreground: #2D2057;
-  --surface-2: #EDE9FF;
+  --card-foreground: #0e0f0c;
+  --surface-2: #e8ebe6;
 
   --popover: #FFFFFF;
-  --popover-foreground: #2D2057;
+  --popover-foreground: #0e0f0c;
 
-  /* Primary: medium purple */
-  --primary: #8A6ECF;
+  /* Primary: Wise lime green → use darker shade for text contrast */
+  --primary: #2ead4b;
   --primary-foreground: #FFFFFF;
 
-  /* Secondary: lavender */
-  --secondary: #D0BFF5;
-  --secondary-foreground: #2D2057;
+  /* Secondary: sage light */
+  --secondary: #e2f6d5;
+  --secondary-foreground: #0e0f0c;
 
-  /* Muted: very light lavender */
-  --muted: #EDE9FF;
-  --muted-foreground: #8A6ECF;
+  /* Muted: sage */
+  --muted: #e8ebe6;
+  --muted-foreground: #868685;
 
-  /* Accent: pink */
-  --accent: #F9A8D4;
-  --accent-foreground: #2D2057;
+  /* Accent: lime green light */
+  --accent: #9fe870;
+  --accent-foreground: #0e0f0c;
 
   --success: #66BB6A;
   --success-foreground: #FFFFFF;
@@ -103,83 +103,83 @@
   --warning-foreground: #FFFFFF;
   --destructive: #EF5350;
 
-  --border: rgba(138, 110, 207, 0.15);
-  --input: rgba(138, 110, 207, 0.1);
-  --ring: #8A6ECF;
+  --border: rgba(0, 0, 0, 0.08);
+  --input: rgba(0, 0, 0, 0.06);
+  --ring: #2ead4b;
 
-  /* Charts - pastel colors */
-  --chart-1: #B090E0;
-  --chart-2: #F9A8D4;
-  --chart-3: #86EFAC;
-  --chart-4: #FDE68A;
-  --chart-5: #7DD3FC;
+  /* Charts — Wise-style greens + warm accents */
+  --chart-1: #9fe870;
+  --chart-2: #2ead4b;
+  --chart-3: #b8e6d0;
+  --chart-4: #ffd11a;
+  --chart-5: #ff6b6b;
 
-  --radius: 1.25rem;
+  --radius: 1.5rem;
 
-  --sidebar: #D0BFF5;
-  --sidebar-foreground: #2D2057;
-  --sidebar-primary: #8A6ECF;
+  --sidebar: #e8ebe6;
+  --sidebar-foreground: #0e0f0c;
+  --sidebar-primary: #2ead4b;
   --sidebar-primary-foreground: #FFFFFF;
-  --sidebar-accent: #EDE9FF;
-  --sidebar-accent-foreground: #2D2057;
-  --sidebar-border: rgba(138, 110, 207, 0.2);
-  --sidebar-ring: #8A6ECF;
+  --sidebar-accent: #e2f6d5;
+  --sidebar-accent-foreground: #0e0f0c;
+  --sidebar-border: rgba(0, 0, 0, 0.08);
+  --sidebar-ring: #2ead4b;
   /* Theme dynamic vars (overridden by JS theme picker) */
-  --color-clay-purple: #D0BFF5;
-  --color-clay-purple-deep: #8A6ECF;
-  --theme-shadow: rgba(138, 110, 207, 0.15);
-  --theme-shadow-strong: rgba(138, 110, 207, 0.3);
+  --color-clay-purple: #9fe870;
+  --color-clay-purple-deep: #2ead4b;
+  --theme-shadow: rgba(46, 173, 75, 0.15);
+  --theme-shadow-strong: rgba(46, 173, 75, 0.3);
 }
 
-/* Dark mode — Claymorphism Dark */
+/* Dark mode — Wise Dark */
 .dark {
   color-scheme: dark;
-  --background: #1a1625;
-  --foreground: #e8e0f0;
-  --card: #231e30;
-  --card-foreground: #e8e0f0;
-  --surface-2: #2a2438;
-  --popover: #231e30;
-  --popover-foreground: #e8e0f0;
-  --primary: #9b7fd4;
-  --primary-foreground: #1a1625;
-  --secondary: #2a2438;
-  --secondary-foreground: #e8e0f0;
-  --muted: #2a2438;
-  --muted-foreground: #9b8ab8;
-  --accent: #c4a0e8;
-  --accent-foreground: #1a1625;
-  --success: #66BB6A;
-  --success-foreground: #1a1625;
+  --background: #111110;
+  --foreground: #f0f0ec;
+  --card: #1a1a18;
+  --card-foreground: #f0f0ec;
+  --surface-2: #242420;
+  --popover: #1a1a18;
+  --popover-foreground: #f0f0ec;
+  --primary: #9fe870;
+  --primary-foreground: #0e0f0c;
+  --secondary: #1a2e12;
+  --secondary-foreground: #f0f0ec;
+  --muted: #242420;
+  --muted-foreground: #707070;
+  --accent: #cdffad;
+  --accent-foreground: #0e0f0c;
+  --success: #2ead4b;
+  --success-foreground: #0e0f0c;
   --warning: #FFB74D;
-  --warning-foreground: #1a1625;
-  --destructive: #ef5350;
-  --border: rgba(155, 127, 212, 0.15);
-  --input: rgba(155, 127, 212, 0.1);
-  --ring: #9b7fd4;
+  --warning-foreground: #0e0f0c;
+  --destructive: #ef4444;
+  --border: rgba(255, 255, 255, 0.08);
+  --input: rgba(255, 255, 255, 0.06);
+  --ring: #9fe870;
   /* Theme dynamic vars (overridden by JS theme picker) */
   --clay-card-dark: var(--card);
-  --clay-greeting-dark: #3a2d5a;
+  --clay-greeting-dark: #1a2e12;
   --clay-nav-dark: var(--card);
   /* Theme dynamic vars (bottom nav, shadows) */
-  --color-clay-purple: #c4a0e8;
-  --color-clay-purple-deep: #9b7fd4;
-  --theme-shadow: rgba(155, 127, 212, 0.15);
-  --theme-shadow-strong: rgba(155, 127, 212, 0.3);
-  --chart-1: #9b7fd4;
-  --chart-2: #c4a0e8;
-  --chart-3: #66BB6A;
-  --chart-4: #FFB74D;
-  --chart-5: #ef5350;
-  --radius: 1.25rem;
-  --sidebar: #231e30;
-  --sidebar-foreground: #e8e0f0;
-  --sidebar-primary: #9b7fd4;
-  --sidebar-primary-foreground: #1a1625;
-  --sidebar-accent: #2a2438;
-  --sidebar-accent-foreground: #e8e0f0;
-  --sidebar-border: rgba(155, 127, 212, 0.15);
-  --sidebar-ring: #9b7fd4;
+  --color-clay-purple: #cdffad;
+  --color-clay-purple-deep: #9fe870;
+  --theme-shadow: rgba(159, 232, 112, 0.15);
+  --theme-shadow-strong: rgba(159, 232, 112, 0.3);
+  --chart-1: #9fe870;
+  --chart-2: #2ead4b;
+  --chart-3: #b8e6d0;
+  --chart-4: #ffd11a;
+  --chart-5: #ef4444;
+  --radius: 1.5rem;
+  --sidebar: #1a1a18;
+  --sidebar-foreground: #f0f0ec;
+  --sidebar-primary: #9fe870;
+  --sidebar-primary-foreground: #0e0f0c;
+  --sidebar-accent: #242420;
+  --sidebar-accent-foreground: #f0f0ec;
+  --sidebar-border: rgba(255, 255, 255, 0.08);
+  --sidebar-ring: #9fe870;
 }
 
 @layer base {
@@ -188,7 +188,7 @@
   }
   body {
     @apply bg-background text-foreground transition-colors;
-    font-family: 'Poppins', 'Inter', system-ui, sans-serif;
+    font-family: 'Inter', 'Poppins', system-ui, sans-serif;
     font-size: var(--app-font-size, 16px);
     transition-duration: 0.3s;
     transition-property: background-color, color, border-color;
@@ -219,8 +219,8 @@ html, html * {
   background: #FFFFFF;
   border-radius: 24px;
   box-shadow:
-    0 8px 32px rgba(138, 110, 207, 0.12),
-    0 2px 8px rgba(138, 110, 207, 0.08),
+    0 8px 32px rgba(46, 173, 75, 0.12),
+    0 2px 8px rgba(46, 173, 75, 0.08),
     inset 0 1px 0 rgba(255, 255, 255, 0.9);
 }
 
@@ -233,19 +233,19 @@ html, html * {
 }
 
 .clay-card-purple {
-  background: var(--color-clay-purple, #D0BFF5);
+  background: var(--color-clay-purple, #9fe870);
   box-shadow: 
-    8px 8px 16px rgba(138, 110, 207, 0.15),
+    8px 8px 16px rgba(46, 173, 75, 0.15),
     -4px -4px 12px rgba(255, 255, 255, 0.8),
     inset 0 2px 0 rgba(255, 255, 255, 0.4);
   border-radius: 24px;
 }
 
 .dark .clay-card-purple {
-  background: var(--clay-greeting-dark, #3a2d5a);
+  background: var(--clay-greeting-dark, #1a2e12);
   box-shadow:
     0 4px 20px rgba(0, 0, 0, 0.25),
-    inset 0 1px 0 rgba(155, 127, 212, 0.2);
+    inset 0 1px 0 rgba(159, 232, 112, 0.2);
 }
 
 .clay-card-pink {
