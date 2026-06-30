@@ -39,8 +39,8 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Format email tidak valid" }, { status: 400 })
     }
 
-    if (password.length < 6) {
-      return NextResponse.json({ error: "Password minimal 6 karakter" }, { status: 400 })
+    if (password.length < 8) {
+      return NextResponse.json({ error: "Password minimal 8 karakter" }, { status: 400 })
     }
 
     const normalizedEmail = email.trim().toLowerCase()
@@ -112,30 +112,7 @@ export async function POST(req: Request) {
   }
 }
 
-// GET to check registration status
-export async function GET(req: Request) {
-  const { searchParams } = new URL(req.url)
-  const email = searchParams.get("email")
-
-  if (!email) {
-    return NextResponse.json({ registered: false })
-  }
-
-  const supabase = getAuthSupabase()
-  if (!supabase) {
-    return NextResponse.json({ registered: false })
-  }
-
-  const normalizedEmail = email.trim().toLowerCase()
-  const userId = `email:${normalizedEmail}`
-
-  const { data } = await supabase
-    .from("user_credentials")
-    .select("user_id")
-    .eq("user_id", userId)
-    .single()
-
-  return NextResponse.json({
-    registered: !!data,
-  })
+// GET — disabled (prevents user enumeration)
+export async function GET() {
+  return NextResponse.json({ error: "Method not allowed" }, { status: 405 })
 }

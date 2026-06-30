@@ -29,7 +29,8 @@ export async function middleware(req: NextRequest) {
 
   // Public routes — no auth needed
   const publicPaths = [
-    '/login', '/verify-invite', '/admin', '/api/admin/codes-simple', '/api/admin/monitoring', '/api/auth', '/api/auth-telegram',
+    '/login', '/verify-invite',
+    '/api/auth', '/api/auth-telegram',
     '/auth/error', '/api/telegram-login', '/api/invite-codes/validate',
     '/_next', '/logo.svg', '/favicon.ico', '/mascot-', '/finwise-cat-',
     '/logo-', '/manifest.json', '/sw.js', '/workbox-',

@@ -63,8 +63,10 @@ export async function POST(req: Request) {
         attempts: 0,
       })
 
-      // Log code for development (no SMTP configured yet)
-      console.log(`[email-login] Verification code for ${normalizedEmail}: ${verificationCode}`)
+      // Log code for development only (never log in production)
+      if (process.env.NODE_ENV === 'development') {
+        console.log(`[email-login] Verification code for ${normalizedEmail}: ${verificationCode}`)
+      }
 
       // TODO: When SMTP is configured, send email here:
       // await sendEmail({

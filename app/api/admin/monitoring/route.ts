@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server"
 import { createClient } from "@supabase/supabase-js"
-const ADMIN_USER = process.env.ADMIN_USER || "fure"
-const ADMIN_PASS = process.env.ADMIN_PASS || "123"
+import crypto from "crypto"
+const ADMIN_USER = process.env.ADMIN_USER
+const ADMIN_PASS = process.env.ADMIN_PASS
 
 function getSupabase() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL
@@ -10,11 +11,21 @@ function getSupabase() {
   return createClient(url, key)
 }
 
+function createAdminToken(password: string): string {
+  return crypto.createHmac('sha256', password).update('finwise-admin').digest('hex')
+}
+
 function checkAuth(req: Request): boolean {
+  if (!ADMIN_PASS) return false
   const cookie = req.headers.get("cookie") || ""
   const match = cookie.match(/fw-admin=([^;]+)/)
   if (!match) return false
-  return decodeURIComponent(match[1]) === ADMIN_PASS
+  const expected = createAdminToken(ADMIN_PASS)
+  try {
+    return crypto.timingSafeEqual(Buffer.from(decodeURIComponent(match[1])), Buffer.from(expected))
+  } catch {
+    return false
+  }
 }
 
 // Suspicious email patterns

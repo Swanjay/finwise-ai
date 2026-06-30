@@ -242,7 +242,7 @@ export function FinwiseProvider({ children }: { children: ReactNode }) {
         body: JSON.stringify(payload),
       })
       const data = await res.json()
-      if (data.ok) console.log(`[store] Synced to cloud (${reason})`, data.results)
+      if (data.ok) { /* synced */ }
       else console.warn('[store] Sync failed:', data)
     } catch (err) {
       console.warn('[store] Cloud sync failed:', err)
@@ -323,11 +323,11 @@ export function FinwiseProvider({ children }: { children: ReactNode }) {
         if (data.settings?.setupDone) setSetupDone(data.settings.setupDone === 'true')
 
         cloudSyncedRef.current = true
-        console.log('[store] Cloud data loaded & merged')
+        // Cloud data loaded & merged
 
         // If merge added local-only items, sync back to cloud
         if (mergedExtra) {
-          console.log('[store] Local had extra data — syncing back to cloud...')
+          // Local had extra data — syncing back to cloud
           setTimeout(() => syncToCloudNow('merge-back'), 500)
         }
       } catch (err) {
@@ -391,7 +391,7 @@ export function FinwiseProvider({ children }: { children: ReactNode }) {
         })
         try {
           navigator.sendBeacon('/api/data', new Blob([payload], { type: 'application/json' }))
-          console.log('[store] Sent beacon on page hide')
+          // Sent beacon on page hide
         } catch { /* fallback: syncToCloudNow will catch it next time */ }
       }
     }

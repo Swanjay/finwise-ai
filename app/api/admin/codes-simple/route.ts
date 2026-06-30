@@ -1,9 +1,14 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import crypto from 'crypto'
 
-// ── Hardcoded admin credentials ──
-const ADMIN_USER = process.env.ADMIN_USER || 'fure'
-const ADMIN_PASS = process.env.ADMIN_PASS || '123'
+// ── Admin credentials from env vars (REQUIRED) ──
+const ADMIN_USER = process.env.ADMIN_USER
+const ADMIN_PASS = process.env.ADMIN_PASS
+
+if (!ADMIN_USER || !ADMIN_PASS) {
+  console.warn('[admin] ADMIN_USER and ADMIN_PASS env vars are required')
+}
 
 function getSupabase() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL
@@ -12,15 +17,36 @@ function getSupabase() {
   return createClient(url, key)
 }
 
+// HMAC-based admin auth (constant-time, no plaintext in cookie)
+function createAdminToken(password: string): string {
+  return crypto.createHmac('sha256', password).update('finwise-admin').digest('hex')
+}
+
+function verifyAdminCookie(req: Request): boolean {
+  if (!ADMIN_PASS) return false
+  const cookie = req.headers.get('cookie') || ''
+  const match = cookie.match(/fw-admin=([^;]+)/)
+  if (!match) return false
+  const expected = createAdminToken(ADMIN_PASS)
+  // Constant-time comparison
+  return crypto.timingSafeEqual(Buffer.from(decodeURIComponent(match[1])), Buffer.from(expected))
+}
+
 // ── POST /api/admin/codes-simple → login ──
 export async function POST(req: Request) {
   const body = await req.json().catch(() => ({}))
 
   // Login action
   if (body.action === 'login') {
-    if (body.user === ADMIN_USER && body.pass === ADMIN_PASS) {
+    const adminUser = ADMIN_USER
+    const adminPass = ADMIN_PASS
+    if (!adminUser || !adminPass) {
+      return NextResponse.json({ ok: false, error: 'Admin not configured' }, { status: 500 })
+    }
+    if (body.user === adminUser && body.pass === adminPass) {
+      const token = createAdminToken(adminPass)
       const res = NextResponse.json({ ok: true })
-      res.cookies.set('fw-admin', ADMIN_PASS, {
+      res.cookies.set('fw-admin', token, {
         httpOnly: true,
         sameSite: 'lax',
         path: '/',
@@ -32,8 +58,7 @@ export async function POST(req: Request) {
   }
 
   // Check auth cookie for other actions
-  const cookie = req.headers.get('cookie') || ''
-  if (!cookie.includes(`fw-admin=${ADMIN_PASS}`)) {
+  if (!verifyAdminCookie(req)) {
     return NextResponse.json({ ok: false, error: 'Unauthorized' }, { status: 401 })
   }
 
@@ -103,8 +128,7 @@ export async function POST(req: Request) {
 
 // ── GET /api/admin/codes-simple → list all codes ──
 export async function GET(req: Request) {
-  const cookie = req.headers.get('cookie') || ''
-  if (!cookie.includes(`fw-admin=${ADMIN_PASS}`)) {
+  if (!verifyAdminCookie(req)) {
     return NextResponse.json({ ok: false, error: 'Unauthorized' }, { status: 401 })
   }
 

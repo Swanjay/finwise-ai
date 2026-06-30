@@ -20,9 +20,9 @@ export async function validateInviteCode(
 ): Promise<{ valid: boolean; error?: string }> {
   const supabase = getSupabase()
   if (!supabase) {
-    // Jika Supabase belum setup, skip validation (development)
-    console.warn('[invite-codes] Supabase not configured, skipping validation')
-    return { valid: true }
+    // Supabase MUST be configured — never bypass validation
+    console.error('[invite-codes] Supabase not configured, rejecting validation')
+    return { valid: false, error: 'Server tidak terkonfigurasi. Hubungi admin.' }
   }
 
   // Normalize code
@@ -94,8 +94,9 @@ export async function validateInviteCode(
 export async function isUserActivated(userId: string): Promise<boolean> {
   const supabase = getSupabase()
   if (!supabase) {
-    // Jika Supabase belum setup, skip validation (development)
-    return true
+    // Supabase MUST be configured — can't verify activation without it
+    console.error('[invite-codes] Supabase not configured for isUserActivated')
+    return false
   }
 
   const { data } = await supabase
