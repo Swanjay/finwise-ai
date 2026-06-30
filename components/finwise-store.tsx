@@ -183,6 +183,12 @@ export function FinwiseProvider({ children }: { children: ReactNode }) {
   const syncTimerRef = useRef<NodeJS.Timeout | null>(null)
   const changeCountRef = useRef(0)
 
+  // Refs to track latest state (avoid stale closures in setTimeout)
+  const dataRef = useRef({ transactions, wallets, goals, budgets, recurring, customCategories, monthlyIncome, initialBalance, theme, accentColor, fontSize, compactMode, setupDone, hideBalance })
+  useEffect(() => {
+    dataRef.current = { transactions, wallets, goals, budgets, recurring, customCategories, monthlyIncome, initialBalance, theme, accentColor, fontSize, compactMode, setupDone, hideBalance }
+  })
+
   // ─── LOAD: localStorage first, then Supabase if logged in ───
   useEffect(() => {
     // Always load from localStorage first (instant)
@@ -207,6 +213,42 @@ export function FinwiseProvider({ children }: { children: ReactNode }) {
     setLoaded(true)
   }, [])
 
+  // ─── SYNC TO CLOUD: reads from refs (always latest data) ───
+  async function syncToCloudNow(reason = 'auto') {
+    const { transactions, wallets, goals, budgets, recurring, customCategories, monthlyIncome, initialBalance, theme, accentColor, fontSize, compactMode, setupDone, hideBalance } = dataRef.current
+    if (authStatus !== 'authenticated' || !session?.user?.email) return
+    try {
+      const payload = {
+        transactions,
+        wallets,
+        goals,
+        budgets,
+        recurring,
+        categories: Object.values(customCategories).filter((c: any) => c.isCustom),
+        settings: {
+          income: String(monthlyIncome),
+          initialBalance: String(initialBalance),
+          theme,
+          accentColor,
+          fontSize,
+          compactMode: String(compactMode),
+          setupDone: String(setupDone),
+          hideBalance: String(hideBalance),
+        },
+      }
+      const res = await fetch('/api/data', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      })
+      const data = await res.json()
+      if (data.ok) console.log(`[store] Synced to cloud (${reason})`, data.results)
+      else console.warn('[store] Sync failed:', data)
+    } catch (err) {
+      console.warn('[store] Cloud sync failed:', err)
+    }
+  }
+
   // ─── FETCH FROM SUPABASE when logged in ───
   useEffect(() => {
     if (authStatus !== 'authenticated' || !session?.user?.email || cloudSyncedRef.current) return
@@ -214,114 +256,79 @@ export function FinwiseProvider({ children }: { children: ReactNode }) {
     async function fetchCloud() {
       try {
         const res = await fetch('/api/data')
-        if (!res.ok) return
+        if (!res.ok) { cloudSyncedRef.current = true; return }
         const data = await res.json()
-        if (!data.ok) return
+        if (!data.ok) { cloudSyncedRef.current = true; return }
 
-        // If cloud has data, use it (override localStorage)
-        if (data.transactions?.length || data.wallets?.length || data.goals?.length) {
-          // Map cloud data back to local format
-          const cloudTx = (data.transactions || []).map((t: any) => ({
-            id: t.id,
-            type: t.type,
-            amount: Number(t.amount),
-            category: t.category,
-            description: t.note || '',
-            date: t.date,
-            walletId: t.wallet || 'cash',
-          }))
-          const cloudWallets = (data.wallets || []).map((w: any) => ({
-            id: w.id,
-            name: w.name,
-            initialBalance: Number(w.balance || 0),
-            color: w.color || '#00ff9d',
-            icon: w.icon || '💵',
-            balance: Number(w.balance || 0),
-          }))
-          const cloudGoals = (data.goals || []).map((g: any) => ({
-            id: g.id,
-            name: g.name,
-            targetAmount: Number(g.target || 0),
-            currentAmount: Number(g.saved || 0),
-            color: g.color || '#a78bfa',
-            emoji: g.emoji || '🎯',
-            deadline: g.deadline || undefined,
-          }))
-          const cloudRecurring = (data.recurring || []).map((r: any) => ({
-            id: r.id,
-            type: r.type,
-            amount: Number(r.amount),
-            category: r.category,
-            description: r.note || '',
-            frequency: r.frequency || 'monthly',
-            walletId: r.wallet || 'cash',
-            active: true,
-          }))
+        const cloudTx = (data.transactions || []).map((t: any) => ({
+          id: t.id, type: t.type, amount: Number(t.amount), category: t.category,
+          description: t.note || '', date: t.date, walletId: t.wallet || 'cash',
+        }))
+        const cloudWallets = (data.wallets || []).map((w: any) => ({
+          id: w.id, name: w.name, initialBalance: Number(w.balance || 0),
+          color: w.color || '#00ff9d', icon: w.icon || '💵', balance: Number(w.balance || 0),
+        }))
+        const cloudGoals = (data.goals || []).map((g: any) => ({
+          id: g.id, name: g.name, targetAmount: Number(g.target || 0),
+          currentAmount: Number(g.saved || 0), color: g.color || '#a78bfa',
+          emoji: g.emoji || '🎯', deadline: g.deadline || undefined,
+        }))
+        const cloudRecurring = (data.recurring || []).map((r: any) => ({
+          id: r.id, type: r.type, amount: Number(r.amount), category: r.category,
+          description: r.note || '', frequency: r.frequency || 'monthly',
+          walletId: r.wallet || 'cash', active: true,
+        }))
 
-          // Only override if cloud has actual data
-          if (cloudTx.length) setTransactions(cloudTx)
-          if (cloudWallets.length) setWallets(cloudWallets)
-          if (cloudGoals.length) setGoals(cloudGoals)
-          if (Object.keys(data.budgets || {}).length) setBudgets(data.budgets)
-          if (cloudRecurring.length) setRecurring(cloudRecurring)
-          if (data.settings?.income) setMonthlyIncomeState(Number(data.settings.income))
-          if (data.settings?.initialBalance) setInitialBalance(Number(data.settings.initialBalance))
-          if (data.settings?.theme) setTheme(data.settings.theme as 'dark' | 'light')
-          if (data.settings?.setupDone) setSetupDone(data.settings.setupDone === 'true')
-        }
+        // Load local data for comparison
+        const localTx = loadJSON(KEYS.tx, [])
+        const localWallets = loadJSON(KEYS.wallets, DEFAULT_WALLETS)
+        const localGoals = loadJSON(KEYS.goals, [])
+        const localRecurring = loadJSON(KEYS.recurring, [])
+        const localBudgets = loadJSON(KEYS.budgets, {})
+        const localIncome = loadJSON(KEYS.income, 0)
+        const localInitBal = loadJSON(KEYS.initialBalance, 0)
+
+        // ALWAYS merge: use whichever has MORE data (prevents data loss)
+        const useTx = localTx.length > cloudTx.length ? localTx : cloudTx
+        const useGoals = localGoals.length > cloudGoals.length ? localGoals : cloudGoals
+        const useRecurring = localRecurring.length > cloudRecurring.length ? localRecurring : cloudRecurring
+        const useBudgets = Object.keys(localBudgets).length > Object.keys(data.budgets || {}).length ? localBudgets : (data.budgets || {})
+
+        // Wallets: use cloud if it has more, but recalculate balance from transactions
+        const useWallets = cloudWallets.length > 0 ? cloudWallets : localWallets
+
+        if (useTx.length) setTransactions(useTx)
+        if (useWallets.length) setWallets(useWallets)
+        if (useGoals.length) setGoals(useGoals)
+        if (Object.keys(useBudgets).length) setBudgets(useBudgets)
+        if (useRecurring.length) setRecurring(useRecurring)
+        if (data.settings?.income && Number(data.settings.income) > 0) setMonthlyIncomeState(Number(data.settings.income))
+        else if (localIncome > 0) setMonthlyIncomeState(localIncome)
+        if (data.settings?.initialBalance && Number(data.settings.initialBalance) > 0) setInitialBalance(Number(data.settings.initialBalance))
+        else if (localInitBal > 0) setInitialBalance(localInitBal)
+        if (data.settings?.theme) setTheme(data.settings.theme as 'dark' | 'light')
+        if (data.settings?.setupDone) setSetupDone(data.settings.setupDone === 'true')
 
         cloudSyncedRef.current = true
-        console.log('[store] Cloud data loaded')
+        console.log('[store] Cloud data loaded & merged')
 
-        // MERGE: Always ensure localStorage data is synced to cloud
-        // This handles: first-time migration, partial syncs, and data loss recovery
-        const localTx = loadJSON(KEYS.tx, [])
-        const localGoals = loadJSON(KEYS.goals, [])
-        const cloudTxCount = (data.transactions || []).length
-        const cloudGoalCount = (data.goals || []).length
-        const cloudRecurringCount = (data.recurring || []).length
-        const localRecurring = loadJSON(KEYS.recurring, [])
-
-        if (localTx.length > cloudTxCount || localGoals.length > cloudGoalCount || localRecurring.length > cloudRecurringCount) {
-          console.log(`[store] Merging localStorage → cloud (local tx:${localTx.length} cloud:${cloudTxCount})`)
-          try {
-            const migratePayload = {
-              transactions: localTx,
-              wallets: loadJSON(KEYS.wallets, DEFAULT_WALLETS),
-              goals: localGoals,
-              budgets: loadJSON(KEYS.budgets, {}),
-              recurring: localRecurring,
-              settings: {
-                income: String(loadJSON(KEYS.income, 0)),
-                initialBalance: String(loadJSON(KEYS.initialBalance, 0)),
-                theme: loadJSON(KEYS.theme, 'light'),
-                accentColor: loadJSON(KEYS.accent, 'purple'),
-                fontSize: loadJSON(KEYS.fontSize, 'base'),
-                compactMode: String(loadJSON(KEYS.compactMode, false)),
-                setupDone: localStorage.getItem('fw.setupDone.v1') || 'false',
-                hideBalance: String(loadJSON(KEYS.hideBalance, false)),
-              },
-            }
-            const migrateRes = await fetch('/api/data', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(migratePayload),
-            })
-            const migrateData = await migrateRes.json()
-            if (migrateData.ok) console.log('[store] Merged localStorage → cloud:', migrateData.results)
-          } catch (err) {
-            console.warn('[store] Merge failed:', err)
-          }
+        // If local had more data, sync back to cloud
+        const needsSyncBack = localTx.length > cloudTx.length || localGoals.length > cloudGoals.length || localRecurring.length > cloudRecurring.length
+        if (needsSyncBack) {
+          console.log('[store] Local has more data — syncing back to cloud...')
+          // Small delay to let state updates settle
+          setTimeout(() => syncToCloudNow('merge-back'), 500)
         }
       } catch (err) {
         console.warn('[store] Failed to load cloud data:', err)
+        cloudSyncedRef.current = true
       }
     }
 
     fetchCloud()
   }, [authStatus, session])
 
-  // ─── SAVE: localStorage always + debounce sync to Supabase ───
+  // ─── SAVE: localStorage always ───
   useEffect(() => { if (loaded) saveJSON(KEYS.tx, transactions) }, [transactions, loaded])
   useEffect(() => { if (loaded) saveJSON(KEYS.categories, customCategories) }, [customCategories, loaded])
   useEffect(() => { if (loaded) saveJSON(KEYS.budgets, budgets) }, [budgets, loaded])
@@ -339,51 +346,52 @@ export function FinwiseProvider({ children }: { children: ReactNode }) {
   useEffect(() => { if (loaded) saveJSON(KEYS.compactMode, compactMode) }, [compactMode, loaded])
   useEffect(() => { if (loaded) { document.documentElement.classList.toggle('dark', theme === 'dark'); document.documentElement.classList.toggle('light', theme === 'light') } }, [theme, loaded])
 
-  // ─── DEBOUNCE SYNC TO SUPABASE ───
-  // Track data changes and schedule a debounced sync
+  // ─── DEBOUNCE SYNC TO SUPABASE (uses refs for latest data) ───
   const scheduleSync = useCallback(() => {
     if (authStatus !== 'authenticated' || !cloudSyncedRef.current) return
 
     changeCountRef.current++
     if (syncTimerRef.current) clearTimeout(syncTimerRef.current)
-    syncTimerRef.current = setTimeout(async () => {
-      try {
-        const payload = {
-          transactions,
-          wallets,
-          goals,
-          budgets,
-          recurring,
-          categories: Object.values(customCategories).filter((c: any) => c.isCustom),
-          settings: {
-            income: String(monthlyIncome),
-            initialBalance: String(initialBalance),
-            theme,
-            accentColor,
-            fontSize,
-            compactMode: String(compactMode),
-            setupDone: String(setupDone),
-            hideBalance: String(hideBalance),
-          },
-        }
-        const res = await fetch('/api/data', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
-        })
-        const data = await res.json()
-        if (data.ok) {
-          console.log(`[store] Synced to cloud (${changeCountRef.current} changes)`)
-          changeCountRef.current = 0
-        }
-      } catch (err) {
-        console.warn('[store] Cloud sync failed:', err)
-      }
-    }, 3000) // 3 second debounce
-  }, [authStatus, transactions, wallets, goals, budgets, recurring, customCategories, monthlyIncome, initialBalance, theme, accentColor, fontSize, compactMode, setupDone, hideBalance])
+    syncTimerRef.current = setTimeout(() => syncToCloudNow('debounce'), 3000)
+  }, [authStatus, session])
 
   // Trigger sync on data changes (after initial cloud load)
   useEffect(() => { if (loaded && cloudSyncedRef.current) scheduleSync() }, [transactions, wallets, goals, budgets, recurring, monthlyIncome, initialBalance, loaded, scheduleSync])
+
+  // ─── SYNC ON PAGE CLOSE/UNLOAD ───
+  useEffect(() => {
+    if (authStatus !== 'authenticated') return
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'hidden' && cloudSyncedRef.current) {
+        // Flush any pending debounce
+        if (syncTimerRef.current) { clearTimeout(syncTimerRef.current); syncTimerRef.current = null }
+        // Use sendBeacon for reliable delivery on page close
+        const d = dataRef.current
+        const payload = JSON.stringify({
+          transactions: d.transactions, wallets: d.wallets, goals: d.goals,
+          budgets: d.budgets, recurring: d.recurring,
+          settings: {
+            income: String(d.monthlyIncome), initialBalance: String(d.initialBalance),
+            theme: d.theme, accentColor: d.accentColor, fontSize: d.fontSize,
+            compactMode: String(d.compactMode), setupDone: String(d.setupDone),
+            hideBalance: String(d.hideBalance),
+          },
+        })
+        try {
+          navigator.sendBeacon('/api/data', new Blob([payload], { type: 'application/json' }))
+          console.log('[store] Sent beacon on page hide')
+        } catch { /* fallback: syncToCloudNow will catch it next time */ }
+      }
+    }
+
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+    window.addEventListener('beforeunload', handleVisibilityChange)
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+      window.removeEventListener('beforeunload', handleVisibilityChange)
+    }
+  }, [authStatus, session])
 
   // Apply font size
   useEffect(() => {
