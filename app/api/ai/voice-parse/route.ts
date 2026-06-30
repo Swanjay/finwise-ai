@@ -1,7 +1,12 @@
 import { NextResponse } from "next/server"
+import { getServerSession } from "next-auth"
+import { authOptions } from "@/auth"
+import { traceAI } from "@/lib/langfuse"
 
 // POST /api/ai/voice-parse — Parse voice input to transaction
 export async function POST(req: Request) {
+  const session = await getServerSession(authOptions)
+
   try {
     const body = await req.json()
     const { text } = body
@@ -10,8 +15,28 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Text tidak boleh kosong" }, { status: 400 })
     }
 
-    // Parse Indonesian natural language to transaction
-    const parsed = parseIndonesianTransaction(text)
+    // Parse Indonesian natural language to transaction (with Langfuse tracing)
+    const parsed = await traceAI(
+      "voice-parse",
+      {
+        userId: session?.user?.email || "anonymous",
+        inputText: text,
+      },
+      async (span) => {
+        const result = parseIndonesianTransaction(text)
+        span.update({
+          output: result,
+          metadata: {
+            category: result.category,
+            amount: result.amount,
+            confidence: result.confidence,
+            type: result.type,
+          },
+        })
+        return result
+      },
+      session?.user?.email || undefined
+    )
 
     return NextResponse.json({
       ok: true,
@@ -42,14 +67,13 @@ function parseIndonesianTransaction(text: string): ParsedTransaction {
 
   // Extract amount
   let amount = 0
-  // First try patterns with suffix (rb/ribu/jt/juta/k)
   const suffixPatterns = [
-    /(\d+[.,]?\d*)\s*(?:rb|ribu)\b/i,        // 25rb, 25 ribu
-    /rp\.?\s*(\d+[.,]?\d*)/i,                // Rp 25000, Rp. 25.000
-    /(\d+[.,]?\d*)\s*(?:jt|juta)\b/i,        // 1jt, 1 juta, 2jt
-    /(\d+[.,]?\d*)(?:jt|juta)\b/i,           // 2jt (no space)
-    /(\d+[.,]?\d*)\s*k\b/i,                  // 25k
-    /(\d+[.,]?\d*)k\b/i,                     // 25k (no space)
+    /(\d+[.,]?\d*)\s*(?:rb|ribu)\b/i,
+    /rp\.?\s*(\d+[.,]?\d*)/i,
+    /(\d+[.,]?\d*)\s*(?:jt|juta)\b/i,
+    /(\d+[.,]?\d*)(?:jt|juta)\b/i,
+    /(\d+[.,]?\d*)\s*k\b/i,
+    /(\d+[.,]?\d*)k\b/i,
   ]
   const plainNumberPattern = /(\d+[.,]?\d*)/i
 
@@ -59,7 +83,6 @@ function parseIndonesianTransaction(text: string): ParsedTransaction {
       let raw = match[1].replace(/[.,]/g, "")
       amount = parseInt(raw, 10)
       
-      // Apply multipliers based on what matched
       const fullMatch = match[0].toLowerCase()
       if (/rb|ribu/.test(fullMatch)) amount *= 1000
       else if (/jt|juta/.test(fullMatch)) amount *= 1000000
@@ -68,7 +91,6 @@ function parseIndonesianTransaction(text: string): ParsedTransaction {
       break
     }
   }
-  // Fallback: plain number (e.g. "beli kopi 15000")
   if (amount === 0) {
     const match = lower.match(plainNumberPattern)
     if (match) amount = parseInt(match[1].replace(/[.,]/g, ""), 10) || 0
@@ -99,11 +121,9 @@ function parseIndonesianTransaction(text: string): ParsedTransaction {
     }
   }
 
-  // Extract note (everything that's not amount or category keywords)
-  let note = text.replace(/rp\.?\s*\d+[\.,]?\d*/gi, "").replace(/\d+[\.,]?\d*\s*(?:rb|ribu|k|jt|juta)/gi, "").trim()
+  let note = text.replace(/rp\.?\s*\d+[\.,]?\d*/gi, "").replace(/\d+[.,]?\d*\s*(?:rb|ribu|k|jt|juta)/gi, "").trim()
   if (note.length > 100) note = note.substring(0, 100)
 
-  // Calculate confidence
   let confidence = 0.5
   if (amount > 0) confidence += 0.3
   if (maxMatch > 0) confidence += 0.2

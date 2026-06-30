@@ -1,7 +1,7 @@
 /** @type {import('next').NextConfig} */
+import { withSentryConfig } from "@sentry/nextjs";
 
 // Narrow CSP: replace wildcards with specific domains where possible
-// TODO: Replace NEXT_PUBLIC_SUPABASE_URL with your actual Supabase project URL to remove *.supabase.co wildcard
 const supabaseOrigin = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://*.supabase.co'
 const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://finwise.my.id'
 
@@ -56,12 +56,10 @@ const nextConfig = {
               "default-src 'self'",
               "script-src 'self' 'unsafe-inline' https://va.vercel-scripts.com https://vitals.vercel-insights.com",
               "style-src 'self' 'unsafe-inline'",
-              // Images: same-origin only (mascot images are in /public). Removed *.vercel.app — not needed.
               "img-src 'self' data: blob: https://*.googleusercontent.com",
               "font-src 'self' data:",
-              // Connect: removed finwise-ai-teal.vercel.app (not needed for API calls).
-              // Supabase URL comes from env var; falls back to wildcard if not set.
-              `connect-src 'self' https://api.telegram.org ${appUrl} https://vitals.vercel-insights.com ${supabaseOrigin} wss://${supabaseOrigin.replace('https://', '')}`,
+              // Added *.ingest.sentry.io for error reporting + *.langfuse.com for AI tracing
+              `connect-src 'self' https://api.telegram.org ${appUrl} https://vitals.vercel-insights.com ${supabaseOrigin} wss://${supabaseOrigin.replace('https://', '')} https://*.ingest.sentry.io https://*.langfuse.com https://cloud.langfuse.com`,
               "frame-ancestors 'none'",
               "base-uri 'self'",
               "form-action 'self'",
@@ -70,8 +68,7 @@ const nextConfig = {
         ],
       },
       {
-        // CORS — restrict to own origin on ALL routes (not just /api)
-        // Prevents Vercel CDN from serving `access-control-allow-origin: *`
+        // CORS — restrict to own origin on ALL routes
         source: '/(.*)',
         headers: [
           {
@@ -97,7 +94,7 @@ const nextConfig = {
         ],
       },
       {
-        // CORS for API routes — same origin restriction (explicit)
+        // CORS for API routes
         source: '/api/(.*)',
         headers: [
           {
@@ -126,4 +123,26 @@ const nextConfig = {
   },
 }
 
-export default nextConfig
+// Sentry config — hide source maps in production, auto-upload for stack traces
+export default withSentryConfig(nextConfig, {
+  // For all available options, see:
+  // https://github.com/getsentry/sentry-webpack-plugin#options
+
+  org: process.env.SENTRY_ORG,
+  project: process.env.SENTRY_PROJECT,
+
+  // Only upload source maps in production
+  silent: !process.env.CI,
+
+  // Wider source map upload for better stack traces
+  widenClientFileUpload: true,
+
+  // Hide source maps from public bundles (security)
+  hideSourceMaps: true,
+
+  // Tree shake Sentry code in production bundles
+  disableLogger: true,
+
+  // Enables automatic instrumentation of Vercel Cron Jobs
+  automaticVercelMonitors: true,
+});
