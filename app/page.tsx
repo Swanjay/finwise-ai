@@ -1304,7 +1304,7 @@ function AppShell() {
   if (isLoading) return <LoadingScreen message="Menyiapkan dashboard..." />
 
   const navItems: { id: Tab; label: string; icon: typeof Home }[] = [
-    { id: 'home', label: 'Stream', icon: Home },
+    { id: 'home', label: 'Home', icon: Home },
     { id: 'transactions', label: 'Transaksi', icon: ListChecks },
     { id: 'trends', label: 'Rencana', icon: BarChart3 },
     { id: 'budget', label: 'Kesehatan', icon: Wallet },
@@ -1319,7 +1319,7 @@ function AppShell() {
           <div>
             <p className="text-xs text-muted-foreground font-medium">Selamat datang 👋</p>
             <h2 className="font-heading text-base font-bold text-foreground leading-tight">
-              {tab === 'home' && 'Stream'}
+              {tab === 'home' && 'Home'}
               {tab === 'transactions' && 'Transaksi'}
               {tab === 'trends' && 'Rencana'}
               {tab === 'budget' && 'Kesehatan'}
