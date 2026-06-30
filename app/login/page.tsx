@@ -1,7 +1,7 @@
 "use client"
 import { useState, useRef, useEffect } from "react"
 import { signIn } from "next-auth/react"
-import { Loader2, MessageCircle, CheckCircle, Mail, ArrowLeft, Send, HelpCircle, Eye, EyeOff, User, Lock } from "lucide-react"
+import { Loader2, MessageCircle, CheckCircle, ArrowLeft, Send, HelpCircle, Eye, EyeOff } from "lucide-react"
 import { useRouter } from "next/navigation"
 
 /* ═══════════════════════════════════════════
@@ -241,23 +241,56 @@ const clayStyles = `
 .clay-divider::after { margin-left: 14px; }
 
 /* ─── Social ─── */
-.clay-social-row { display: flex; justify-content: center; gap: 16px; margin-bottom: 20px; }
 .clay-social-btn {
-  width: 54px; height: 54px;
+  width: 100%; height: 48px;
   background: white;
-  border: none; border-radius: 50%;
-  display: flex; align-items: center; justify-content: center;
+  border: 2px solid #e2f3ef;
+  border-radius: 14px;
+  display: flex; align-items: center; justify-content: center; gap: 10px;
   cursor: pointer;
-  box-shadow: 0 5px 15px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,1);
+  font-size: 14px; font-weight: 700; color: #1a3d36; font-family: inherit;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
   transition: all 0.25s;
 }
-.clay-social-btn:hover { transform: translateY(-3px); box-shadow: 0 8px 22px rgba(0,0,0,0.1); }
-.clay-social-btn svg { width: 22px; height: 22px; }
+.clay-social-btn:hover { transform: translateY(-2px); border-color: #8eddd0; box-shadow: 0 6px 18px rgba(0,0,0,0.08); }
+.clay-social-btn svg { width: 20px; height: 20px; }
 
 /* ─── Footer ─── */
 .clay-footer { text-align: center; font-size: 13px; color: #6b9a91; font-weight: 600; }
 .clay-footer a { color: #2cb5a0; font-weight: 800; text-decoration: none; }
 .clay-footer a:hover { opacity: 0.7; text-decoration: underline; }
+
+/* ─── OTP Input ─── */
+.clay-otp-input {
+  flex: 1; rounded-xl;
+  border-radius: 14px;
+  border: 2px solid #e2f3ef;
+  background: #e2f3ef;
+  padding: 0.875rem 1rem;
+  text-align: center; text-xl;
+  font-size: 20px;
+  letter-spacing: 0.5em;
+  font-family: monospace;
+  color: #1a3d36;
+  outline: none;
+  transition: all 0.25s;
+  box-shadow: inset 0 3px 8px rgba(0,0,0,0.06);
+}
+.clay-otp-input:focus {
+  border-color: #8eddd0;
+  box-shadow: inset 0 3px 8px rgba(0,0,0,0.04), 0 0 0 4px rgba(44,181,160,0.1);
+}
+
+/* ─── Alt method link ─── */
+.clay-alt-link {
+  font-size: 12px; color: #6b9a91;
+  font-weight: 600; cursor: pointer;
+  background: none; border: none;
+  display: flex; align-items: center; justify-content: center; gap: 4px;
+  margin: 0 auto;
+  transition: color 0.2s;
+}
+.clay-alt-link:hover { color: #1a3d36; }
 
 @media (max-width: 480px) {
   .clay-card { padding: 32px 24px 28px; border-radius: 36px; }
@@ -318,16 +351,20 @@ function StepDots({ current, total }: { current: number; total: number }) {
   )
 }
 
+// ─── View types ───
+type View = "login" | "register" | "forgot" | "telegram" | "email-otp"
+
 export default function LoginPage() {
   const router = useRouter()
+
   // ─── Global state ───
   const [loading, setLoading] = useState<"google" | "telegram" | "email" | "credentials" | "register" | null>(null)
   const [error, setError] = useState("")
 
   // ─── View state ───
-  const [view, setView] = useState<"login" | "register" | "forgot">("login")
+  const [view, setView] = useState<View>("login")
 
-  // ─── Email+Password Login ───
+  // ─── Email + Password ───
   const [authEmail, setAuthEmail] = useState("")
   const [authPassword, setAuthPassword] = useState("")
   const [showPassword, setShowPassword] = useState(false)
@@ -348,15 +385,13 @@ export default function LoginPage() {
   const [channelUrl, setChannelUrl] = useState("")
 
   // ─── Email OTP ───
-  const [emailStep, setEmailStep] = useState<"idle" | "input" | "sent" | "done">("idle")
+  const [emailStep, setEmailStep] = useState<"idle" | "sent" | "done">("idle")
   const [email, setEmail] = useState("")
   const [emailCode, setEmailCode] = useState("")
 
   // ─── Refs ───
   const otpRef = useRef<HTMLInputElement>(null)
   const emailOtpRef = useRef<HTMLInputElement>(null)
-  const tgInputRef = useRef<HTMLInputElement>(null)
-  const emailInputRef = useRef<HTMLInputElement>(null)
   const authEmailRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
@@ -366,17 +401,19 @@ export default function LoginPage() {
     if (emailStep === "sent") emailOtpRef.current?.focus()
   }, [emailStep])
 
+  const isLoading = loading !== null
+
   // ═══════════════════════════════════════════
-  //  EMAIL + PASSWORD LOGIN
+  //  HANDLERS
   // ═══════════════════════════════════════════
+
   async function handleEmailPasswordLogin() {
     if (!authEmail.trim()) return setError("Masukkan email kamu")
     if (!authPassword.trim()) return setError("Masukkan password")
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
     if (!emailRegex.test(authEmail.trim())) return setError("Format email tidak valid")
     if (authPassword.length < 6) return setError("Password minimal 6 karakter")
-    setLoading("credentials")
-    setError("")
+    setLoading("credentials"); setError("")
     try {
       const result = await signIn("email-password", { email: authEmail.trim().toLowerCase(), password: authPassword, redirect: false })
       if (result?.error) { setError("Email atau password salah"); setLoading(null) }
@@ -384,9 +421,6 @@ export default function LoginPage() {
     } catch { setError("Koneksi gagal. Periksa internet kamu."); setLoading(null) }
   }
 
-  // ═══════════════════════════════════════════
-  //  REGISTRATION
-  // ═══════════════════════════════════════════
   async function handleRegister() {
     if (!regName.trim()) return setError("Masukkan nama kamu")
     if (!regEmail.trim()) return setError("Masukkan email")
@@ -395,8 +429,7 @@ export default function LoginPage() {
     if (!emailRegex.test(regEmail.trim())) return setError("Format email tidak valid")
     if (regPassword.length < 6) return setError("Password minimal 6 karakter")
     if (regPassword !== regConfirm) return setError("Password tidak cocok")
-    setLoading("register")
-    setError("")
+    setLoading("register"); setError("")
     try {
       const res = await fetch("/api/auth/register", {
         method: "POST",
@@ -406,8 +439,7 @@ export default function LoginPage() {
       const data = await res.json()
       if (res.status === 409) { setError(data.error || "Email sudah terdaftar"); setLoading(null); return }
       if (!res.ok) { setError(data.error || "Gagal mendaftar"); setLoading(null); return }
-      setRegSuccess(true)
-      setLoading(null)
+      setRegSuccess(true); setLoading(null)
       setTimeout(async () => {
         try {
           const loginResult = await signIn("email-password", { email: regEmail.trim().toLowerCase(), password: regPassword, redirect: false })
@@ -418,19 +450,12 @@ export default function LoginPage() {
     } catch { setError("Koneksi gagal. Periksa internet kamu."); setLoading(null) }
   }
 
-  // ═══════════════════════════════════════════
-  //  GOOGLE
-  // ═══════════════════════════════════════════
   async function handleGoogleLogin() {
-    setLoading("google")
-    setError("")
+    setLoading("google"); setError("")
     try { await signIn("google", { callbackUrl: "/" }) }
     catch { setError("Gagal login dengan Google"); setLoading(null) }
   }
 
-  // ═══════════════════════════════════════════
-  //  TELEGRAM OTP
-  // ═══════════════════════════════════════════
   async function handleTelegramRequest() {
     if (!tgUsername.trim()) return setError("Masukkan username Telegram")
     if (!/^[a-zA-Z0-9_]+$/.test(tgUsername.trim())) return setError("Username hanya huruf, angka, dan underscore")
@@ -446,6 +471,7 @@ export default function LoginPage() {
     } catch { setError("Koneksi gagal. Periksa internet kamu.") }
     setLoading(null)
   }
+
   async function handleTelegramVerify() {
     if (!tgCode.trim()) return setError("Masukkan kode verifikasi")
     if (tgCode.trim().length < 6) return setError("Kode harus 6 digit")
@@ -465,9 +491,6 @@ export default function LoginPage() {
     } catch { setError("Koneksi gagal."); setLoading(null) }
   }
 
-  // ═══════════════════════════════════════════
-  //  EMAIL OTP
-  // ═══════════════════════════════════════════
   async function handleEmailRequest() {
     if (!email.trim()) return setError("Masukkan alamat email")
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) return setError("Format email tidak valid")
@@ -481,6 +504,7 @@ export default function LoginPage() {
     } catch { setError("Koneksi gagal.") }
     setLoading(null)
   }
+
   async function handleEmailVerify() {
     if (!emailCode.trim()) return setError("Masukkan kode verifikasi")
     if (emailCode.trim().length < 6) return setError("Kode harus 6 digit")
@@ -496,58 +520,31 @@ export default function LoginPage() {
 
   function resetTelegram() { setTgStep("idle"); setTgCode(""); setError(""); setBotUrl(""); setChannelUrl("") }
   function resetEmail() { setEmailStep("idle"); setEmailCode(""); setError("") }
+  function goBack() { setView("login"); setError(""); resetTelegram(); resetEmail() }
 
-  const isLoading = loading !== null
-
-  // ─── Social buttons sub-component ───
-  function SocialButtons() {
-    return (
-      <div className="clay-social-row">
-        <button className="clay-social-btn" onClick={handleGoogleLogin} disabled={isLoading} title="Google">
-          {loading === "google" ? <Loader2 className="size-5 animate-spin text-gray-400" /> : (
-            <svg viewBox="0 0 24 24">
-              <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z"/>
-              <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-              <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
-              <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
-            </svg>
-          )}
-        </button>
-        <button className="clay-social-btn" onClick={() => { setTgStep("idle"); setError("") }} disabled={isLoading} title="Telegram">
-          <svg viewBox="0 0 24 24">
-            <path fill="#229ED9" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69.01-.03.01-.14-.07-.2-.08-.06-.19-.04-.27-.02-.12.03-1.97 1.25-5.56 3.67-.53.36-1.01.54-1.44.53-.47-.01-1.38-.27-2.06-.49-.83-.27-1.49-.42-1.43-.88.03-.24.37-.49 1.02-.75 3.99-1.74 6.65-2.89 7.98-3.44 3.8-1.58 4.59-1.86 5.1-1.87.11 0 .37.03.54.17.14.12.18.28.2.47-.01.06.01.24 0 .36z"/>
-          </svg>
-        </button>
-        <button className="clay-social-btn" onClick={() => { setEmailStep("input"); setError("") }} disabled={isLoading} title="Email">
-          <svg viewBox="0 0 24 24" fill="none" stroke="#1a8f7d" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
-            <polyline points="22,6 12,13 2,6"/>
-          </svg>
-        </button>
-      </div>
-    )
-  }
-
+  // ═══════════════════════════════════════════
+  //  RENDER
+  // ═══════════════════════════════════════════
   return (
     <>
       <style>{clayStyles}</style>
       <div className="clay-bg flex flex-col items-center justify-center p-6">
-        <div className="cloud clay-cloud-1"></div>
-        <div className="cloud clay-cloud-2"></div>
+        <div className="clay-cloud clay-cloud-1" />
+        <div className="clay-cloud clay-cloud-2" />
         <div className="clay-plant-left">
           <div className="clay-leaves">
-            <div className="clay-leaf clay-leaf-1"></div>
-            <div className="clay-leaf clay-leaf-2"></div>
-            <div className="clay-leaf clay-leaf-3"></div>
+            <div className="clay-leaf clay-leaf-1" />
+            <div className="clay-leaf clay-leaf-2" />
+            <div className="clay-leaf clay-leaf-3" />
           </div>
-          <div className="clay-pot"></div>
+          <div className="clay-pot" />
         </div>
         <div className="clay-flower-right">
-          <div className="clay-fpot"></div>
-          <div className="clay-fstem"></div>
+          <div className="clay-fpot" />
+          <div className="clay-fstem" />
         </div>
 
-        {/* ═══ PHONE FRAME ═══ */}
+        {/* ═══ CARD ═══ */}
         <div className="clay-card">
           {/* ─── Mascot ─── */}
           <div className="clay-mascot">
@@ -562,13 +559,17 @@ export default function LoginPage() {
                 <span className="clay-sparkle">✧</span>
                 <span className="clay-sparkle">✧</span>
                 <span className="clay-sparkle">✧</span>
-                {view === "register" ? "Create Account" : view === "forgot" ? "Reset Password" : "Welcome Back"}
+                {view === "register" ? "Buat Akun" : view === "forgot" ? "Reset Password" : "Selamat Datang"}
                 <span className="clay-sparkle">✧</span>
                 <span className="clay-sparkle">✧</span>
                 <span className="clay-sparkle">✧</span>
               </h1>
               <p className="clay-subtitle">
-                {view === "register" ? "Start your journey." : view === "forgot" ? "We'll help you reset." : "Login to continue your journey."}
+                {view === "register"
+                  ? "Mulai perjalananmu."
+                  : view === "forgot"
+                    ? "Kami bantu reset password."
+                    : "Masuk untuk melanjutkan."}
               </p>
             </div>
           </div>
@@ -581,16 +582,16 @@ export default function LoginPage() {
           )}
 
           {/* ═══════════════════════════════════════
-              LOGIN VIEW
+              LOGIN VIEW (utama)
           ═══════════════════════════════════════ */}
-          {view === "login" && tgStep === "idle" && emailStep === "idle" && (
+          {view === "login" && (
             <div className="space-y-0">
               {/* Email */}
               <div className="clay-input-group">
                 <div className="clay-input-icon">
-                  <svg viewBox="0 0 24 24"><path d="M12 12c2.7 0 5-2.3 5-5s-2.3-5-5-5-5 2.3-5 5 2.3 5 5 5zm0 2c-3.3 0-10 1.7-10 5v2h20v-2c0-3.3-6.7-5-10-5z"/></svg>
+                  <svg viewBox="0 0 24 24"><path d="M12 12c2.7 0 5-2.3 5-5s-2.3-5-5-5-5 2.3-5 5 2.3 5 5 5zm0 2c-3.3 0-10 1.7-10 5v2h20v-2c0-3.3-6.7-5-10-5z" /></svg>
                 </div>
-                <input ref={authEmailRef} type="email" className="clay-input-field" placeholder="Email or Username"
+                <input ref={authEmailRef} type="email" className="clay-input-field" placeholder="Email"
                   value={authEmail} onChange={(e) => { setAuthEmail(e.target.value); setError("") }}
                   onKeyDown={(e) => e.key === "Enter" && handleEmailPasswordLogin()} disabled={isLoading}
                 />
@@ -598,7 +599,7 @@ export default function LoginPage() {
               {/* Password */}
               <div className="clay-input-group">
                 <div className="clay-input-icon">
-                  <svg viewBox="0 0 24 24"><path d="M18 8h-1V6c0-2.8-2.2-5-5-5S7 3.2 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.7 1.3-3 3.1-3s3.1 1.3 3.1 3v2z"/></svg>
+                  <svg viewBox="0 0 24 24"><path d="M18 8h-1V6c0-2.8-2.2-5-5-5S7 3.2 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.7 1.3-3 3.1-3s3.1 1.3 3.1 3v2z" /></svg>
                 </div>
                 <input type={showPassword ? "text" : "password"} className="clay-input-field" placeholder="Password"
                   value={authPassword} onChange={(e) => { setAuthPassword(e.target.value); setError("") }}
@@ -608,21 +609,53 @@ export default function LoginPage() {
                   {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
                 </button>
               </div>
-              {/* Forgot */}
+              {/* Lupa password */}
               <div className="clay-forgot-row">
-                <button onClick={() => { setView("forgot"); setError("") }} className="clay-forgot-link">Forgot Password?</button>
+                <button onClick={() => { setView("forgot"); setError("") }} className="clay-forgot-link">Lupa Password?</button>
               </div>
-              {/* Login button */}
+              {/* Tombol Masuk */}
               <button className="clay-btn" onClick={handleEmailPasswordLogin} disabled={isLoading}>
-                {loading === "credentials" ? <Loader2 className="size-5 animate-spin mx-auto" /> : "Login"}
+                {loading === "credentials" ? <Loader2 className="size-5 animate-spin mx-auto" /> : "Masuk"}
               </button>
-              {/* Divider */}
-              <div className="clay-divider">or continue with</div>
-              {/* Social */}
-              <SocialButtons />
-              {/* Sign up */}
+
+              {/* Pembatas */}
+              <div className="clay-divider">atau masuk dengan</div>
+
+              {/* Google */}
+              <button className="clay-social-btn mb-3" onClick={handleGoogleLogin} disabled={isLoading}>
+                {loading === "google" ? <Loader2 className="size-5 animate-spin text-gray-400" /> : (
+                  <svg viewBox="0 0 24 24">
+                    <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" />
+                    <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+                    <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
+                    <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
+                  </svg>
+                )}
+                <span>Google</span>
+              </button>
+
+              {/* Telegram & Email OTP di-collapse */}
+              <div className="flex gap-2 mb-4">
+                <button className="clay-social-btn flex-1" style={{ height: 42, fontSize: 13 }}
+                  onClick={() => { setView("telegram"); setError("") }} disabled={isLoading}>
+                  <svg viewBox="0 0 24 24" style={{ width: 18, height: 18 }}>
+                    <path fill="#229ED9" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69.01-.03.01-.14-.07-.2-.08-.06-.19-.04-.27-.02-.12.03-1.97 1.25-5.56 3.67-.53.36-1.01.54-1.44.53-.47-.01-1.38-.27-2.06-.49-.83-.27-1.49-.42-1.43-.88.03-.24.37-.49 1.02-.75 3.99-1.74 6.65-2.89 7.98-3.44 3.8-1.58 4.59-1.86 5.1-1.87.11 0 .37.03.54.17.14.12.18.28.2.47-.01.06.01.24 0 .36z" />
+                  </svg>
+                  <span>Telegram</span>
+                </button>
+                <button className="clay-social-btn flex-1" style={{ height: 42, fontSize: 13 }}
+                  onClick={() => { setView("email-otp"); setError("") }} disabled={isLoading}>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="#1a8f7d" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: 18, height: 18 }}>
+                    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+                    <polyline points="22,6 12,13 2,6" />
+                  </svg>
+                  <span>Email OTP</span>
+                </button>
+              </div>
+
+              {/* Daftar */}
               <div className="clay-footer mt-0">
-                Don't have an account? <button onClick={() => { setView("register"); setError("") }} className="font-800 underline underline-offset-2">Sign Up</button>
+                Belum punya akun? <button onClick={() => { setView("register"); setError("") }} className="font-800 underline underline-offset-2">Daftar</button>
               </div>
             </div>
           )}
@@ -634,15 +667,15 @@ export default function LoginPage() {
             <div className="space-y-0">
               <div className="clay-input-group">
                 <div className="clay-input-icon">
-                  <svg viewBox="0 0 24 24"><path d="M12 12c2.7 0 5-2.3 5-5s-2.3-5-5-5-5 2.3-5 5 2.3 5 5 5zm0 2c-3.3 0-10 1.7-10 5v2h20v-2c0-3.3-6.7-5-10-5z"/></svg>
+                  <svg viewBox="0 0 24 24"><path d="M12 12c2.7 0 5-2.3 5-5s-2.3-5-5-5-5 2.3-5 5 2.3 5 5 5zm0 2c-3.3 0-10 1.7-10 5v2h20v-2c0-3.3-6.7-5-10-5z" /></svg>
                 </div>
-                <input type="text" className="clay-input-field" placeholder="Full name"
+                <input type="text" className="clay-input-field" placeholder="Nama lengkap"
                   value={regName} onChange={(e) => { setRegName(e.target.value); setError("") }} disabled={isLoading}
                 />
               </div>
               <div className="clay-input-group">
                 <div className="clay-input-icon">
-                  <svg viewBox="0 0 24 24"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg>
+                  <svg viewBox="0 0 24 24"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z" /></svg>
                 </div>
                 <input type="email" className="clay-input-field" placeholder="Email"
                   value={regEmail} onChange={(e) => { setRegEmail(e.target.value); setError("") }} disabled={isLoading}
@@ -650,9 +683,9 @@ export default function LoginPage() {
               </div>
               <div className="clay-input-group">
                 <div className="clay-input-icon">
-                  <svg viewBox="0 0 24 24"><path d="M18 8h-1V6c0-2.8-2.2-5-5-5S7 3.2 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.7 1.3-3 3.1-3s3.1 1.3 3.1 3v2z"/></svg>
+                  <svg viewBox="0 0 24 24"><path d="M18 8h-1V6c0-2.8-2.2-5-5-5S7 3.2 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.7 1.3-3 3.1-3s3.1 1.3 3.1 3v2z" /></svg>
                 </div>
-                <input type={showRegPassword ? "text" : "password"} className="clay-input-field" placeholder="Password (min 6 chars)"
+                <input type={showRegPassword ? "text" : "password"} className="clay-input-field" placeholder="Password (min 6 karakter)"
                   value={regPassword} onChange={(e) => { setRegPassword(e.target.value); setError("") }} disabled={isLoading}
                 />
                 <button type="button" className="clay-pwd-toggle" onClick={() => setShowRegPassword(!showRegPassword)}>
@@ -661,19 +694,19 @@ export default function LoginPage() {
               </div>
               <div className="clay-input-group">
                 <div className="clay-input-icon">
-                  <svg viewBox="0 0 24 24"><path d="M18 8h-1V6c0-2.8-2.2-5-5-5S7 3.2 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.7 1.3-3 3.1-3s3.1 1.3 3.1 3v2z"/></svg>
+                  <svg viewBox="0 0 24 24"><path d="M18 8h-1V6c0-2.8-2.2-5-5-5S7 3.2 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.7 1.3-3 3.1-3s3.1 1.3 3.1 3v2z" /></svg>
                 </div>
-                <input type={showRegPassword ? "text" : "password"} className="clay-input-field" placeholder="Confirm password"
+                <input type={showRegPassword ? "text" : "password"} className="clay-input-field" placeholder="Konfirmasi password"
                   value={regConfirm} onChange={(e) => { setRegConfirm(e.target.value); setError("") }} disabled={isLoading}
                 />
               </div>
               <button className="clay-btn mt-2" onClick={handleRegister} disabled={isLoading}>
-                {loading === "register" ? <Loader2 className="size-5 animate-spin mx-auto" /> : "Create Account 🚀"}
+                {loading === "register" ? <Loader2 className="size-5 animate-spin mx-auto" /> : "Daftar 🚀"}
               </button>
               <div className="text-center mt-4">
-                <button onClick={() => { setView("login"); setError("") }}
+                <button onClick={goBack}
                   className="text-xs text-[#6b9a91] hover:text-[#1a3d36] transition flex items-center justify-center gap-1 mx-auto font-600">
-                  <ArrowLeft className="size-3" /> Already have an account? Sign In
+                  <ArrowLeft className="size-3" /> Sudah punya akun? Masuk
                 </button>
               </div>
             </div>
@@ -683,8 +716,8 @@ export default function LoginPage() {
           {view === "register" && regSuccess && (
             <div className="text-center space-y-3 py-6 animate-[slideUp_0.3s_ease]">
               <CheckCircle className="size-14 mx-auto text-[#2cb5a0]" />
-              <p className="text-sm font-bold text-[#1a8f7d]">Account created! 🎉</p>
-              <p className="text-xs text-[#6b9a91]">Redirecting to dashboard...</p>
+              <p className="text-sm font-bold text-[#1a8f7d]">Akun berhasil dibuat! 🎉</p>
+              <p className="text-xs text-[#6b9a91]">Mengalihkan ke dashboard...</p>
             </div>
           )}
 
@@ -694,157 +727,157 @@ export default function LoginPage() {
           {view === "forgot" && (
             <div className="text-center space-y-4 py-4">
               <div className="rounded-xl border border-[#8eddd0]/30 bg-[#e8f7f3] p-4">
-                <p className="text-sm text-[#6b9a91]">Reset password coming soon! 🛠️</p>
+                <p className="text-sm text-[#6b9a91]">Reset password segera hadir! 🛠️</p>
                 <p className="text-xs text-[#82b0a6] mt-2">
-                  For now, contact admin via <a href="https://t.me/ainsyir" target="_blank" rel="noopener noreferrer" className="text-[#2cb5a0] font-bold hover:underline">@ainsyir</a>
+                  Sementara, hubungi admin via <a href="https://t.me/ainsyir" target="_blank" rel="noopener noreferrer" className="text-[#2cb5a0] font-bold hover:underline">@ainsyir</a>
                 </p>
               </div>
-              <button onClick={() => { setView("login"); setError("") }}
-                className="text-xs text-[#6b9a91] hover:text-[#1a3d36] transition flex items-center justify-center gap-1 mx-auto font-600">
-                <ArrowLeft className="size-3" /> Back to Sign In
+              <button onClick={goBack}
+                className="clay-alt-link">
+                <ArrowLeft className="size-3" /> Kembali ke Masuk
               </button>
             </div>
           )}
 
           {/* ═══════════════════════════════════════
-              TELEGRAM OTP
+              TELEGRAM OTP VIEW
           ═══════════════════════════════════════ */}
-          {tgStep === "code" && (
+          {view === "telegram" && tgStep === "idle" && (
+            <div className="space-y-4">
+              <StepDots current={1} total={3} />
+              <p className="text-sm text-center text-[#6b9a91]">Masukkan username Telegram kamu 📱</p>
+              <div className="flex gap-2">
+                <input type="text" placeholder="Username (tanpa @)"
+                  value={tgUsername} onChange={(e) => { setTgUsername(e.target.value.replace(/[^a-zA-Z0-9_]/g, '')); setError("") }}
+                  onKeyDown={(e) => e.key === "Enter" && handleTelegramRequest()} maxLength={50}
+                  className="flex-1 rounded-xl border-2 border-[#e2f3ef] bg-[#e2f3ef] px-4 py-3 text-sm outline-none transition-all focus:border-[#8eddd0] focus:ring-2 focus:ring-[#2cb5a0]/20"
+                  style={{ fontFamily: "inherit", color: "#1a3d36", fontWeight: 600, boxShadow: "inset 0 3px 8px rgba(0,0,0,0.06)" }}
+                />
+                <button onClick={handleTelegramRequest} disabled={isLoading}
+                  className="flex items-center justify-center rounded-xl bg-[#229ED9] px-4 py-3 text-white transition-all hover:bg-[#1d8ec4] disabled:opacity-50">
+                  {loading === "telegram" ? <Loader2 className="size-5 animate-spin" /> : <Send className="size-4" />}
+                </button>
+              </div>
+              {botUrl && (
+                <div className="rounded-xl border border-[#2cb5a0]/30 bg-[#e8f7f3] p-4">
+                  <p className="text-sm font-medium text-[#1a3d36]">🤖 Bot belum aktif!</p>
+                  <p className="text-xs text-[#6b9a91] mt-1">Mulai chat dengan bot FinWise dulu ya.</p>
+                  <a href={botUrl} target="_blank" rel="noopener noreferrer"
+                    className="flex w-full items-center justify-center gap-2 rounded-lg bg-[#229ED9] px-4 py-2.5 text-sm font-medium text-white mt-2 transition hover:bg-[#1d8ec4]">
+                    <MessageCircle className="size-4" /> Buka Bot
+                  </a>
+                </div>
+              )}
+              {channelUrl && (
+                <div className="rounded-xl border border-[#2cb5a0]/30 bg-[#e8f7f3] p-4">
+                  <p className="text-sm font-medium text-[#1a3d36]">📢 Gabung channel dulu!</p>
+                  <a href={channelUrl} target="_blank" rel="noopener noreferrer"
+                    className="flex w-full items-center justify-center gap-2 rounded-lg bg-[#229ED9] px-4 py-2.5 text-sm font-medium text-white mt-2 transition hover:bg-[#1d8ec4]">
+                    <MessageCircle className="size-4" /> Gabung Channel
+                  </a>
+                </div>
+              )}
+              <button onClick={goBack} className="clay-alt-link">
+                <ArrowLeft className="size-3" /> Kembali ke Masuk
+              </button>
+            </div>
+          )}
+
+          {view === "telegram" && tgStep === "code" && (
             <div className="space-y-4">
               <StepDots current={2} total={3} />
               <div className="text-center space-y-1">
-                <p className="text-sm text-[#6b9a91]">6-digit code sent via Telegram ✨</p>
+                <p className="text-sm text-[#6b9a91]">Kode 6 digit dikirim via Telegram ✨</p>
                 <p className="text-xs text-[#82b0a6]">@{tgUsername}</p>
               </div>
               <div className="flex gap-2">
                 <input ref={otpRef} type="text" placeholder="• • • • • •" maxLength={6} inputMode="numeric"
                   value={tgCode} onChange={(e) => { setTgCode(e.target.value.replace(/\D/g, "")); setError("") }}
                   onKeyDown={(e) => e.key === "Enter" && handleTelegramVerify()}
-                  className="flex-1 rounded-xl border border-[#8eddd0]/50 bg-[#e2f3ef] px-4 py-3.5 text-center text-xl tracking-[0.5em] font-mono outline-none transition-all focus:border-[#2cb5a0] focus:ring-2 focus:ring-[#2cb5a0]/20" />
+                  className="clay-otp-input flex-1" />
                 <button onClick={handleTelegramVerify} disabled={isLoading || tgCode.length < 6}
                   className="flex items-center justify-center rounded-xl bg-[#2cb5a0] px-4 py-3.5 text-white transition-all hover:bg-[#1a8f7d] disabled:opacity-50">
                   {loading === "telegram" ? <Loader2 className="size-5 animate-spin" /> : <CheckCircle className="size-5" />}
                 </button>
               </div>
-              <button onClick={resetTelegram}
-                className="flex w-full items-center justify-center gap-1.5 text-xs text-[#6b9a91] hover:text-[#1a3d36] transition py-1">
-                <ArrowLeft className="size-3" /> Change username
+              <button onClick={resetTelegram} className="clay-alt-link">
+                <ArrowLeft className="size-3" /> Ganti username
               </button>
             </div>
           )}
 
-          {tgStep === "done" && (
+          {view === "telegram" && tgStep === "done" && (
             <div className="text-center space-y-3 py-6">
               <StepDots current={3} total={3} />
               <CheckCircle className="size-12 mx-auto text-[#2cb5a0]" />
-              <p className="text-sm font-medium text-[#1a8f7d]">Verified! Redirecting...</p>
-            </div>
-          )}
-
-          {/* Telegram idle - username input with button */}
-          {tgStep === "idle" && view === "login" && emailStep === "idle" && (
-            <div className="space-y-3 mt-2 hidden">
-              {/* Hidden by default, visible when Telegram button triggers tgStep */}
-            </div>
-          )}
-
-          {/* Telegram expanded input */}
-          {tgStep === "idle" && view === "login" && emailStep !== "idle" && (
-            <div className="space-y-3">
-              <div className="flex gap-2">...</div>
+              <p className="text-sm font-medium text-[#1a8f7d]">Terverifikasi! Mengalihkan...</p>
             </div>
           )}
 
           {/* ═══════════════════════════════════════
-              EMAIL OTP
+              EMAIL OTP VIEW
           ═══════════════════════════════════════ */}
-          {emailStep === "input" && (
+          {view === "email-otp" && emailStep === "idle" && (
             <div className="space-y-4">
               <StepDots current={1} total={2} />
-              <p className="text-sm text-center text-[#6b9a91]">Enter your email ✉️</p>
+              <p className="text-sm text-center text-[#6b9a91]">Masukkan alamat email ✉️</p>
               <div className="flex gap-2">
-                <input ref={emailInputRef} type="email" placeholder="your@email.com"
+                <input type="email" placeholder="email@contoh.com"
                   value={email} onChange={(e) => { setEmail(e.target.value); setError("") }}
                   onKeyDown={(e) => e.key === "Enter" && handleEmailRequest()}
-                  className="flex-1 rounded-xl border border-[#8eddd0]/50 bg-[#e2f3ef] px-4 py-3 text-sm outline-none transition-all focus:border-[#2cb5a0] focus:ring-2 focus:ring-[#2cb5a0]/20" />
+                  className="flex-1 rounded-xl border-2 border-[#e2f3ef] bg-[#e2f3ef] px-4 py-3 text-sm outline-none transition-all focus:border-[#8eddd0] focus:ring-2 focus:ring-[#2cb5a0]/20"
+                  style={{ fontFamily: "inherit", color: "#1a3d36", fontWeight: 600, boxShadow: "inset 0 3px 8px rgba(0,0,0,0.06)" }}
+                />
                 <button onClick={handleEmailRequest} disabled={isLoading}
                   className="flex items-center justify-center gap-1.5 rounded-xl bg-[#2cb5a0] px-3 py-3 text-sm font-semibold text-white transition-all hover:bg-[#1a8f7d] disabled:opacity-50">
-                  {loading === "email" ? <Loader2 className="size-5 animate-spin" /> : <><Send className="size-4 shrink-0" /><span className="hidden sm:inline">Send</span></>}
+                  {loading === "email" ? <Loader2 className="size-5 animate-spin" /> : <Send className="size-4 shrink-0" />}
                 </button>
               </div>
-              <button onClick={() => setEmailStep("idle")}
-                className="flex w-full items-center justify-center gap-1.5 text-xs text-[#6b9a91] hover:text-[#1a3d36] transition py-1">
-                <ArrowLeft className="size-3" /> Other methods
+              <button onClick={goBack} className="clay-alt-link">
+                <ArrowLeft className="size-3" /> Kembali ke Masuk
               </button>
             </div>
           )}
 
-          {emailStep === "sent" && (
+          {view === "email-otp" && emailStep === "sent" && (
             <div className="space-y-4">
               <StepDots current={2} total={2} />
-              <p className="text-sm text-center text-[#6b9a91]">Code sent to your email ✨</p>
+              <p className="text-sm text-center text-[#6b9a91]">Kode dikirim ke email ✨</p>
               <p className="text-xs text-center text-[#82b0a6] font-medium">{email}</p>
               <div className="flex gap-2">
                 <input ref={emailOtpRef} type="text" placeholder="• • • • • •" maxLength={6} inputMode="numeric"
                   value={emailCode} onChange={(e) => { setEmailCode(e.target.value.replace(/\D/g, "")); setError("") }}
                   onKeyDown={(e) => e.key === "Enter" && handleEmailVerify()}
-                  className="flex-1 rounded-xl border border-[#8eddd0]/50 bg-[#e2f3ef] px-4 py-3.5 text-center text-xl tracking-[0.5em] font-mono outline-none transition-all focus:border-[#2cb5a0] focus:ring-2 focus:ring-[#2cb5a0]/20" />
+                  className="clay-otp-input flex-1" />
                 <button onClick={handleEmailVerify} disabled={isLoading || emailCode.length < 6}
                   className="flex items-center justify-center rounded-xl bg-[#2cb5a0] px-4 py-3.5 text-white transition-all hover:bg-[#1a8f7d] disabled:opacity-50">
                   {loading === "email" ? <Loader2 className="size-5 animate-spin" /> : <CheckCircle className="size-5" />}
                 </button>
               </div>
-              <button onClick={resetEmail}
-                className="flex w-full items-center justify-center gap-1.5 text-xs text-[#6b9a91] hover:text-[#1a3d36] transition py-1">
-                <ArrowLeft className="size-3" /> Change email
+              <button onClick={resetEmail} className="clay-alt-link">
+                <ArrowLeft className="size-3" /> Ganti email
               </button>
             </div>
           )}
 
-          {emailStep === "done" && (
+          {view === "email-otp" && emailStep === "done" && (
             <div className="text-center space-y-3 py-6">
               <StepDots current={2} total={2} />
               <CheckCircle className="size-12 mx-auto text-[#2cb5a0]" />
-              <p className="text-sm font-medium text-[#1a8f7d]">Login successful! Redirecting...</p>
-            </div>
-          )}
-
-          {/* ─── Telegram expansion area ─── */}
-          {tgStep === "idle" && view === "login" && emailStep === "idle" && (
-            <div id="telegram-section" style={{display: 'none'}}>
-              <div className="flex gap-2 mt-4">
-                <input ref={tgInputRef} type="text" placeholder="Telegram username (without @)"
-                  value={tgUsername} onChange={(e) => { setTgUsername(e.target.value.replace(/[^a-zA-Z0-9_]/g, '')); setError("") }}
-                  onKeyDown={(e) => e.key === "Enter" && handleTelegramRequest()} maxLength={50}
-                  className="flex-1 rounded-xl border border-[#8eddd0]/50 bg-[#e2f3ef] px-4 py-3 text-sm outline-none transition-all focus:border-[#2cb5a0] focus:ring-2 focus:ring-[#2cb5a0]/20" />
-                <button onClick={handleTelegramRequest} disabled={isLoading}
-                  className="flex items-center justify-center gap-1.5 rounded-xl bg-[#229ED9] px-3 py-3 text-sm font-semibold text-white transition-all hover:bg-[#1d8ec4] disabled:opacity-50">
-                  {loading === "telegram" ? <Loader2 className="size-5 animate-spin" /> : <><Send className="size-4 shrink-0" /><span className="hidden sm:inline">Send</span></>}
-                </button>
-              </div>
-              {botUrl && (
-                <div className="rounded-xl border border-[#2cb5a0]/30 bg-[#e8f7f3] p-4 mt-3">
-                  <p className="text-sm font-medium text-[#1a3d36]">🤖 Bot not found!</p>
-                  <p className="text-xs text-[#6b9a91] mt-1">Please /start the FinWise bot first.</p>
-                  <a href={botUrl} target="_blank" rel="noopener noreferrer"
-                    className="flex w-full items-center justify-center gap-2 rounded-lg bg-[#229ED9] px-4 py-2.5 text-sm font-medium text-white mt-2 transition hover:bg-[#1d8ec4]">
-                    <MessageCircle className="size-4" /> Open Bot
-                  </a>
-                </div>
-              )}
+              <p className="text-sm font-medium text-[#1a8f7d]">Login berhasil! Mengalihkan...</p>
             </div>
           )}
 
           {/* ─── Footer ─── */}
           <div className="text-center mt-5 pt-4 border-t border-[#8eddd0]/30">
             <p className="flex items-center justify-center gap-1.5 text-xs text-[#82b0a6]">
-              🔒 Secured & encrypted
+              🔒 Terenkripsi & aman
             </p>
             <p className="text-xs text-[#a0c8be] mt-1">
-              Account auto-created on first login ·{" "}
+              Akun otomatis dibuat saat login pertama ·{" "}
               <a href="https://t.me/ainsyir" target="_blank" rel="noopener noreferrer"
                 className="inline-flex items-center gap-1 text-[#2cb5a0] font-bold hover:underline">
-                <HelpCircle className="size-3" /> Need help?
+                <HelpCircle className="size-3" /> Butuh bantuan?
               </a>
             </p>
           </div>
