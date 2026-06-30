@@ -364,9 +364,14 @@ export function formatIDR(value: number): string {
 }
 
 export function formatIDRShort(value: number): string {
-  // Always use Indonesian thousand-separator dots: 1.000, 10.000, 1.000.000
-  if (value >= 1_000_000_000) return `Rp${new Intl.NumberFormat('id-ID').format(value / 1_000_000)}jt`
-  if (value >= 1_000_000) return `Rp${new Intl.NumberFormat('id-ID').format(value / 1_000)}rb`
+  if (value >= 1_000_000_000) {
+    const v = value / 1_000_000_000
+    return v % 1 === 0 ? `Rp${v}M` : `Rp${v.toFixed(1).replace('.', ',')}M`
+  }
+  if (value >= 1_000_000) {
+    const v = value / 1_000_000
+    return v % 1 === 0 ? `Rp${v}jt` : `Rp${v.toFixed(1).replace('.', ',')}jt`
+  }
   return `Rp${new Intl.NumberFormat('id-ID').format(value)}`
 }
 
