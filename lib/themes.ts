@@ -23,6 +23,32 @@ export interface ThemeColors {
 
 export const THEMES: ThemeColors[] = [
   {
+    name: 'Wise',
+    id: 'wise',
+    emoji: '🌿',
+    description: 'Lime fresh — Wise / TransferWise',
+    dark: {
+      bg: '#111110',
+      card: '#1a1a18',
+      surface2: '#242420',
+      primary: '#9fe870',
+      primaryLight: '#cdffad',
+      greetingBg: '#1a2e12',
+      border: 'rgba(159, 232, 112, 0.15)',
+      mutedFg: '#707070',
+    },
+    light: {
+      bg: '#FFFFFF',
+      card: '#FFFFFF',
+      surface2: '#e8ebe6',
+      primary: '#2ead4b',
+      primaryLight: '#9fe870',
+      greetingBg: '#e2f6d5',
+      border: 'rgba(0, 0, 0, 0.08)',
+      mutedFg: '#868685',
+    },
+  },
+  {
     name: 'Ungu',
     id: 'purple',
     emoji: '💜',
@@ -155,7 +181,7 @@ export const THEMES: ThemeColors[] = [
 ]
 
 const STORAGE_KEY = 'fw.colorTheme.v1'
-const DEFAULT_THEME = 'emerald'
+const DEFAULT_THEME = 'wise'
 
 export function getStoredThemeId(): string {
   if (typeof window === 'undefined') return DEFAULT_THEME
