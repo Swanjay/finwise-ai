@@ -9,24 +9,55 @@ import { useRouter } from "next/navigation"
 ═══════════════════════════════════════════ */
 const clayStyles = `
 /* ─── Background ─── */
-.clay-bg { background: radial-gradient(ellipse at 50% 40%, #f5f8ee 0%, #f0f5e8 70%); min-height: 100vh; position: relative; overflow: hidden; }
+.clay-bg {
+  background:
+    radial-gradient(circle at 15% 25%, rgba(159,232,112,0.10) 0%, transparent 40%),
+    radial-gradient(circle at 85% 75%, rgba(159,232,112,0.08) 0%, transparent 35%),
+    radial-gradient(circle at 55% 85%, rgba(46,173,75,0.05) 0%, transparent 40%),
+    radial-gradient(circle at 40% 10%, rgba(159,232,112,0.06) 0%, transparent 30%),
+    repeating-linear-gradient(0deg, transparent, transparent 59px, rgba(159,232,112,0.06) 59px, rgba(159,232,112,0.06) 60px),
+    repeating-linear-gradient(90deg, transparent, transparent 59px, rgba(159,232,112,0.06) 59px, rgba(159,232,112,0.06) 60px),
+    radial-gradient(ellipse at 50% 40%, #f5f8ee 0%, #f0f5e8 70%);
+  min-height: 100vh; position: relative; overflow: hidden;
+}
 
 /* ─── Card ─── */
 .clay-card {
   position: relative; z-index: 10;
   width: 100%; max-width: 380px;
-  background: #FFFFFF;
+  background: linear-gradient(#FFFFFF, #FFFFFF) padding-box,
+              linear-gradient(135deg, rgba(159,232,112,0.35), rgba(46,173,75,0.12), rgba(159,232,112,0.05)) border-box;
+  border: 2px solid transparent;
   border-radius: 32px;
-  padding: 40px 32px 32px;
+  padding: 40px 32px 36px;
   box-shadow: 0 25px 60px rgba(0,0,0,0.08), 0 8px 20px rgba(0,0,0,0.05), inset 0 2px 0 rgba(255,255,255,0.8);
   overflow: visible;
+  animation: fadeInUp 0.5s ease forwards;
+}
+.clay-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 50%; transform: translateX(-50%);
+  width: 40px; height: 4px;
+  background: linear-gradient(90deg, #9fe870, #2ead4b);
+  border-radius: 0 0 4px 4px;
+  z-index: 5;
 }
 
 /* ─── Mascot ─── */
 .clay-mascot {
   position: absolute; top: -85px; left: 50%; transform: translateX(-50%);
-  z-index: 20; width: 130px; height: 130px;
+  z-index: 20; width: 100px; height: 100px;
   animation: charBounce 3s ease-in-out infinite;
+}
+.clay-mascot::before {
+  content: '';
+  position: absolute;
+  top: 50%; left: 50%; transform: translate(-50%, -50%);
+  width: 130px; height: 130px;
+  background: radial-gradient(circle, rgba(159,232,112,0.22) 0%, transparent 70%);
+  border-radius: 50%;
+  z-index: -1;
 }
 @keyframes charBounce {
   0%, 100% { transform: translateX(-50%) translateY(0); }
@@ -35,13 +66,21 @@ const clayStyles = `
 
 /* ─── Header ─── */
 .clay-header h1 {
-  font-size: 22px; font-weight: 900;
+  font-size: 26px; font-weight: 900;
   color: #0e0f0c;
-  letter-spacing: -0.5px;
+  letter-spacing: -0.3px;
   text-align: center;
 }
+.clay-header h1::after {
+  content: '';
+  display: block;
+  width: 30%; height: 3px;
+  background: linear-gradient(90deg, #9fe870, #2ead4b);
+  margin: 8px auto 0;
+  border-radius: 2px;
+}
 .clay-subtitle {
-  font-size: 13px; color: #868685;
+  font-size: 14px; color: #868685;
   margin-top: 2px; font-weight: 600;
 }
 
@@ -130,10 +169,10 @@ const clayStyles = `
 
 /* ─── Social ─── */
 .clay-social-btn {
-  width: 100%; height: 48px;
+  width: 100%; height: 50px;
   background: white;
   border: 2px solid #e8ebe6;
-  border-radius: 14px;
+  border-radius: 16px;
   display: flex; align-items: center; justify-content: center; gap: 10px;
   cursor: pointer;
   font-size: 14px; font-weight: 700; color: #0e0f0c; font-family: inherit;
@@ -142,11 +181,14 @@ const clayStyles = `
 }
 .clay-social-btn:hover { transform: translateY(-2px); border-color: #9fe870; box-shadow: 0 6px 18px rgba(0,0,0,0.08); }
 .clay-social-btn svg { width: 20px; height: 20px; }
+.clay-social-google { border-left: 4px solid #4285F4; }
+.clay-social-telegram { border-left: 4px solid #229ED9; }
+.clay-social-email { border-left: 4px solid #2ead4b; }
 
 /* ─── Footer ─── */
 .clay-footer { text-align: center; font-size: 13px; color: #868685; font-weight: 600; }
-.clay-footer a { color: #2ead4b; font-weight: 800; text-decoration: none; }
-.clay-footer a:hover { opacity: 0.7; text-decoration: underline; }
+.clay-footer a { color: #2ead4b; font-weight: 800; text-decoration: none; padding: 4px 10px; border-radius: 8px; background: rgba(159,232,112,0.12); transition: all 0.2s; }
+.clay-footer a:hover { background: rgba(159,232,112,0.25); text-decoration: none; opacity: 1; }
 
 /* ─── OTP Input ─── */
 .clay-otp-input {
@@ -180,9 +222,15 @@ const clayStyles = `
 }
 .clay-alt-link:hover { color: #0e0f0c; }
 
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
 @media (max-width: 480px) {
   .clay-card { padding: 32px 24px 28px; border-radius: 24px; }
-  .clay-mascot { top: -70px; width: 110px; height: 110px; }
+  .clay-mascot { top: -70px; width: 80px; height: 80px; }
+  .clay-mascot::before { width: 110px; height: 110px; }
 }
 `
 
@@ -197,7 +245,7 @@ function FinWiseCat({ theme = "green" }: { theme?: string }) {
   const cheekColor = "#FFB8C8"
 
   return (
-    <svg viewBox="0 0 160 160" fill="none" xmlns="http://www.w3.org/2000/svg" width="130" height="130">
+    <svg viewBox="0 0 160 160" fill="none" xmlns="http://www.w3.org/2000/svg" width="100" height="100">
       <ellipse cx="80" cy="105" rx="42" ry="35" fill={bodyColor}/>
       <path d="M45 90C45 72 60 58 80 58C100 58 115 72 115 90V105C115 120 100 130 80 130C60 130 45 120 45 105V90Z" fill={hoodieColor}/>
       <path d="M55 95C55 82 66 72 80 72C94 72 105 82 105 95V105C105 115 94 122 80 122C66 122 55 115 55 105V95Z" fill={hoodieShadow}/>
@@ -511,7 +559,7 @@ export default function LoginPage() {
               <div className="clay-divider">atau masuk dengan</div>
 
               {/* Google */}
-              <button className="clay-social-btn mb-3" onClick={handleGoogleLogin} disabled={isLoading}>
+              <button className="clay-social-btn clay-social-google mb-3" onClick={handleGoogleLogin} disabled={isLoading}>
                 {loading === "google" ? <Loader2 className="size-5 animate-spin text-gray-400" /> : (
                   <svg viewBox="0 0 24 24">
                     <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" />
@@ -525,14 +573,14 @@ export default function LoginPage() {
 
               {/* Telegram & Email OTP */}
               <div className="flex flex-col gap-2 mb-4">
-                <button className="clay-social-btn" style={{ height: 42, fontSize: 13 }}
+                <button className="clay-social-btn clay-social-telegram" style={{ height: 42, fontSize: 13 }}
                   onClick={() => { setView("telegram"); setError("") }} disabled={isLoading}>
                   <svg viewBox="0 0 24 24" style={{ width: 18, height: 18 }}>
                     <path fill="#229ED9" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69.01-.03.01-.14-.07-.2-.08-.06-.19-.04-.27-.02-.12.03-1.97 1.25-5.56 3.67-.53.36-1.01.54-1.44.53-.47-.01-1.38-.27-2.06-.49-.83-.27-1.49-.42-1.43-.88.03-.24.37-.49 1.02-.75 3.99-1.74 6.65-2.89 7.98-3.44 3.8-1.58 4.59-1.86 5.1-1.87.11 0 .37.03.54.17.14.12.18.28.2.47-.01.06.01.24 0 .36z" />
                   </svg>
                   <span>Telegram</span>
                 </button>
-                <button className="clay-social-btn" style={{ height: 42, fontSize: 13 }}
+                <button className="clay-social-btn clay-social-email" style={{ height: 42, fontSize: 13 }}
                   onClick={() => { setView("email-otp"); setError("") }} disabled={isLoading}>
                   <svg viewBox="0 0 24 24" fill="none" stroke="#2ead4b" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: 18, height: 18 }}>
                     <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
@@ -542,8 +590,9 @@ export default function LoginPage() {
                 </button>
               </div>
 
-              {/* Daftar */}
-              <div className="clay-footer mt-0">
+              {/* Daftar + Security */}
+              <div className="clay-footer mt-1">
+                <p className="text-xs text-[#868685] mb-2 opacity-50">🛡️ Data terlindungi</p>
                 Belum punya akun? <button onClick={() => { setView("register"); setError("") }} className="font-800 underline underline-offset-2">Daftar</button>
               </div>
             </div>
