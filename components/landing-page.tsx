@@ -23,10 +23,9 @@ import {
 function FinWiseCat({ size = 80 }: { size?: number }) {
   return (
     <img
-      src="/mascot-cat-512.png?v=3"
+      src="/mascot-cat-512.png?v=4"
       alt="FinWise Cat"
-      width={size}
-      height={size}
+      width={size} height={Math.round(size * 576 / 1024)}
       style={{ objectFit: 'contain' }}
     />
   )

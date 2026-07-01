@@ -29,7 +29,7 @@ export const metadata: Metadata = {
     siteName: 'FinWise',
     images: [
       {
-        url: '/mascot-512.webp?v=3',
+        url: '/mascot-512.webp?v=4',
         width: 512,
         height: 512,
         alt: 'FinWise Cat Mascot',
@@ -42,12 +42,12 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'FinWise — Catat Keuangan Lebih Pintar',
     description: 'Aplikasi keuangan pribadi berbasis AI.',
-    images: ['/mascot-512.webp?v=3'],
+    images: ['/mascot-512.webp?v=4'],
   },
   manifest: '/manifest.json',
   icons: {
     icon: '/favicon-32.png',
-    apple: '/mascot-cat-192.png?v=3',
+    apple: '/mascot-cat-192.png?v=4',
   },
   alternates: {
     canonical: './',

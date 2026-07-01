@@ -54,7 +54,7 @@ export function FinWiseMascot({
         className="relative"
       >
         <Image
-          src="/mascot-128.png?v=3"
+          src="/mascot-128.png?v=4"
           alt="FinWise Cat"
           width={size}
           height={size}
