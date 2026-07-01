@@ -232,6 +232,119 @@ const clayStyles = `
   .clay-mascot { top: -70px; width: 80px; height: 80px; }
   .clay-mascot::before { width: 110px; height: 110px; }
 }
+
+/* ─── Desktop Split Layout (≥768px) ─── */
+.clay-brand-panel { display: none; }
+
+@media (min-width: 768px) {
+  .clay-bg {
+    flex-direction: row !important;
+    padding: 0 !important;
+    align-items: stretch !important;
+  }
+  .clay-brand-panel {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 60px 48px;
+    width: 44%;
+    max-width: 560px;
+    background: linear-gradient(135deg, #2ead4b 0%, #9fe870 100%);
+    position: relative;
+    z-index: 5;
+  }
+  .clay-brand-panel::before {
+    content: '';
+    position: absolute;
+    top: 10%; right: -30px;
+    width: 120px; height: 120px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 50%;
+  }
+  .clay-brand-panel::after {
+    content: '';
+    position: absolute;
+    bottom: 15%; right: -10px;
+    width: 80px; height: 80px;
+    background: rgba(255,255,255,0.08);
+    border-radius: 50%;
+  }
+  .clay-brand-mascot {
+    position: relative;
+    z-index: 2;
+    margin-bottom: 8px;
+  }
+  .clay-brand-panel h2 {
+    font-size: 30px;
+    font-weight: 900;
+    color: white;
+    margin-top: 20px;
+    margin-bottom: 12px;
+    letter-spacing: -0.5px;
+    line-height: 1.2;
+    position: relative;
+    z-index: 2;
+  }
+  .clay-brand-panel p {
+    font-size: 15px;
+    color: rgba(255,255,255,0.9);
+    line-height: 1.6;
+    position: relative;
+    z-index: 2;
+  }
+  .clay-brand-features {
+    margin-top: 28px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    position: relative;
+    z-index: 2;
+  }
+  .clay-brand-feature {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 14px;
+    color: rgba(255,255,255,0.95);
+    font-weight: 600;
+  }
+  .clay-brand-feature::before {
+    content: '✓';
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px; height: 24px;
+    background: rgba(255,255,255,0.2);
+    border-radius: 50%;
+    font-size: 12px;
+    flex-shrink: 0;
+  }
+  .clay-brand-badge {
+    margin-top: 32px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    background: rgba(255,255,255,0.15);
+    border-radius: 100px;
+    font-size: 13px;
+    font-weight: 700;
+    color: white;
+    width: fit-content;
+    position: relative;
+    z-index: 2;
+  }
+  .clay-card-wrapper {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 24px;
+  }
+  .clay-card {
+    max-width: 420px;
+  }
+}
 `
 
 // ─── FinWise Cat Component ───
@@ -463,7 +576,24 @@ export default function LoginPage() {
       <style>{clayStyles}</style>
       <div className="clay-bg flex flex-col items-center justify-center p-6">
 
-        {/* ═══ CARD ═══ */}
+        {/* ═══ BRAND PANEL (desktop only) ═══ */}
+        <div className="clay-brand-panel">
+          <div className="clay-brand-mascot">
+            <FinWiseCat size={120} />
+          </div>
+          <h2>Catat Keuangan Lebih Pintar ✨</h2>
+          <p>AI financial assistant untuk generasi muda Indonesia. Catat, analisis, dan capai target keuanganmu — semua dalam satu app.</p>
+          <div className="clay-brand-features">
+            <div className="clay-brand-feature">Scan struk dengan AI</div>
+            <div className="clay-brand-feature">Laporan visual interaktif</div>
+            <div className="clay-brand-feature">Multi dompet & rekening</div>
+            <div className="clay-brand-feature">Data terenkripsi end-to-end</div>
+          </div>
+          <div className="clay-brand-badge">⭐ 4.9/5 rating dari pengguna</div>
+        </div>
+
+        {/* ═══ CARD WRAPPER ═══ */}
+        <div className="clay-card-wrapper">
         <div className="clay-card">
           {/* ─── Mascot ─── */}
           <div className="clay-mascot">
@@ -809,6 +939,7 @@ export default function LoginPage() {
               </a>
             </p>
           </div>
+        </div>
         </div>
       </div>
     </>

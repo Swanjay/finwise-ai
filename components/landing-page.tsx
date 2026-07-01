@@ -110,41 +110,47 @@ export default function LandingPage() {
       {/* Hero */}
       <section className="relative overflow-hidden px-4 pt-20 pb-16 sm:pt-28 sm:pb-24">
         <div className="absolute inset-0 z-0" style={{ background: 'radial-gradient(ellipse at 50% 0%, rgba(159,232,112,0.15) 0%, transparent 70%)' }} />
-        <div className={`relative z-10 mx-auto max-w-3xl text-center transition-all duration-700 ${visible ? 'translate-y-0 opacity-100' : 'translate-y-6 opacity-0'}`}>
-          <div className="mx-auto mb-6">
-            <FinWiseCat size={80} />
+        <div className={`relative z-10 mx-auto flex max-w-6xl flex-col items-center gap-8 transition-all duration-700 lg:flex-row lg:items-center lg:gap-16 ${visible ? 'translate-y-0 opacity-100' : 'translate-y-6 opacity-0'}`}>
+          {/* Left: Mascot */}
+          <div className="order-1 flex justify-center lg:order-2 lg:flex-1 lg:justify-end">
+            <div className="lg:scale-150">
+              <FinWiseCat size={120} />
+            </div>
           </div>
-          <h1 className="text-4xl font-black tracking-tight sm:text-5xl md:text-6xl" style={{ color: '#0e0f0c' }}>
-            Catat Keuangan{' '}
-            <span className="bg-clip-text text-transparent" style={{ backgroundImage: 'linear-gradient(135deg, #2ead4b, #9fe870)' }}>
-              Lebih Pintar
-            </span>{' '}
-            ✨
-          </h1>
-          <p className="mx-auto mt-4 max-w-xl text-base text-muted-foreground sm:text-lg">
-            AI financial assistant untuk generasi muda Indonesia. Catat, analisis, dan capai target keuanganmu — semua dalam satu app.
-          </p>
-          <div className="mt-8 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
-            <Link
-              href="/register"
-              className="inline-flex items-center gap-2 rounded-2xl bg-primary px-8 py-4 text-lg font-bold text-white shadow-lg transition-all hover:scale-105 hover:shadow-xl"
-              style={{ backgroundColor: '#2ead4b' }}
-            >
-              Mulai Gratis <ArrowRight className="h-5 w-5" />
-            </Link>
-            <Link
-              href="/login"
-              className="inline-flex items-center rounded-2xl border border-border px-8 py-4 text-lg font-semibold text-foreground transition-all hover:bg-muted"
-            >
-              Sudah Punya Akun?
-            </Link>
-          </div>
-          <div className="mt-6 flex flex-wrap items-center justify-center gap-2">
-            {['100% Gratis', 'Tanpa Iklan', 'Data Terenkripsi'].map((item) => (
-              <span key={item} className="rounded-full border px-3 py-1 text-xs font-medium text-muted-foreground" style={{ borderColor: '#9fe870', backgroundColor: 'rgba(159,232,112,0.08)' }}>
-                {item}
-              </span>
-            ))}
+          {/* Right: Text */}
+          <div className="order-2 flex-1 text-center lg:order-1 lg:text-left">
+            <h1 className="text-4xl font-black tracking-tight sm:text-5xl md:text-6xl" style={{ color: '#0e0f0c' }}>
+              Catat Keuangan{' '}
+              <span className="bg-clip-text text-transparent" style={{ backgroundImage: 'linear-gradient(135deg, #2ead4b, #9fe870)' }}>
+                Lebih Pintar
+              </span>{' '}
+              ✨
+            </h1>
+            <p className="mx-auto mt-4 max-w-xl text-base text-muted-foreground sm:text-lg lg:mx-0">
+              AI financial assistant untuk generasi muda Indonesia. Catat, analisis, dan capai target keuanganmu — semua dalam satu app.
+            </p>
+            <div className="mt-8 flex flex-col items-center gap-3 sm:flex-row sm:justify-center lg:justify-start">
+              <Link
+                href="/register"
+                className="inline-flex items-center gap-2 rounded-2xl bg-primary px-8 py-4 text-lg font-bold text-white shadow-lg transition-all hover:scale-105 hover:shadow-xl"
+                style={{ backgroundColor: '#2ead4b' }}
+              >
+                Mulai Gratis <ArrowRight className="h-5 w-5" />
+              </Link>
+              <Link
+                href="/login"
+                className="inline-flex items-center rounded-2xl border border-border px-8 py-4 text-lg font-semibold text-foreground transition-all hover:bg-muted"
+              >
+                Sudah Punya Akun?
+              </Link>
+            </div>
+            <div className="mt-6 flex flex-wrap items-center justify-center gap-2 lg:justify-start">
+              {['100% Gratis', 'Tanpa Iklan', 'Data Terenkripsi'].map((item) => (
+                <span key={item} className="rounded-full border px-3 py-1 text-xs font-medium text-muted-foreground" style={{ borderColor: '#9fe870', backgroundColor: 'rgba(159,232,112,0.08)' }}>
+                  {item}
+                </span>
+              ))}
+            </div>
           </div>
         </div>
       </section>
