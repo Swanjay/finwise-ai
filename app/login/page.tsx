@@ -9,110 +9,14 @@ import { useRouter } from "next/navigation"
 ═══════════════════════════════════════════ */
 const clayStyles = `
 /* ─── Background ─── */
-.clay-bg { background: #f0f5e8; min-height: 100vh; position: relative; overflow: hidden; }
-
-/* ─── Clouds ─── */
-.clay-cloud {
-  position: absolute;
-  background: rgba(255,255,255,0.45);
-  border-radius: 50%;
-  pointer-events: none;
-}
-.clay-cloud-1 {
-  width: 120px; height: 50px;
-  top: 12%; left: 5%;
-  border-radius: 50px;
-  animation: cloudFloat 8s ease-in-out infinite alternate;
-}
-.clay-cloud-1::before {
-  content: '';
-  position: absolute;
-  width: 50px; height: 40px;
-  background: rgba(255,255,255,0.45);
-  border-radius: 50%;
-  top: -20px; left: 25px;
-}
-.clay-cloud-1::after {
-  content: '';
-  position: absolute;
-  width: 35px; height: 30px;
-  background: rgba(255,255,255,0.45);
-  border-radius: 50%;
-  top: -12px; left: 60px;
-}
-.clay-cloud-2 {
-  width: 100px; height: 40px;
-  top: 16%; right: 8%;
-  border-radius: 40px;
-  animation: cloudFloat 6s ease-in-out infinite alternate-reverse;
-}
-.clay-cloud-2::before {
-  content: '';
-  position: absolute;
-  width: 40px; height: 32px;
-  background: rgba(255,255,255,0.45);
-  border-radius: 50%;
-  top: -16px; left: 20px;
-}
-@keyframes cloudFloat {
-  0% { transform: translateX(0); }
-  100% { transform: translateX(25px); }
-}
-
-/* ─── Plant left ─── */
-.clay-plant-left { position: absolute; bottom: 0; left: 3%; z-index: 2; width: 70px; }
-.clay-pot {
-  width: 70px; height: 50px;
-  background: linear-gradient(135deg, #c4956a, #a87d5a);
-  border-radius: 8px 8px 20px 20px;
-  position: relative;
-  box-shadow: inset 0 -8px 15px rgba(0,0,0,0.15), 0 5px 15px rgba(0,0,0,0.1);
-}
-.clay-pot::before {
-  content: '';
-  position: absolute; top: -8px; left: -5px; right: -5px; height: 16px;
-  background: linear-gradient(135deg, #d4a574, #b8885e);
-  border-radius: 10px;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-}
-.clay-leaves { position: absolute; bottom: 45px; left: 50%; transform: translateX(-50%); }
-.clay-leaf {
-  position: absolute;
-  width: 30px; height: 55px;
-  background: #2ead4b;
-  border-radius: 50% 50% 50% 50% / 70% 70% 30% 30%;
-  box-shadow: inset 0 -5px 10px rgba(0,0,0,0.1);
-  transform-origin: bottom center;
-}
-.clay-leaf-1 { transform: rotate(-30deg); left: -20px; }
-.clay-leaf-2 { transform: rotate(0deg); left: 0; }
-.clay-leaf-3 { transform: rotate(30deg); left: 20px; }
-
-/* ─── Flower right ─── */
-.clay-flower-right { position: absolute; bottom: 0; right: 3%; z-index: 2; }
-.clay-fpot {
-  width: 60px; height: 45px;
-  background: linear-gradient(135deg, #f8b4c8, #e897af);
-  border-radius: 8px 8px 18px 18px;
-  position: relative;
-  box-shadow: inset 0 -8px 12px rgba(0,0,0,0.1), 0 5px 12px rgba(0,0,0,0.1);
-}
-.clay-fpot::before {
-  content: ''; position: absolute; top: -7px; left: -4px; right: -4px; height: 14px;
-  background: linear-gradient(135deg, #f0a3b8, #e08da5);
-  border-radius: 8px;
-}
-.clay-fstem {
-  position: absolute; bottom: 40px; left: 50%; transform: translateX(-50%);
-  width: 4px; height: 50px; background: #2ead4b; border-radius: 2px;
-}
+.clay-bg { background: radial-gradient(ellipse at 50% 40%, #f5f8ee 0%, #f0f5e8 70%); min-height: 100vh; position: relative; overflow: hidden; }
 
 /* ─── Card ─── */
 .clay-card {
   position: relative; z-index: 10;
   width: 100%; max-width: 380px;
   background: #FFFFFF;
-  border-radius: 45px;
+  border-radius: 32px;
   padding: 40px 32px 32px;
   box-shadow: 0 25px 60px rgba(0,0,0,0.08), 0 8px 20px rgba(0,0,0,0.05), inset 0 2px 0 rgba(255,255,255,0.8);
   overflow: visible;
@@ -130,27 +34,11 @@ const clayStyles = `
 }
 
 /* ─── Header ─── */
-.clay-heart { font-size: 18px; display: block; margin-bottom: 4px; }
 .clay-header h1 {
   font-size: 22px; font-weight: 900;
   color: #0e0f0c;
   letter-spacing: -0.5px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-wrap: wrap;
-  gap: 4px;
-}
-.clay-sparkle {
-  font-size: 11px;
-  color: #ffc857;
-  animation: sparkleAnim 2s ease-in-out infinite;
-}
-.clay-sparkle:nth-child(2) { animation-delay: 0.3s; }
-.clay-sparkle:nth-child(3) { animation-delay: 0.6s; }
-@keyframes sparkleAnim {
-  0%, 100% { opacity: 1; transform: scale(1); }
-  50% { opacity: 0.5; transform: scale(0.7); }
+  text-align: center;
 }
 .clay-subtitle {
   font-size: 13px; color: #868685;
@@ -293,9 +181,8 @@ const clayStyles = `
 .clay-alt-link:hover { color: #0e0f0c; }
 
 @media (max-width: 480px) {
-  .clay-card { padding: 32px 24px 28px; border-radius: 36px; }
+  .clay-card { padding: 32px 24px 28px; border-radius: 24px; }
   .clay-mascot { top: -70px; width: 110px; height: 110px; }
-  .clay-plant-left, .clay-flower-right { display: none; }
 }
 `
 
@@ -552,20 +439,6 @@ export default function LoginPage() {
     <>
       <style>{clayStyles}</style>
       <div className="clay-bg flex flex-col items-center justify-center p-6">
-        <div className="clay-cloud clay-cloud-1" />
-        <div className="clay-cloud clay-cloud-2" />
-        <div className="clay-plant-left">
-          <div className="clay-leaves">
-            <div className="clay-leaf clay-leaf-1" />
-            <div className="clay-leaf clay-leaf-2" />
-            <div className="clay-leaf clay-leaf-3" />
-          </div>
-          <div className="clay-pot" />
-        </div>
-        <div className="clay-flower-right">
-          <div className="clay-fpot" />
-          <div className="clay-fstem" />
-        </div>
 
         {/* ═══ CARD ═══ */}
         <div className="clay-card">
@@ -576,23 +449,16 @@ export default function LoginPage() {
 
           {/* ─── Header ─── */}
           <div className="text-center mb-6 mt-[30px]">
-            <span className="clay-heart">💗</span>
             <div className="clay-header">
-              <h1 className="flex items-center justify-center flex-wrap gap-0.5">
-                <span className="clay-sparkle">✧</span>
-                <span className="clay-sparkle">✧</span>
-                <span className="clay-sparkle">✧</span>
+              <h1>
                 {view === "register" ? "Buat Akun" : view === "forgot" ? "Reset Password" : "Selamat Datang"}
-                <span className="clay-sparkle">✧</span>
-                <span className="clay-sparkle">✧</span>
-                <span className="clay-sparkle">✧</span>
               </h1>
               <p className="clay-subtitle">
                 {view === "register"
                   ? "Mulai perjalananmu."
                   : view === "forgot"
                     ? "Kami bantu reset password."
-                    : "Masuk untuk melanjutkan."}
+                    : "Masuk ke akunmu"}
               </p>
             </div>
           </div>
@@ -657,16 +523,16 @@ export default function LoginPage() {
                 <span>Google</span>
               </button>
 
-              {/* Telegram & Email OTP di-collapse */}
-              <div className="flex gap-2 mb-4">
-                <button className="clay-social-btn flex-1" style={{ height: 42, fontSize: 13 }}
+              {/* Telegram & Email OTP */}
+              <div className="flex flex-col gap-2 mb-4">
+                <button className="clay-social-btn" style={{ height: 42, fontSize: 13 }}
                   onClick={() => { setView("telegram"); setError("") }} disabled={isLoading}>
                   <svg viewBox="0 0 24 24" style={{ width: 18, height: 18 }}>
                     <path fill="#229ED9" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69.01-.03.01-.14-.07-.2-.08-.06-.19-.04-.27-.02-.12.03-1.97 1.25-5.56 3.67-.53.36-1.01.54-1.44.53-.47-.01-1.38-.27-2.06-.49-.83-.27-1.49-.42-1.43-.88.03-.24.37-.49 1.02-.75 3.99-1.74 6.65-2.89 7.98-3.44 3.8-1.58 4.59-1.86 5.1-1.87.11 0 .37.03.54.17.14.12.18.28.2.47-.01.06.01.24 0 .36z" />
                   </svg>
                   <span>Telegram</span>
                 </button>
-                <button className="clay-social-btn flex-1" style={{ height: 42, fontSize: 13 }}
+                <button className="clay-social-btn" style={{ height: 42, fontSize: 13 }}
                   onClick={() => { setView("email-otp"); setError("") }} disabled={isLoading}>
                   <svg viewBox="0 0 24 24" fill="none" stroke="#2ead4b" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: 18, height: 18 }}>
                     <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
@@ -912,9 +778,7 @@ export default function LoginPage() {
           <div className="text-center mt-5 pt-4 border-t border-[#9fe870]/30">
             <p className="flex items-center justify-center gap-1.5 text-xs text-[#868685]">
               🔒 Terenkripsi & aman
-            </p>
-            <p className="text-xs text-[#868685] mt-1">
-              Akun otomatis dibuat saat login pertama ·{" "}
+              <span className="mx-1">·</span>
               <a href="https://t.me/ainsyir" target="_blank" rel="noopener noreferrer"
                 className="inline-flex items-center gap-1 text-[#2ead4b] font-bold hover:underline">
                 <HelpCircle className="size-3" /> Butuh bantuan?

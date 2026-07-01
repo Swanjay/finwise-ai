@@ -1,207 +1,279 @@
 'use client'
 
 import Link from 'next/link'
-import Image from 'next/image'
+import { useState, useEffect } from 'react'
 import {
-  Camera, BarChart3, PiggyBank, ReceiptText, ShieldCheck,
-  Sparkles, Moon, Sun, ArrowRight, ChevronRight,
+  Wallet,
+  Camera,
+  PieChart,
+  Bell,
+  Shield,
+  Sparkles,
+  Languages,
+  Banknote,
+  Smartphone,
+  Moon,
+  User,
+  Plus,
+  BarChart3,
+  ArrowRight,
 } from 'lucide-react'
-import { useEffect, useState } from 'react'
 
-const FEATURES = [
-  {
-    icon: Sparkles,
-    title: 'AI Scan Struk',
-    desc: 'Foto struk belanja, otomatis tercatat. Gak perlu input manual lagi.',
-    color: 'text-primary',
-    bg: 'bg-primary/10',
-  },
-  {
-    icon: BarChart3,
-    title: 'Laporan Visual',
-    desc: 'Grafik pengeluaran per kategori. Tahu uang habis ke mana.',
-    color: 'text-blue-500',
-    bg: 'bg-blue-500/10',
-  },
-  {
-    icon: PiggyBank,
-    title: 'Anggaran Cerdas',
-    desc: 'Batas budget per kategori. Dapat notifikasi kalau hampir over.',
-    color: 'text-emerald-500',
-    bg: 'bg-emerald-500/10',
-  },
-  {
-    icon: ReceiptText,
-    title: 'Transaksi Rutin',
-    desc: 'Bayar tagihan bulanan otomatis tercatat. Gak ada yang terlewat.',
-    color: 'text-amber-500',
-    bg: 'bg-amber-500/10',
-  },
-  {
-    icon: ShieldCheck,
-    title: 'Privasi Utama',
-    desc: 'Akunmu terlindungi, data terenkripsi. Hanya kamu yang bisa akses.',
-    color: 'text-rose-500',
-    bg: 'bg-rose-500/10',
-  },
+function FinWiseCat({ size = 80 }: { size?: number }) {
+  return (
+    <svg viewBox="0 0 160 160" fill="none" xmlns="http://www.w3.org/2000/svg" width={size} height={size}>
+      <ellipse cx="80" cy="105" rx="42" ry="35" fill="#f0f5e8"/>
+      <path d="M45 90C45 72 60 58 80 58C100 58 115 72 115 90V105C115 120 100 130 80 130C60 130 45 120 45 105V90Z" fill="#9fe870"/>
+      <path d="M55 95C55 82 66 72 80 72C94 72 105 82 105 95V105C105 115 94 122 80 122C66 122 55 115 55 105V95Z" fill="#cdffad"/>
+      <circle cx="80" cy="65" r="30" fill="#f8faf5"/>
+      <path d="M55 42L45 12L72 35" fill="#9fe870"/>
+      <path d="M105 42L115 12L88 35" fill="#9fe870"/>
+      <path d="M58 40L50 18L70 36" fill="#e2f6d5"/>
+      <path d="M102 40L110 18L90 36" fill="#e2f6d5"/>
+      <ellipse cx="68" cy="60" rx="6" ry="7" fill="#0e0f0c"/>
+      <ellipse cx="92" cy="60" rx="6" ry="7" fill="#0e0f0c"/>
+      <circle cx="66" cy="57" r="2.5" fill="white"/>
+      <circle cx="90" cy="57" r="2.5" fill="white"/>
+      <path d="M86 63 Q92 59 98 63" stroke="#0e0f0c" strokeWidth="2.5" strokeLinecap="round" fill="none"/>
+      <ellipse cx="80" cy="68" rx="3" ry="2" fill="#E8A0B0"/>
+      <path d="M75 73 Q80 78 85 73" stroke="#0e0f0c" strokeWidth="2" strokeLinecap="round" fill="none"/>
+      <ellipse cx="60" cy="68" rx="6" ry="4" fill="#FFB8C8" opacity="0.5"/>
+      <ellipse cx="100" cy="68" rx="6" ry="4" fill="#FFB8C8" opacity="0.5"/>
+      <ellipse cx="52" cy="108" rx="12" ry="8" fill="#f8faf5" transform="rotate(-15 52 108)"/>
+      <ellipse cx="108" cy="108" rx="12" ry="8" fill="#f8faf5" transform="rotate(15 108 108)"/>
+      <circle cx="48" cy="115" r="6" fill="#FFB8C8" opacity="0.6"/>
+      <circle cx="112" cy="115" r="6" fill="#FFB8C8" opacity="0.6"/>
+    </svg>
+  )
+}
+
+const features = [
   {
     icon: Camera,
-    title: 'Multi Wallet',
-    desc: 'Tunai, e-wallet, rekening bank — semua terpantau dalam satu tempat.',
-    color: 'text-cyan-500',
-    bg: 'bg-cyan-500/10',
+    title: 'Scan Struk AI',
+    desc: 'Foto struk belanja, AI otomatis membaca dan mencatat transaksinya.',
+    color: '#2ead4b',
+  },
+  {
+    icon: PieChart,
+    title: 'Laporan Visual',
+    desc: 'Grafik dan chart interaktif untuk memahami pola pengeluaranmu.',
+    color: '#9fe870',
+  },
+  {
+    icon: Wallet,
+    title: 'Multi Dompet',
+    desc: 'Kelola beberapa dompet dan rekening dalam satu tempat.',
+    color: '#2ead4b',
+  },
+  {
+    icon: Bell,
+    title: 'Pengingat Cerdas',
+    desc: 'Notifikasi otomatis untuk tagihan, anggaran, dan target menabung.',
+    color: '#9fe870',
+  },
+  {
+    icon: Shield,
+    title: 'Privasi Terjaga',
+    desc: 'Data terenkripsi end-to-end. Tidak dijual ke pihak manapun.',
+    color: '#2ead4b',
+  },
+  {
+    icon: Sparkles,
+    title: 'Insight AI',
+    desc: 'Rekomendasi personal untuk hemat dan capai target keuangan.',
+    color: '#9fe870',
   },
 ]
 
-const TRUST_ITEMS = [
-  { emoji: '🇮🇩', label: 'Bahasa Indonesia' },
-  { emoji: '💸', label: 'Format Rupiah (IDR)' },
-  { emoji: '📱', label: 'Install sebagai App (PWA)' },
-  { emoji: '🌙', label: 'Mode Gelap & 5 Tema' },
+const howItWorks = [
+  {
+    step: '01',
+    icon: User,
+    title: 'Daftar & Login',
+    desc: 'Masuk dengan Google, Telegram, atau email. Akun otomatis dibuat.',
+  },
+  {
+    step: '02',
+    icon: Plus,
+    title: 'Catat Transaksi',
+    desc: 'Input manual atau scan struk dengan AI. Selesai dalam hitungan detik.',
+  },
+  {
+    step: '03',
+    icon: BarChart3,
+    title: 'Pantau & Analisis',
+    desc: 'Lihat laporan visual, atur anggaran, dan capai target keuanganmu.',
+  },
+]
+
+const trustItems = [
+  { icon: Languages, label: 'Dukungan Bahasa Indonesia' },
+  { icon: Banknote, label: 'Format Rupiah (Rp)' },
+  { icon: Smartphone, label: 'Mobile-First Design' },
+  { icon: Moon, label: 'Mode Gelap & Terang' },
 ]
 
 export default function LandingPage() {
-  const [darkMode, setDarkMode] = useState(true)
+  const [visible, setVisible] = useState(false)
 
   useEffect(() => {
-    setDarkMode(document.documentElement.classList.contains('dark'))
+    setVisible(true)
   }, [])
 
-  function toggleDark() {
-    const root = document.documentElement
-    const isDark = !root.classList.contains('dark')
-    root.classList.toggle('dark', isDark)
-    setDarkMode(isDark)
-  }
-
   return (
-    <div className="min-h-dvh bg-background text-foreground">
-      {/* ─── Top bar ─── */}
-      <header className="sticky top-0 z-50 border-b border-border/40 bg-background/80 backdrop-blur-xl">
-        <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3">
-          <div className="flex items-center gap-2">
-            <Image src="/mascot-64.png?v=2" alt="FinWise" width={28} height={28} className="drop-shadow-sm" />
-            <span className="text-base font-bold tracking-tight">
-              <span className="text-primary">Fin</span>Wise
-            </span>
+    <div className="min-h-screen bg-background">
+      {/* Hero */}
+      <section className="relative overflow-hidden px-4 pt-20 pb-16 sm:pt-28 sm:pb-24">
+        <div className="absolute inset-0 z-0" style={{ background: 'radial-gradient(ellipse at 50% 0%, rgba(159,232,112,0.15) 0%, transparent 70%)' }} />
+        <div className={`relative z-10 mx-auto max-w-3xl text-center transition-all duration-700 ${visible ? 'translate-y-0 opacity-100' : 'translate-y-6 opacity-0'}`}>
+          <div className="mx-auto mb-6">
+            <FinWiseCat size={80} />
           </div>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={toggleDark}
-              className="rounded-lg p-2 text-muted-foreground hover:text-foreground transition"
-              aria-label="Toggle dark mode"
-            >
-              {darkMode ? <Sun className="size-4" /> : <Moon className="size-4" />}
-            </button>
-            <Link
-              href="/login"
-              className="rounded-lg bg-primary px-4 py-2 text-xs font-semibold text-primary-foreground shadow-sm hover:opacity-90 transition"
-            >
-              Masuk
-            </Link>
-          </div>
-        </div>
-      </header>
-
-      {/* ─── Hero ─── */}
-      <section className="px-4 pt-12 pb-10 text-center">
-        <div className="mx-auto max-w-lg">
-          <div className="mx-auto mb-6 w-fit">
-            <Image src="/mascot-128.png?v=2" alt="FinWise Mascot" width={96} height={96} className="drop-shadow-lg" />
-          </div>
-          <h1 className="text-3xl font-extrabold tracking-tight sm:text-4xl">
-            Catat Keuangan
-            <br />
-            <span className="text-primary">Lebih Pintar</span> ✨
+          <h1 className="text-4xl font-black tracking-tight sm:text-5xl md:text-6xl" style={{ color: '#0e0f0c' }}>
+            Catat Keuangan{' '}
+            <span className="bg-clip-text text-transparent" style={{ backgroundImage: 'linear-gradient(135deg, #2ead4b, #9fe870)' }}>
+              Lebih Pintar
+            </span>{' '}
+            ✨
           </h1>
-          <p className="mx-auto mt-4 max-w-sm text-base text-muted-foreground leading-relaxed">
-            Scan struk otomatis dengan AI, pantau pengeluaran, atur anggaran — semua dalam Bahasa Indonesia.
+          <p className="mx-auto mt-4 max-w-xl text-base text-muted-foreground sm:text-lg">
+            AI financial assistant untuk generasi muda Indonesia. Catat, analisis, dan capai target keuanganmu — semua dalam satu app.
           </p>
           <div className="mt-8 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
             <Link
-              href="/login"
-              className="flex items-center gap-2 rounded-xl bg-primary px-8 py-3.5 text-sm font-bold text-primary-foreground shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30 transition-all active:scale-[0.98]"
+              href="/register"
+              className="inline-flex items-center gap-2 rounded-2xl bg-primary px-8 py-4 text-lg font-bold text-white shadow-lg transition-all hover:scale-105 hover:shadow-xl"
+              style={{ backgroundColor: '#2ead4b' }}
             >
-              Mulai Sekarang
-              <ArrowRight className="size-4" />
+              Mulai Gratis <ArrowRight className="h-5 w-5" />
             </Link>
             <Link
-              href="/about"
-              className="flex items-center gap-1 text-sm font-medium text-muted-foreground hover:text-foreground transition"
+              href="/login"
+              className="inline-flex items-center rounded-2xl border border-border px-8 py-4 text-lg font-semibold text-foreground transition-all hover:bg-muted"
             >
-              Pelajari lebih lanjut <ChevronRight className="size-4" />
+              Sudah Punya Akun?
             </Link>
+          </div>
+          <div className="mt-6 flex flex-wrap items-center justify-center gap-2">
+            {['100% Gratis', 'Tanpa Iklan', 'Data Terenkripsi'].map((item) => (
+              <span key={item} className="rounded-full border px-3 py-1 text-xs font-medium text-muted-foreground" style={{ borderColor: '#9fe870', backgroundColor: 'rgba(159,232,112,0.08)' }}>
+                {item}
+              </span>
+            ))}
           </div>
         </div>
       </section>
 
-      {/* ─── Trust indicators ─── */}
-      <section className="px-4 pb-10">
-        <div className="mx-auto flex max-w-lg flex-wrap items-center justify-center gap-x-6 gap-y-2">
-          {TRUST_ITEMS.map((item) => (
-            <span key={item.label} className="flex items-center gap-1.5 text-xs text-muted-foreground">
-              <span className="text-base">{item.emoji}</span>
-              {item.label}
-            </span>
-          ))}
-        </div>
-      </section>
-
-      {/* ─── Features ─── */}
-      <section className="px-4 pb-12">
-        <div className="mx-auto max-w-2xl">
-          <h2 className="mb-8 text-center text-xl font-bold tracking-tight sm:text-2xl">
-            Fitur yang bikin hidup lebih mudah
+      {/* How It Works */}
+      <section className="px-4 py-16 sm:py-20">
+        <div className="mx-auto max-w-5xl">
+          <h2 className="text-center text-2xl font-black sm:text-3xl" style={{ color: '#0e0f0c' }}>
+            Cara Kerja
           </h2>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {FEATURES.map((f) => (
+          <p className="mt-2 text-center text-muted-foreground">Mulai dalam 3 langkah mudah</p>
+          <div className="mt-10 grid gap-6 sm:grid-cols-3">
+            {howItWorks.map((item) => (
               <div
-                key={f.title}
-                className="rounded-2xl border border-border/60 bg-card p-5 transition-all hover:shadow-md hover:border-border"
+                key={item.step}
+                className="flex items-start gap-4 rounded-2xl border bg-card p-6 transition-all hover:shadow-lg"
+                style={{ borderColor: 'rgba(159,232,112,0.3)' }}
               >
-                <div className={`mb-3 flex size-10 items-center justify-center rounded-xl ${f.bg}`}>
-                  <f.icon className={`size-5 ${f.color}`} />
+                <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full text-lg font-black" style={{ backgroundColor: 'rgba(159,232,112,0.2)', color: '#2ead4b' }}>
+                  {item.step}
                 </div>
-                <h3 className="mb-1 text-sm font-bold">{f.title}</h3>
-                <p className="text-xs leading-relaxed text-muted-foreground">{f.desc}</p>
+                <div>
+                  <item.icon className="mb-2 h-5 w-5 text-primary" style={{ color: '#2ead4b' }} />
+                  <h3 className="text-base font-bold" style={{ color: '#0e0f0c' }}>{item.title}</h3>
+                  <p className="mt-1 text-sm text-muted-foreground">{item.desc}</p>
+                </div>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* ─── CTA ─── */}
-      <section className="px-4 pb-12">
-        <div className="mx-auto max-w-lg rounded-2xl border border-border/40 bg-card p-8 text-center">
-          <h2 className="mb-3 text-lg font-bold tracking-tight">
-            Mulai catat keuangannya sekarang 🚀
+      {/* Features */}
+      <section className="px-4 py-16 sm:py-20" style={{ backgroundColor: '#f8faf5' }}>
+        <div className="mx-auto max-w-5xl">
+          <h2 className="text-center text-2xl font-black sm:text-3xl" style={{ color: '#0e0f0c' }}>
+            Fitur Unggulan
           </h2>
-          <p className="mb-6 text-sm text-muted-foreground">
-            Gratis. Gak perlu kartu kredit. Akun dibuat otomatis saat pertama login.
-          </p>
-          <Link
-            href="/login"
-            className="inline-flex items-center gap-2 rounded-xl bg-primary px-8 py-3.5 text-sm font-bold text-primary-foreground shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30 transition-all active:scale-[0.98]"
-          >
-            Daftar Sekarang
-            <ArrowRight className="size-4" />
-          </Link>
+          <p className="mt-2 text-center text-muted-foreground">Semua yang kamu butuhkan untuk kelola keuangan</p>
+          <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {features.map((f) => (
+              <div
+                key={f.title}
+                className="rounded-2xl bg-card p-6 transition-all hover:-translate-y-1 hover:shadow-lg"
+                style={{ borderTop: `2px solid ${f.color}` }}
+              >
+                <div className="flex h-12 w-12 items-center justify-center rounded-xl" style={{ backgroundColor: `${f.color}18` }}>
+                  <f.icon className="h-6 w-6" style={{ color: f.color }} />
+                </div>
+                <h3 className="mt-4 text-lg font-bold" style={{ color: '#0e0f0c' }}>{f.title}</h3>
+                <p className="mt-2 text-sm text-muted-foreground">{f.desc}</p>
+              </div>
+            ))}
+          </div>
         </div>
       </section>
 
-      {/* ─── Footer ─── */}
-      <footer className="border-t border-border/40 bg-background px-4 py-6">
+      {/* Trust Indicators */}
+      <section className="px-4 py-16 sm:py-20">
         <div className="mx-auto max-w-5xl">
-          <div className="flex flex-wrap items-center justify-center gap-4 text-xs text-muted-foreground">
-            <Link href="/about" className="hover:text-foreground transition">Tentang</Link>
-            <Link href="/privacy" className="hover:text-foreground transition">Privasi</Link>
-            <Link href="/terms" className="hover:text-foreground transition">Syarat & Ketentuan</Link>
-            <a href="https://t.me/ainsyir" target="_blank" rel="noopener noreferrer" className="hover:text-foreground transition">
-              Bantuan 💬
-            </a>
+          <h2 className="text-center text-2xl font-black sm:text-3xl" style={{ color: '#0e0f0c' }}>
+            Dibuat Khusus untuk Indonesia
+          </h2>
+          <div className="mt-10 grid grid-cols-2 gap-6 sm:grid-cols-4">
+            {trustItems.map((item) => (
+              <div key={item.label} className="flex flex-col items-center gap-3 rounded-2xl border p-6 text-center transition-all hover:shadow-md" style={{ borderColor: 'rgba(159,232,112,0.3)' }}>
+                <div className="flex h-12 w-12 items-center justify-center rounded-full" style={{ backgroundColor: 'rgba(159,232,112,0.15)' }}>
+                  <item.icon className="h-6 w-6" style={{ color: '#2ead4b' }} />
+                </div>
+                <span className="text-sm font-medium" style={{ color: '#0e0f0c' }}>{item.label}</span>
+              </div>
+            ))}
           </div>
-          <p className="mt-3 text-center text-[10px] text-muted-foreground/50">
-            © {new Date().getFullYear()} FinWise. Dibuat dengan ❤️ di Indonesia.
+        </div>
+      </section>
+
+      {/* CTA */}
+      <section className="px-4 py-16 sm:py-24" style={{ background: 'linear-gradient(135deg, #2ead4b, #9fe870)' }}>
+        <div className="mx-auto max-w-2xl text-center">
+          <h2 className="text-3xl font-black text-white sm:text-4xl">
+            Siap Lebih Pintar Kelola Uang?
+          </h2>
+          <p className="mt-3 text-lg text-white/85">
+            Ribuan orang sudah pakai FinWise. Sekarang giliranmu.
+          </p>
+          <Link
+            href="/register"
+            className="mt-8 inline-flex items-center gap-2 rounded-2xl bg-white px-8 py-4 text-lg font-bold shadow-lg transition-all hover:scale-105 hover:shadow-xl"
+            style={{ color: '#2ead4b' }}
+          >
+            Daftar Sekarang <ArrowRight className="h-5 w-5" />
+          </Link>
+          <p className="mt-4 text-sm text-white/70">⭐ 4.9/5 rating dari pengguna</p>
+        </div>
+      </section>
+
+      {/* Footer */}
+      <footer className="border-t px-4 py-10" style={{ borderColor: 'rgba(159,232,112,0.3)' }}>
+        <div className="mx-auto max-w-5xl">
+          <div className="flex flex-col items-center gap-6 sm:flex-row sm:justify-between">
+            <div className="flex items-center gap-2">
+              <FinWiseCat size={20} />
+              <span className="text-lg font-bold" style={{ color: '#0e0f0c' }}>FinWise</span>
+            </div>
+            <div className="flex flex-wrap items-center gap-6 text-sm text-muted-foreground">
+              <Link href="/login" className="transition-colors hover:text-primary" style={{ '--tw-hover-color': '#2ead4b' } as React.CSSProperties}>Masuk</Link>
+              <Link href="/register" className="transition-colors hover:text-primary" style={{ '--tw-hover-color': '#2ead4b' } as React.CSSProperties}>Daftar</Link>
+              <Link href="/privacy" className="transition-colors hover:text-primary" style={{ '--tw-hover-color': '#2ead4b' } as React.CSSProperties}>Privasi</Link>
+              <Link href="/terms" className="transition-colors hover:text-primary" style={{ '--tw-hover-color': '#2ead4b' } as React.CSSProperties}>Syarat</Link>
+            </div>
+          </div>
+          <p className="mt-6 text-center text-xs text-muted-foreground">
+            Made with ❤️ in Indonesia · © {new Date().getFullYear()} FinWise
           </p>
         </div>
       </footer>
