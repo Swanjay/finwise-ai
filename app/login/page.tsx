@@ -240,7 +240,7 @@ function FinWiseCat({ size = 100 }: { size?: number }) {
     <img
       src="/mascot-cat-512.png?v=4"
       alt="FinWise Cat"
-      width={size} height={Math.round(size * 576 / 1024)}
+      width={size} height={Math.round(size * 472 / 414)}
       style={{ objectFit: 'contain' }}
     />
   )
