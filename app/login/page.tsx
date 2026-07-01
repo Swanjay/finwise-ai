@@ -234,178 +234,175 @@ const clayStyles = `
 }
 `
 
-// ─── FinWise Cat SVG Component (Premium Detail) ───
-function FinWiseCat({ theme = "green" }: { theme?: string }) {
+// ─── FinWise Cat SVG Component (Orange Tabby Business Cat) ───
+function FinWiseCat({ size = 100 }: { size?: number }) {
   return (
-    <svg viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg" width="100" height="100">
-      <defs>
-        {/* Fur/body gradients */}
-        <radialGradient id="headGrad" cx="50%" cy="40%" r="50%">
-          <stop offset="0%" stopColor="#fefefe"/>
-          <stop offset="85%" stopColor="#f5f5f2"/>
-          <stop offset="100%" stopColor="#e8e8e4"/>
-        </radialGradient>
-        <radialGradient id="bodyGrad" cx="50%" cy="30%" r="60%">
-          <stop offset="0%" stopColor="#b8f07a"/>
-          <stop offset="50%" stopColor="#9fe870"/>
-          <stop offset="100%" stopColor="#7acc52"/>
-        </radialGradient>
-        <radialGradient id="bodyInnerGrad" cx="50%" cy="30%" r="55%">
-          <stop offset="0%" stopColor="#ddffc0"/>
-          <stop offset="100%" stopColor="#b8f07a"/>
-        </radialGradient>
-        <radialGradient id="earGradL" cx="40%" cy="30%" r="65%">
-          <stop offset="0%" stopColor="#b8f07a"/>
-          <stop offset="100%" stopColor="#7acc52"/>
-        </radialGradient>
-        <radialGradient id="earGradR" cx="60%" cy="30%" r="65%">
-          <stop offset="0%" stopColor="#b8f07a"/>
-          <stop offset="100%" stopColor="#7acc52"/>
-        </radialGradient>
-        <radialGradient id="earInnerGrad" cx="50%" cy="40%" r="55%">
-          <stop offset="0%" stopColor="#f0fce0"/>
-          <stop offset="100%" stopColor="#d4f5b0"/>
-        </radialGradient>
-        <radialGradient id="cheekGrad" cx="50%" cy="50%" r="50%">
-          <stop offset="0%" stopColor="#FFD0DC" stopOpacity="0.7"/>
-          <stop offset="100%" stopColor="#FFB8C8" stopOpacity="0"/>
-        </radialGradient>
-        <radialGradient id="pawPadGrad" cx="50%" cy="30%" r="55%">
-          <stop offset="0%" stopColor="#FFCDD8"/>
-          <stop offset="100%" stopColor="#F0A0B5"/>
-        </radialGradient>
-        <radialGradient id="eyeShine" cx="35%" cy="30%" r="50%">
-          <stop offset="0%" stopColor="#3a3a3a"/>
-          <stop offset="100%" stopColor="#0e0f0c"/>
-        </radialGradient>
-        <radialGradient id="noseGrad" cx="50%" cy="30%" r="55%">
-          <stop offset="0%" stopColor="#F5B0C0"/>
-          <stop offset="100%" stopColor="#E8A0B0"/>
-        </radialGradient>
-        <radialGradient id="tailGrad" cx="30%" cy="30%" r="60%">
-          <stop offset="0%" stopColor="#b8f07a"/>
-          <stop offset="100%" stopColor="#8ad45a"/>
-        </radialGradient>
-        {/* Shadow filter */}
-        <filter id="softShadow" x="-20%" y="-20%" width="140%" height="140%">
-          <feGaussianBlur in="SourceAlpha" stdDeviation="3"/>
-          <feOffset dy="2"/>
-          <feComposite in2="SourceAlpha" operator="arithmetic" k2="-1" k3="1"/>
-          <feColorMatrix values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.12 0"/>
-          <feBlend in="SourceGraphic"/>
-        </filter>
-      </defs>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width={size} height={size}>
+<defs>
+<radialGradient id="m-furGrad" cx="50%" cy="40%" r="50%" fx="45%" fy="35%">
+      <stop offset="0%" stopColor="#F5A623"/>
+      <stop offset="60%" stopColor="#FF8C00"/>
+      <stop offset="100%" stopColor="#E67E22"/>
+    </radialGradient>
+<radialGradient id="m-faceGrad" cx="50%" cy="45%" r="45%">
+      <stop offset="0%" stopColor="#FFB347"/>
+      <stop offset="100%" stopColor="#FF8C00"/>
+    </radialGradient>
+<radialGradient id="m-muzzleGrad" cx="50%" cy="40%" r="50%">
+      <stop offset="0%" stopColor="#FFFDF7"/>
+      <stop offset="100%" stopColor="#FFF8F0"/>
+    </radialGradient>
+<radialGradient id="m-eyeGrad" cx="45%" cy="40%" r="50%">
+      <stop offset="0%" stopColor="#FFD700"/>
+      <stop offset="40%" stopColor="#DAA520"/>
+      <stop offset="100%" stopColor="#B8860B"/>
+    </radialGradient>
+<radialGradient id="m-earInnerGrad" cx="50%" cy="60%" r="50%">
+      <stop offset="0%" stopColor="#FFB6C1"/>
+      <stop offset="100%" stopColor="#FFF8F0"/>
+    </radialGradient>
+<linearGradient id="m-tieGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stopColor="#3B82F6"/>
+      <stop offset="50%" stopColor="#2563EB"/>
+      <stop offset="100%" stopColor="#1D4ED8"/>
+    </linearGradient>
+<linearGradient id="m-phoneGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stopColor="#374151"/>
+      <stop offset="100%" stopColor="#1F2937"/>
+    </linearGradient>
+<linearGradient id="m-screenGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stopColor="#DBEAFE"/>
+      <stop offset="100%" stopColor="#BFDBFE"/>
+    </linearGradient>
+<radialGradient id="m-bodyGrad" cx="50%" cy="30%" r="60%">
+      <stop offset="0%" stopColor="#FF8C00"/>
+      <stop offset="100%" stopColor="#E67E22"/>
+    </radialGradient>
+<linearGradient id="m-shirtGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stopColor="#FFFFFF"/>
+      <stop offset="100%" stopColor="#F3F4F6"/>
+    </linearGradient>
+<filter id="m-shadow" x="-10%" y="-10%" width="130%" height="130%">
+      <feDropShadow dx="2" dy="3" stdDeviation="3" floodColor="#00000030"/>
+    </filter>
+<filter id="m-innerShadow" x="-5%" y="-5%" width="110%" height="110%">
+      <feDropShadow dx="0" dy="1" stdDeviation="2" floodColor="#00000020"/>
+    </filter>
+<filter id="m-glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="2" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+<clipPath id="m-earClipLeft">
+      <ellipse cx="138" cy="108" rx="28" ry="42"/>
+    </clipPath>
+    <clipPath id="m-earClipRight">
+      <ellipse cx="262" cy="108" rx="28" ry="42"/>
+    </clipPath>
+  </defs>
 
-      {/* ── Shadow beneath character ── */}
-      <ellipse cx="100" cy="175" rx="55" ry="8" fill="#0e0f0c" opacity="0.06"/>
+<ellipse cx="200" cy="390" rx="140" ry="100" fill="url(#m-bodyGrad)" filter="url(#m-shadow)"/>
+<path d="M155 310 Q165 290 200 285 Q235 290 245 310 L260 400 L140 400 Z" fill="url(#m-shirtGrad)"/>
+<path d="M155 310 Q170 305 185 310 L180 335 Q170 330 160 332 Z" fill="#FFFFFF" stroke="#E5E7EB" strokeWidth="0.5"/>
+<path d="M245 310 Q230 305 215 310 L220 335 Q230 330 240 332 Z" fill="#FFFFFF" stroke="#E5E7EB" strokeWidth="0.5"/>
+<polygon points="195,312 205,312 203,325 200,328 197,325" fill="#1D4ED8"/>
+<path d="M196 325 L200 395 L204 325 Q200 320 196 325 Z" fill="url(#m-tieGrad)"/>
+<line x1="199" y1="335" x2="199" y2="385" stroke="#60A5FA" strokeWidth="1.5" opacity="0.4"/>
 
-      {/* ── Tail (visible from right side) ── */}
-      <path d="M140 135 C155 128, 165 115, 158 102 C152 92, 142 98, 145 108 C147 115, 148 125, 138 132"
-            fill="url(#tailGrad)" stroke="#8ad45a" strokeWidth="0.5" opacity="0.9"/>
-      <path d="M158 102 C156 98, 150 95, 148 100" fill="#f8faf5" stroke="none" opacity="0.6"/>
+<ellipse cx="200" cy="210" rx="95" ry="85" fill="url(#m-furGrad)" filter="url(#m-shadow)"/>
+<ellipse cx="145" cy="230" rx="25" ry="20" fill="#FF8C00" opacity="0.6"/>
+  <ellipse cx="255" cy="230" rx="25" ry="20" fill="#FF8C00" opacity="0.6"/>
 
-      {/* ── Body (lower, sitting pose) ── */}
-      <ellipse cx="100" cy="145" rx="50" ry="38" fill="url(#bodyGrad)"/>
-      {/* Body inner/chest highlight */}
-      <ellipse cx="100" cy="138" rx="36" ry="28" fill="url(#bodyInnerGrad)"/>
-      {/* Belly area */}
-      <ellipse cx="100" cy="148" rx="28" ry="20" fill="#ddffc0" opacity="0.6"/>
+<path d="M130 175 L115 100 L162 155 Z" fill="#FF8C00" stroke="#E67E22" strokeWidth="1"/>
+<path d="M135 168 L124 112 L155 155 Z" fill="url(#m-earInnerGrad)"/>
+<path d="M270 175 L285 100 L238 155 Z" fill="#FF8C00" stroke="#E67E22" strokeWidth="1"/>
+<path d="M265 168 L276 112 L245 155 Z" fill="url(#m-earInnerGrad)"/>
 
-      {/* ── Hoodie neckline ── */}
-      <path d="M72 120 Q100 132, 128 120" stroke="#7acc52" strokeWidth="2" fill="none" strokeLinecap="round"/>
-      <path d="M76 122 Q100 133, 124 122" stroke="#b8f07a" strokeWidth="1" fill="none" opacity="0.5"/>
+<path d="M170 175 L180 160 L190 178" fill="none" stroke="#D2691E" strokeWidth="3" strokeLinecap="round" opacity="0.6"/>
+  <path d="M190 178 L200 162 L210 178" fill="none" stroke="#D2691E" strokeWidth="3" strokeLinecap="round" opacity="0.6"/>
+  <path d="M210 178 L220 160 L230 175" fill="none" stroke="#D2691E" strokeWidth="3" strokeLinecap="round" opacity="0.6"/>
+<path d="M120 200 Q130 195 135 205" fill="none" stroke="#D2691E" strokeWidth="2.5" strokeLinecap="round" opacity="0.5"/>
+  <path d="M118 215 Q128 210 133 220" fill="none" stroke="#D2691E" strokeWidth="2.5" strokeLinecap="round" opacity="0.5"/>
+  <path d="M120 230 Q130 225 135 235" fill="none" stroke="#D2691E" strokeWidth="2.5" strokeLinecap="round" opacity="0.5"/>
 
-      {/* ── Left paw (resting on ground) ── */}
-      <ellipse cx="68" cy="168" rx="16" ry="11" fill="url(#headGrad)" stroke="#e0e0dc" strokeWidth="0.5"/>
-      {/* Paw pads */}
-      <ellipse cx="63" cy="172" rx="4" ry="3" fill="url(#pawPadGrad)"/>
-      <ellipse cx="72" cy="173" rx="3" ry="2.5" fill="url(#pawPadGrad)"/>
-      <circle cx="60" cy="168" r="2" fill="#FFD0DC" opacity="0.4"/>
-      <circle cx="66" cy="166" r="2" fill="#FFD0DC" opacity="0.4"/>
-      <circle cx="74" cy="167" r="2" fill="#FFD0DC" opacity="0.4"/>
-      {/* Subtle fur lines */}
-      <path d="M58 164 Q62 162 66 164" stroke="#e0e0dc" strokeWidth="0.4" fill="none" opacity="0.5"/>
-      <path d="M66 163 Q70 161 74 163" stroke="#e0e0dc" strokeWidth="0.4" fill="none" opacity="0.5"/>
+  <path d="M280 200 Q270 195 265 205" fill="none" stroke="#D2691E" strokeWidth="2.5" strokeLinecap="round" opacity="0.5"/>
+  <path d="M282 215 Q272 210 267 220" fill="none" stroke="#D2691E" strokeWidth="2.5" strokeLinecap="round" opacity="0.5"/>
+  <path d="M280 230 Q270 225 265 235" fill="none" stroke="#D2691E" strokeWidth="2.5" strokeLinecap="round" opacity="0.5"/>
 
-      {/* ── Right paw (resting on ground) ── */}
-      <ellipse cx="132" cy="168" rx="16" ry="11" fill="url(#headGrad)" stroke="#e0e0dc" strokeWidth="0.5"/>
-      {/* Paw pads */}
-      <ellipse cx="137" cy="172" rx="4" ry="3" fill="url(#pawPadGrad)"/>
-      <ellipse cx="128" cy="173" rx="3" ry="2.5" fill="url(#pawPadGrad)"/>
-      <circle cx="140" cy="168" r="2" fill="#FFD0DC" opacity="0.4"/>
-      <circle cx="134" cy="166" r="2" fill="#FFD0DC" opacity="0.4"/>
-      <circle cx="126" cy="167" r="2" fill="#FFD0DC" opacity="0.4"/>
-      <path d="M126 163 Q130 161 134 163" stroke="#e0e0dc" strokeWidth="0.4" fill="none" opacity="0.5"/>
-      <path d="M134 164 Q138 162 142 164" stroke="#e0e0dc" strokeWidth="0.4" fill="none" opacity="0.5"/>
+<ellipse cx="200" cy="240" rx="52" ry="40" fill="url(#m-muzzleGrad)"/>
 
-      {/* ── Head ── */}
-      <ellipse cx="100" cy="82" rx="38" ry="35" fill="url(#headGrad)" filter="url(#softShadow)"/>
-      {/* Subtle head shadow at bottom */}
-      <ellipse cx="100" cy="108" rx="30" ry="8" fill="#e8e8e4" opacity="0.3"/>
+<ellipse cx="170" cy="210" rx="24" ry="26" fill="#FFFFFF" stroke="#5C4033" strokeWidth="1"/>
+<ellipse cx="170" cy="212" rx="18" ry="20" fill="url(#m-eyeGrad)"/>
+<ellipse cx="170" cy="213" rx="10" ry="13" fill="#1A1A2E"/>
+<ellipse cx="176" cy="204" rx="5" ry="5" fill="#FFFFFF" opacity="0.95"/>
+  <ellipse cx="165" cy="220" rx="3" ry="3" fill="#FFFFFF" opacity="0.6"/>
+<path d="M148 207 Q170 195 192 207" fill="none" stroke="#5C4033" strokeWidth="1.5" opacity="0.3"/>
+<ellipse cx="230" cy="210" rx="24" ry="26" fill="#FFFFFF" stroke="#5C4033" strokeWidth="1"/>
+<ellipse cx="230" cy="212" rx="18" ry="20" fill="url(#m-eyeGrad)"/>
+<ellipse cx="230" cy="213" rx="10" ry="13" fill="#1A1A2E"/>
+<ellipse cx="236" cy="204" rx="5" ry="5" fill="#FFFFFF" opacity="0.95"/>
+  <ellipse cx="225" cy="220" rx="3" ry="3" fill="#FFFFFF" opacity="0.6"/>
+<path d="M208 207 Q230 195 252 207" fill="none" stroke="#5C4033" strokeWidth="1.5" opacity="0.3"/>
 
-      {/* ── Left ear ── */}
-      <path d="M70 58 C62 30, 52 8, 58 6 C64 4, 76 22, 82 48" fill="url(#earGradL)"/>
-      <path d="M68 54 C63 32, 56 14, 60 12 C64 10, 72 28, 78 48" fill="url(#earInnerGrad)" opacity="0.8"/>
-      {/* Ear fur detail */}
-      <path d="M62 20 Q65 25 67 18" stroke="#8ad45a" strokeWidth="0.5" fill="none" opacity="0.4"/>
-      <path d="M58 28 Q62 32 64 26" stroke="#8ad45a" strokeWidth="0.5" fill="none" opacity="0.3"/>
+<path d="M195 237 Q200 230 205 237 Q200 243 195 237 Z" fill="#FF8FAB" stroke="#E8697A" strokeWidth="0.5"/>
+<ellipse cx="199" cy="235" rx="2" ry="1.5" fill="#FFB6C1" opacity="0.7"/>
 
-      {/* ── Right ear ── */}
-      <path d="M130 58 C138 30, 148 8, 142 6 C136 4, 124 22, 118 48" fill="url(#earGradR)"/>
-      <path d="M132 54 C137 32, 144 14, 140 12 C136 10, 128 28, 122 48" fill="url(#earInnerGrad)" opacity="0.8"/>
-      <path d="M138 20 Q135 25 133 18" stroke="#8ad45a" strokeWidth="0.5" fill="none" opacity="0.4"/>
-      <path d="M142 28 Q138 32 136 26" stroke="#8ad45a" strokeWidth="0.5" fill="none" opacity="0.3"/>
+<line x1="200" y1="241" x2="200" y2="248" stroke="#5C4033" strokeWidth="1.5" strokeLinecap="round"/>
+<path d="M175 250 Q188 272 200 272 Q212 272 225 250" fill="#FF6B81" stroke="#5C4033" strokeWidth="1.5"/>
+<ellipse cx="200" cy="267" rx="12" ry="8" fill="#FF8FAB"/>
+  <path d="M188 267 Q200 275 212 267" fill="#FF6B81"/>
+<path d="M185 252 Q192 250 199 252" fill="none" stroke="#FFFFFF" strokeWidth="1.5" opacity="0.8"/>
+  <path d="M201 252 Q208 250 215 252" fill="none" stroke="#FFFFFF" strokeWidth="1.5" opacity="0.8"/>
 
-      {/* ── Eyes (detailed, expressive) ── */}
-      {/* Left eye */}
-      <ellipse cx="85" cy="78" rx="9" ry="10" fill="url(#eyeShine)"/>
-      <circle cx="82" cy="74" r="3.5" fill="white" opacity="0.95"/>
-      <circle cx="87" cy="80" r="1.8" fill="white" opacity="0.5"/>
-      <circle cx="83" cy="81" r="0.8" fill="white" opacity="0.3"/>
-      {/* Left iris ring */}
-      <ellipse cx="85" cy="78" rx="9" ry="10" fill="none" stroke="#2a2a2a" strokeWidth="0.5" opacity="0.3"/>
+<line x1="170" y1="245" x2="100" y2="235" stroke="#5C4033" strokeWidth="1" strokeLinecap="round" opacity="0.6"/>
+  <line x1="168" y1="252" x2="95" y2="252" stroke="#5C4033" strokeWidth="1" strokeLinecap="round" opacity="0.6"/>
+  <line x1="170" y1="259" x2="100" y2="269" stroke="#5C4033" strokeWidth="1" strokeLinecap="round" opacity="0.6"/>
+<line x1="230" y1="245" x2="300" y2="235" stroke="#5C4033" strokeWidth="1" strokeLinecap="round" opacity="0.6"/>
+  <line x1="232" y1="252" x2="305" y2="252" stroke="#5C4033" strokeWidth="1" strokeLinecap="round" opacity="0.6"/>
+  <line x1="230" y1="259" x2="300" y2="269" stroke="#5C4033" strokeWidth="1" strokeLinecap="round" opacity="0.6"/>
+<circle cx="168" cy="245" r="1.5" fill="#5C4033" opacity="0.5"/>
+  <circle cx="166" cy="252" r="1.5" fill="#5C4033" opacity="0.5"/>
+  <circle cx="168" cy="259" r="1.5" fill="#5C4033" opacity="0.5"/>
+  <circle cx="232" cy="245" r="1.5" fill="#5C4033" opacity="0.5"/>
+  <circle cx="234" cy="252" r="1.5" fill="#5C4033" opacity="0.5"/>
+  <circle cx="232" cy="259" r="1.5" fill="#5C4033" opacity="0.5"/>
 
-      {/* Right eye */}
-      <ellipse cx="115" cy="78" rx="9" ry="10" fill="url(#eyeShine)"/>
-      <circle cx="112" cy="74" r="3.5" fill="white" opacity="0.95"/>
-      <circle cx="117" cy="80" r="1.8" fill="white" opacity="0.5"/>
-      <circle cx="113" cy="81" r="0.8" fill="white" opacity="0.3"/>
-      <ellipse cx="115" cy="78" rx="9" ry="10" fill="none" stroke="#2a2a2a" strokeWidth="0.5" opacity="0.3"/>
+<path d="M275 310 Q300 290 310 260 Q315 245 310 235" fill="url(#m-furGrad)" stroke="#E67E22" strokeWidth="1"/>
+<ellipse cx="308" cy="225" rx="18" ry="14" fill="#FF8C00"/>
+<ellipse cx="308" cy="228" rx="10" ry="8" fill="#FFB347" opacity="0.5"/>
 
-      {/* Eyelash hints */}
-      <path d="M76 73 Q78 71 80 73" stroke="#3a3a3a" strokeWidth="0.6" fill="none" opacity="0.3"/>
-      <path d="M120 73 Q122 71 124 73" stroke="#3a3a3a" strokeWidth="0.6" fill="none" opacity="0.3"/>
+<rect x="285" y="175" width="52" height="82" rx="6" ry="6" fill="#000000" opacity="0.15" transform="translate(2,2)"/>
+<rect x="285" y="175" width="52" height="82" rx="6" ry="6" fill="url(#m-phoneGrad)" stroke="#111827" strokeWidth="1"/>
+<rect x="289" y="181" width="44" height="68" rx="3" ry="3" fill="url(#m-screenGrad)"/>
+<rect x="305" y="177" width="12" height="2" rx="1" fill="#374151"/>
 
-      {/* ── Eyebrows (subtle) ── */}
-      <path d="M77 66 Q85 63 93 66" stroke="#c8c8c4" strokeWidth="1.2" fill="none" strokeLinecap="round" opacity="0.5"/>
-      <path d="M107 66 Q115 63 123 66" stroke="#c8c8c4" strokeWidth="1.2" fill="none" strokeLinecap="round" opacity="0.5"/>
+<text x="305" y="207" fontFamily="Arial, sans-serif" fontSize="18" fontWeight="bold" fill="#22C55E" textAnchor="middle">$</text>
 
-      {/* ── Nose ── */}
-      <path d="M95 88 Q100 83 105 88 Q102 93 100 94 Q98 93 95 88Z" fill="url(#noseGrad)"/>
-      <ellipse cx="100" cy="87" rx="2" ry="1" fill="white" opacity="0.3"/>
+<rect x="295" y="212" width="22" height="10" rx="1.5" fill="#22C55E" opacity="0.9"/>
+  <rect x="297" y="214" width="18" height="6" rx="1" fill="#16A34A" opacity="0.5"/>
+<rect x="297" y="208" width="22" height="10" rx="1.5" fill="#4ADE80" opacity="0.9"/>
+  <rect x="299" y="210" width="18" height="6" rx="1" fill="#22C55E" opacity="0.5"/>
+<rect x="299" y="204" width="22" height="10" rx="1.5" fill="#86EFAC" opacity="0.9"/>
+  <rect x="301" y="206" width="18" height="6" rx="1" fill="#4ADE80" opacity="0.5"/>
 
-      {/* ── Mouth (happy cat smile) ── */}
-      <path d="M93 94 Q97 98 100 95" stroke="#3a3a3a" strokeWidth="1.5" fill="none" strokeLinecap="round"/>
-      <path d="M100 95 Q103 98 107 94" stroke="#3a3a3a" strokeWidth="1.5" fill="none" strokeLinecap="round"/>
+<rect x="296" y="240" width="8" height="8" rx="1" fill="#3B82F6"/>
+<rect x="306" y="236" width="8" height="12" rx="1" fill="#2563EB"/>
+<rect x="316" y="230" width="8" height="18" rx="1" fill="#1D4ED8"/>
+<rect x="289" y="181" width="44" height="5" rx="2" fill="#93C5FD" opacity="0.3"/>
 
-      {/* ── Whiskers ── */}
-      <line x1="62" y1="85" x2="78" y2="88" stroke="#c8c8c4" strokeWidth="0.8" strokeLinecap="round" opacity="0.5"/>
-      <line x1="60" y1="90" x2="78" y2="91" stroke="#c8c8c4" strokeWidth="0.8" strokeLinecap="round" opacity="0.4"/>
-      <line x1="62" y1="95" x2="78" y2="93" stroke="#c8c8c4" strokeWidth="0.8" strokeLinecap="round" opacity="0.3"/>
-      <line x1="138" y1="85" x2="122" y2="88" stroke="#c8c8c4" strokeWidth="0.8" strokeLinecap="round" opacity="0.5"/>
-      <line x1="140" y1="90" x2="122" y2="91" stroke="#c8c8c4" strokeWidth="0.8" strokeLinecap="round" opacity="0.4"/>
-      <line x1="138" y1="95" x2="122" y2="93" stroke="#c8c8c4" strokeWidth="0.8" strokeLinecap="round" opacity="0.3"/>
+<ellipse cx="165" cy="340" rx="22" ry="16" fill="#FF8C00"/>
+  <ellipse cx="165" cy="343" rx="14" ry="10" fill="#FFB347" opacity="0.4"/>
+<ellipse cx="155" cy="345" rx="5" ry="4" fill="#FF8C00"/>
+  <ellipse cx="163" cy="348" rx="5" ry="4" fill="#FF8C00"/>
+  <ellipse cx="171" cy="347" rx="5" ry="4" fill="#FF8C00"/>
 
-      {/* ── Cheeks ── */}
-      <ellipse cx="72" cy="90" rx="9" ry="6" fill="url(#cheekGrad)"/>
-      <ellipse cx="128" cy="90" rx="9" ry="6" fill="url(#cheekGrad)"/>
+<path d="M155 310 Q160 300 170 308 Q175 298 185 306" fill="#FF8C00" opacity="0.8"/>
+  <path d="M245 310 Q240 300 230 308 Q225 298 215 306" fill="#FF8C00" opacity="0.8"/>
 
-      {/* ── Forehead fur detail (W marking hint) ── */}
-      <path d="M88 62 Q92 58 96 62 Q100 58 104 62 Q108 58 112 62" stroke="#e0e0dc" strokeWidth="0.6" fill="none" opacity="0.3"/>
-
-      {/* ── Cheek fur tufts ── */}
-      <path d="M62 82 Q58 80 60 77" stroke="#e0e0dc" strokeWidth="0.5" fill="none" opacity="0.3"/>
-      <path d="M138 82 Q142 80 140 77" stroke="#e0e0dc" strokeWidth="0.5" fill="none" opacity="0.3"/>
+<ellipse cx="200" cy="280" rx="45" ry="10" fill="#E67E22" opacity="0.3"/>
+<ellipse cx="200" cy="190" rx="30" ry="15" fill="#FFD700" opacity="0.12"/>
     </svg>
   )
 }
