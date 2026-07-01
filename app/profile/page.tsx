@@ -91,7 +91,7 @@ function ProfilePage() {
           <button 
             onClick={handleSave}
             disabled={saving}
-            className="px-4 py-2 rounded-xl bg-gradient-to-r from-teal-500 to-cyan-500 text-white text-sm font-semibold hover:from-teal-600 hover:to-cyan-600 transition disabled:opacity-50"
+            className="px-4 py-2 rounded-xl bg-gradient-to-r from-primary to-green-700 text-white text-sm font-semibold hover:from-green-700 hover:to-green-800 transition disabled:opacity-50"
           >
             {saving ? <Loader2 className="size-4 animate-spin" /> : saved ? "✓ Tersimpan" : "Simpan"}
           </button>
@@ -102,15 +102,15 @@ function ProfilePage() {
         {/* Avatar Section */}
         <div className="flex flex-col items-center py-6">
           <div className="relative mb-4">
-            <div className="w-24 h-24 rounded-full bg-gradient-to-br from-teal-400 to-cyan-400 flex items-center justify-center text-4xl overflow-hidden">
+            <div className="w-24 h-24 rounded-full bg-gradient-to-br from-primary to-green-700 flex items-center justify-center text-4xl overflow-hidden">
               {session?.user?.image ? (
                 <img src={session.user.image} alt="" className="w-full h-full object-cover" />
               ) : (
                 <span className="text-3xl font-bold text-white">{(profile.name || 'U')[0].toUpperCase()}</span>
               )}
             </div>
-            <button className="absolute -bottom-1 -right-1 w-9 h-9 rounded-full bg-background border-2 border-teal-500 flex items-center justify-center">
-              <Camera className="size-4 text-teal-400" />
+            <button className="absolute -bottom-1 -right-1 w-9 h-9 rounded-full bg-background border-2 border-primary flex items-center justify-center">
+              <Camera className="size-4 text-primary" />
             </button>
           </div>
           <h2 className="text-xl font-semibold text-white">{profile.name || "User"}</h2>
@@ -119,7 +119,7 @@ function ProfilePage() {
 
         {/* Personal Info */}
         <section>
-          <h3 className="text-xs font-semibold text-teal-400 uppercase tracking-wider mb-4 px-1">Informasi Pribadi</h3>
+          <h3 className="text-xs font-semibold text-primary uppercase tracking-wider mb-4 px-1">Informasi Pribadi</h3>
           
           <div className="space-y-4">
             <div>
@@ -131,7 +131,7 @@ function ProfilePage() {
                   value={profile.name}
                   onChange={(e) => updateField("name", e.target.value)}
                   placeholder="Masukkan nama"
-                  className="w-full pl-11 pr-4 py-3 rounded-xl bg-muted border border-border text-white placeholder-gray-500 focus:border-teal-500 focus:ring-1 focus:ring-teal-500 outline-none transition"
+                  className="w-full pl-11 pr-4 py-3 rounded-xl bg-muted border border-border text-white placeholder-gray-500 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition"
                 />
               </div>
             </div>
@@ -145,7 +145,7 @@ function ProfilePage() {
                   value={profile.email}
                   onChange={(e) => updateField("email", e.target.value)}
                   placeholder="email@contoh.com"
-                  className="w-full pl-11 pr-4 py-3 rounded-xl bg-muted border border-border text-white placeholder-gray-500 focus:border-teal-500 focus:ring-1 focus:ring-teal-500 outline-none transition"
+                  className="w-full pl-11 pr-4 py-3 rounded-xl bg-muted border border-border text-white placeholder-gray-500 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition"
                 />
               </div>
             </div>
@@ -160,7 +160,7 @@ function ProfilePage() {
                     value={profile.phone}
                     onChange={(e) => updateField("phone", e.target.value)}
                     placeholder="08xxx"
-                    className="w-full pl-11 pr-4 py-3 rounded-xl bg-muted border border-border text-white placeholder-gray-500 focus:border-teal-500 focus:ring-1 focus:ring-teal-500 outline-none transition"
+                    className="w-full pl-11 pr-4 py-3 rounded-xl bg-muted border border-border text-white placeholder-gray-500 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition"
                   />
                 </div>
               </div>
@@ -172,7 +172,7 @@ function ProfilePage() {
                     type="date"
                     value={profile.birthDate}
                     onChange={(e) => updateField("birthDate", e.target.value)}
-                    className="w-full pl-11 pr-4 py-3 rounded-xl bg-muted border border-border text-white focus:border-teal-500 focus:ring-1 focus:ring-teal-500 outline-none transition"
+                    className="w-full pl-11 pr-4 py-3 rounded-xl bg-muted border border-border text-white focus:border-primary focus:ring-1 focus:ring-primary outline-none transition"
                   />
                 </div>
               </div>
@@ -183,7 +183,7 @@ function ProfilePage() {
               <select
                 value={profile.gender}
                 onChange={(e) => updateField("gender", e.target.value)}
-                className="w-full px-4 py-3 rounded-xl bg-muted border border-border text-white focus:border-teal-500 focus:ring-1 focus:ring-teal-500 outline-none transition appearance-none cursor-pointer"
+                className="w-full px-4 py-3 rounded-xl bg-muted border border-border text-white focus:border-primary focus:ring-1 focus:ring-primary outline-none transition appearance-none cursor-pointer"
               >
                 <option value="Laki-laki">Laki-laki</option>
                 <option value="Perempuan">Perempuan</option>
@@ -195,7 +195,7 @@ function ProfilePage() {
 
         {/* Financial Info */}
         <section>
-          <h3 className="text-xs font-semibold text-teal-400 uppercase tracking-wider mb-4 px-1">Informasi Keuangan</h3>
+          <h3 className="text-xs font-semibold text-primary uppercase tracking-wider mb-4 px-1">Informasi Keuangan</h3>
           
           <div className="space-y-4">
             <div>
@@ -207,7 +207,7 @@ function ProfilePage() {
                   value={profile.occupation}
                   onChange={(e) => updateField("occupation", e.target.value)}
                   placeholder="Freelancer, Karyawan, dll"
-                  className="w-full pl-11 pr-4 py-3 rounded-xl bg-muted border border-border text-white placeholder-gray-500 focus:border-teal-500 focus:ring-1 focus:ring-teal-500 outline-none transition"
+                  className="w-full pl-11 pr-4 py-3 rounded-xl bg-muted border border-border text-white placeholder-gray-500 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition"
                 />
               </div>
             </div>
@@ -221,7 +221,7 @@ function ProfilePage() {
                   value={store.monthlyIncome ? formatIDRInput(String(store.monthlyIncome)) : ""}
                   onChange={(e) => store.updateMonthlyIncome(parseIDRInput(e.target.value))}
                   placeholder="Rp 0"
-                  className="w-full pl-11 pr-4 py-3 rounded-xl bg-muted border border-border text-white placeholder-gray-500 focus:border-teal-500 focus:ring-1 focus:ring-teal-500 outline-none transition"
+                  className="w-full pl-11 pr-4 py-3 rounded-xl bg-muted border border-border text-white placeholder-gray-500 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition"
                 />
               </div>
             </div>
@@ -238,7 +238,7 @@ function ProfilePage() {
                     placeholder="20"
                     min="0"
                     max="100"
-                    className="w-full pl-11 pr-4 py-3 rounded-xl bg-muted border border-border text-white placeholder-gray-500 focus:border-teal-500 focus:ring-1 focus:ring-teal-500 outline-none transition"
+                    className="w-full pl-11 pr-4 py-3 rounded-xl bg-muted border border-border text-white placeholder-gray-500 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition"
                   />
                 </div>
               </div>
@@ -249,7 +249,7 @@ function ProfilePage() {
                   <select
                     value={profile.currency}
                     onChange={(e) => updateField("currency", e.target.value)}
-                    className="w-full pl-11 pr-4 py-3 rounded-xl bg-muted border border-border text-white focus:border-teal-500 focus:ring-1 focus:ring-teal-500 outline-none transition appearance-none cursor-pointer"
+                    className="w-full pl-11 pr-4 py-3 rounded-xl bg-muted border border-border text-white focus:border-primary focus:ring-1 focus:ring-primary outline-none transition appearance-none cursor-pointer"
                   >
                     <option value="IDR">IDR (Rupiah)</option>
                     <option value="USD">USD (Dollar)</option>
@@ -262,8 +262,8 @@ function ProfilePage() {
         </section>
 
         {/* Stats Card - Real Data */}
-        <div className="rounded-2xl bg-gradient-to-br from-teal-500/10 to-cyan-500/10 border border-teal-500/20 p-5">
-          <h3 className="text-xs font-semibold text-teal-400 uppercase tracking-wider mb-4">📊 Statistik Akun</h3>
+        <div className="rounded-2xl bg-gradient-to-br from-primary/10 to-green-700/10 border border-primary/20 p-5">
+          <h3 className="text-xs font-semibold text-primary uppercase tracking-wider mb-4">📊 Statistik Akun</h3>
           <div className="grid grid-cols-3 gap-4 text-center">
             <div>
               <div className="text-2xl font-bold text-white">{txCount}</div>
@@ -284,7 +284,7 @@ function ProfilePage() {
 
         {/* Preferences - Connected to Store */}
         <section>
-          <h3 className="text-xs font-semibold text-teal-400 uppercase tracking-wider mb-4 px-1">Preferensi</h3>
+          <h3 className="text-xs font-semibold text-primary uppercase tracking-wider mb-4 px-1">Preferensi</h3>
           
           <div className="space-y-3">
             <ToggleItem
@@ -303,7 +303,7 @@ function ProfilePage() {
             />
             <div className="flex items-center justify-between p-4 rounded-xl bg-muted/50 border border-border">
               <div className="flex items-center gap-3">
-                <div className={`p-2 rounded-lg ${store.pin ? 'bg-teal-500/20 text-teal-400' : 'bg-gray-500/20 text-gray-500'}`}>
+                <div className={`p-2 rounded-lg ${store.pin ? 'bg-primary/20 text-primary' : 'bg-gray-500/20 text-gray-500'}`}>
                   <Lock className="size-5" />
                 </div>
                 <div>
@@ -343,7 +343,7 @@ function ProfilePage() {
                     }
                   }
                 }}
-                className="px-4 py-2 rounded-lg bg-teal-500/20 text-teal-400 text-sm font-medium hover:bg-teal-500/30 transition"
+                className="px-4 py-2 rounded-lg bg-primary/20 text-primary text-sm font-medium hover:bg-primary/30 transition"
               >
                 {store.pin ? 'Ubah' : 'Aktifkan'}
               </button>
@@ -393,7 +393,7 @@ function ToggleItem({ icon, title, desc, active, onChange }: {
   return (
     <div className="flex items-center justify-between p-4 rounded-xl bg-muted/50 border border-border">
       <div className="flex items-center gap-3">
-        <div className={`p-2 rounded-lg ${active ? 'bg-teal-500/20 text-teal-400' : 'bg-gray-500/20 text-gray-500'}`}>
+        <div className={`p-2 rounded-lg ${active ? 'bg-primary/20 text-primary' : 'bg-gray-500/20 text-gray-500'}`}>
           {icon}
         </div>
         <div>
@@ -403,7 +403,7 @@ function ToggleItem({ icon, title, desc, active, onChange }: {
       </div>
       <button
         onClick={onChange}
-        className={`relative w-12 h-7 rounded-full transition-colors ${active ? 'bg-teal-500' : 'bg-gray-600'}`}
+        className={`relative w-12 h-7 rounded-full transition-colors ${active ? 'bg-primary' : 'bg-gray-600'}`}
       >
         <div className={`absolute top-1 w-5 h-5 rounded-full bg-white shadow transition-transform ${active ? 'left-6' : 'left-1'}`} />
       </button>

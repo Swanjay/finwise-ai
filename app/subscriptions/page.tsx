@@ -157,7 +157,7 @@ export default function SubscriptionsPage() {
   if (status === "loading" || loading) {
     return (
       <div className="flex min-h-dvh items-center justify-center bg-[#0F172A]">
-        <Loader2 className="size-8 animate-spin text-teal-400" />
+        <Loader2 className="size-8 animate-spin text-primary" />
       </div>
     )
   }
@@ -193,7 +193,7 @@ export default function SubscriptionsPage() {
         {/* Add Button */}
         <button
           onClick={() => setShowForm(true)}
-          className="w-full flex items-center justify-center gap-2 rounded-xl border border-dashed border-gray-600 px-4 py-4 text-sm text-gray-400 hover:text-white hover:border-teal-500 transition"
+          className="w-full flex items-center justify-center gap-2 rounded-xl border border-dashed border-gray-600 px-4 py-4 text-sm text-gray-400 hover:text-white hover:border-primary transition"
         >
           <Plus className="size-4" />
           Tambah Subscription
@@ -211,7 +211,7 @@ export default function SubscriptionsPage() {
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 placeholder="Netflix, Spotify, dll"
-                className="w-full mt-1 rounded-lg border border-border bg-background px-3 py-2.5 text-sm text-white placeholder:text-gray-500 outline-none focus:border-teal-500"
+                className="w-full mt-1 rounded-lg border border-border bg-background px-3 py-2.5 text-sm text-white placeholder:text-gray-500 outline-none focus:border-primary"
               />
             </div>
 
@@ -224,7 +224,7 @@ export default function SubscriptionsPage() {
                   value={formatIDRInput(formData.amount)}
                   onChange={(e) => setFormData({ ...formData, amount: e.target.value.replace(/\D/g, '') })}
                   placeholder="54000"
-                  className="w-full mt-1 rounded-lg border border-border bg-background px-3 py-2.5 text-sm text-white placeholder:text-gray-500 outline-none focus:border-teal-500"
+                  className="w-full mt-1 rounded-lg border border-border bg-background px-3 py-2.5 text-sm text-white placeholder:text-gray-500 outline-none focus:border-primary"
                 />
               </div>
               <div className="flex-1">
@@ -232,7 +232,7 @@ export default function SubscriptionsPage() {
                 <select
                   value={formData.billing_cycle}
                   onChange={(e) => setFormData({ ...formData, billing_cycle: e.target.value })}
-                  className="w-full mt-1 rounded-lg border border-border bg-background px-3 py-2.5 text-sm text-white outline-none focus:border-teal-500"
+                  className="w-full mt-1 rounded-lg border border-border bg-background px-3 py-2.5 text-sm text-white outline-none focus:border-primary"
                 >
                   <option value="weekly">Mingguan</option>
                   <option value="monthly">Bulanan</option>
@@ -248,7 +248,7 @@ export default function SubscriptionsPage() {
                 type="date"
                 value={formData.next_billing_date}
                 onChange={(e) => setFormData({ ...formData, next_billing_date: e.target.value })}
-                className="w-full mt-1 rounded-lg border border-border bg-background px-3 py-2.5 text-sm text-white outline-none focus:border-teal-500"
+                className="w-full mt-1 rounded-lg border border-border bg-background px-3 py-2.5 text-sm text-white outline-none focus:border-primary"
               />
             </div>
 
@@ -260,7 +260,7 @@ export default function SubscriptionsPage() {
                     key={icon}
                     onClick={() => setFormData({ ...formData, icon })}
                     className={`text-xl p-2 rounded-lg transition ${
-                      formData.icon === icon ? "bg-teal-500/30 border border-teal-500" : "bg-muted"
+                      formData.icon === icon ? "bg-primary/30 border border-primary" : "bg-muted"
                     }`}
                   >
                     {icon}
@@ -279,7 +279,7 @@ export default function SubscriptionsPage() {
               <button
                 onClick={handleCreate}
                 disabled={submitting || !formData.name || !formData.amount}
-                className="flex-1 rounded-lg bg-teal-500 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-teal-600 disabled:opacity-50"
+                className="flex-1 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-green-700 disabled:opacity-50"
               >
                 {submitting ? <Loader2 className="size-4 animate-spin mx-auto" /> : "Tambah"}
               </button>

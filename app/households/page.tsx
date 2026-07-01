@@ -163,7 +163,7 @@ export default function HouseholdsPage() {
   if (status === "loading" || loading) {
     return (
       <div className="flex min-h-dvh items-center justify-center bg-[#0F172A]">
-        <Loader2 className="size-8 animate-spin text-teal-400" />
+        <Loader2 className="size-8 animate-spin text-primary" />
       </div>
     )
   }
@@ -177,7 +177,7 @@ export default function HouseholdsPage() {
             <ArrowLeft className="size-5" />
           </button>
           <h1 className="text-xl font-bold text-white flex items-center gap-2">
-            <Users className="size-5 text-teal-400" />
+            <Users className="size-5 text-primary" />
             Household
           </h1>
         </div>
@@ -193,7 +193,7 @@ export default function HouseholdsPage() {
         <div className="flex gap-3">
           <button
             onClick={() => { setShowCreate(true); setShowJoin(false) }}
-            className="flex-1 flex items-center justify-center gap-2 rounded-xl bg-teal-500/20 border border-teal-500/30 px-4 py-3 text-sm font-semibold text-teal-400 transition hover:bg-teal-500/30"
+            className="flex-1 flex items-center justify-center gap-2 rounded-xl bg-primary/20 border border-primary/30 px-4 py-3 text-sm font-semibold text-primary transition hover:bg-primary/30"
           >
             <Plus className="size-4" />
             Buat Baru
@@ -216,12 +216,12 @@ export default function HouseholdsPage() {
               value={newName}
               onChange={(e) => setNewName(e.target.value)}
               placeholder="Contoh: Keluarga Budi, Kosan A1"
-              className="w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm text-white placeholder:text-gray-500 outline-none focus:border-teal-500"
+              className="w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm text-white placeholder:text-gray-500 outline-none focus:border-primary"
             />
             <button
               onClick={handleCreate}
               disabled={creating || !newName.trim()}
-              className="w-full rounded-lg bg-teal-500 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-teal-600 disabled:opacity-50"
+              className="w-full rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-green-700 disabled:opacity-50"
             >
               {creating ? <Loader2 className="size-4 animate-spin mx-auto" /> : "Buat Household"}
             </button>
@@ -274,7 +274,7 @@ export default function HouseholdsPage() {
                   </div>
                   {h.role === "owner" && (
                     <div className="flex items-center gap-2">
-                      <code className="text-xs font-mono bg-muted px-2 py-1 rounded text-teal-400">
+                      <code className="text-xs font-mono bg-muted px-2 py-1 rounded text-primary">
                         {h.invite_code}
                       </code>
                       <button
@@ -315,7 +315,7 @@ export default function HouseholdsPage() {
               
               {loadingMembers ? (
                 <div className="flex justify-center py-8">
-                  <Loader2 className="size-6 animate-spin text-teal-400" />
+                  <Loader2 className="size-6 animate-spin text-primary" />
                 </div>
               ) : (
                 <div className="space-y-2 max-h-60 overflow-y-auto">

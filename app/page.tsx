@@ -1240,7 +1240,7 @@ function UserAvatar({ onOpenSettings }: { onOpenSettings?: () => void }) {
             <div className="p-2">
               <p className="px-2 py-1 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Fitur</p>
               <Link href="/households" onClick={() => setShowMenu(false)} className="flex items-center gap-2.5 rounded-lg px-2 py-2 text-sm hover:bg-muted transition">
-                <Users className="size-4 text-teal-400" /> Household
+                <Users className="size-4 text-primary" /> Household
               </Link>
               <Link href="/subscriptions" onClick={() => setShowMenu(false)} className="flex items-center gap-2.5 rounded-lg px-2 py-2 text-sm hover:bg-muted transition">
                 <CreditCard className="size-4 text-primary" /> Subscription
@@ -1380,7 +1380,7 @@ function AppShell() {
               className={cn(
                 'flex flex-col items-center gap-0.5 rounded-2xl py-1.5 px-2 text-[10px] font-semibold transition',
                 tab === item.id
-                  ? 'bg-[var(--color-clay-purple,#9fe870)] text-primary'
+                  ? 'bg-[var(--color-clay-green,#9fe870)] text-primary'
                   : 'text-muted-foreground hover:text-primary'
               )}
             >
@@ -1403,7 +1403,7 @@ function AppShell() {
               className={cn(
                 'flex flex-col items-center gap-0.5 rounded-2xl py-1.5 px-2 text-[10px] font-semibold transition',
                 tab === item.id
-                  ? 'bg-[var(--color-clay-purple,#9fe870)] text-primary'
+                  ? 'bg-[var(--color-clay-green,#9fe870)] text-primary'
                   : 'text-muted-foreground hover:text-primary'
               )}
             >
@@ -1429,7 +1429,7 @@ function AppShell() {
             <button
               onClick={() => { haptic.light(); setFabOpen(false); setSheet('scan') }}
               aria-label="Scan struk"
-              className="flex size-10 items-center justify-center rounded-full bg-gradient-to-br from-green-400 to-teal-500 text-white shadow-lg animate-in fade-in slide-in-from-bottom-2 duration-200"
+              className="flex size-10 items-center justify-center rounded-full bg-gradient-to-br from-green-400 to-primary text-white shadow-lg animate-in fade-in slide-in-from-bottom-2 duration-200"
             >
               <Camera className="size-5" />
             </button>

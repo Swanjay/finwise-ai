@@ -6,7 +6,7 @@ const config: CapacitorConfig = {
   webDir: "out",
   server: {
     androidScheme: "https",
-    url: "https://finwise-ai-teal.vercel.app",
+    url: "https://finwise.my.id",
     cleartext: false,
   },
 };

@@ -300,7 +300,7 @@ const clayStyles = `
 `
 
 // ─── FinWise Cat SVG Component ───
-function FinWiseCat({ theme = "teal" }: { theme?: string }) {
+function FinWiseCat({ theme = "green" }: { theme?: string }) {
   const bodyColor = "#f0f5e8"
   const hoodieColor = "#9fe870"
   const hoodieShadow = "#cdffad"

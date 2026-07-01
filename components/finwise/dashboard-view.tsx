@@ -112,7 +112,7 @@ export function DashboardView({ transactions, month, onOpenGoals, onOpenWallets,
           initial={{ opacity: 0, y: 16, scale: 0.97 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
           transition={{ duration: 0.5, delay: 0.05, type: 'spring', stiffness: 200, damping: 20 }}
-          className="clay-card-purple p-5 relative overflow-hidden"
+          className="clay-card-sage p-5 relative overflow-hidden"
         >
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-2 text-xs font-semibold text-muted-foreground">

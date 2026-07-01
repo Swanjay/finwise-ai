@@ -226,7 +226,7 @@ export default function MonitoringPage() {
 
         {/* Stats Cards */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-          <StatCard icon={<Users className="size-5" />} label="Total Users" value={data?.stats.total || 0} color="teal" />
+          <StatCard icon={<Users className="size-5" />} label="Total Users" value={data?.stats.total || 0} color="green" />
           <StatCard icon={<Calendar className="size-5" />} label="Today" value={data?.stats.today || 0} color="blue" />
           <StatCard icon={<TrendingUp className="size-5" />} label="This Week" value={data?.stats.thisWeek || 0} color="green" />
           <StatCard icon={<Shield className="size-5" />} label="Suspicious" value={data?.stats.suspicious || 0} color="red" />
@@ -313,12 +313,11 @@ export default function MonitoringPage() {
 
 function StatCard({ icon, label, value, color }: { icon: React.ReactNode; label: string; value: number; color: string }) {
   const colors: Record<string, { bg: string; text: string; icon: string }> = {
-    teal: { bg: "bg-[#e2f6d5]", text: "text-[#2ead4b]", icon: "text-[#2ead4b]" },
+    green: { bg: "bg-[#e2f6d5]", text: "text-[#2ead4b]", icon: "text-[#2ead4b]" },
     blue: { bg: "bg-blue-50", text: "text-blue-700", icon: "text-blue-500" },
-    green: { bg: "bg-green-50", text: "text-green-700", icon: "text-green-500" },
     red: { bg: "bg-red-50", text: "text-red-700", icon: "text-red-500" },
   }
-  const c = colors[color] || colors.teal
+  const c = colors[color] || colors.green
 
   return (
     <div className={`${c.bg} rounded-2xl p-4 shadow-sm`}>

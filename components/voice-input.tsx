@@ -269,7 +269,7 @@ export default function VoiceInput({ onResult }: VoiceInputProps) {
         <button
           onClick={() => { reset(); setInputMode("text") }}
           className={`flex-1 flex items-center justify-center gap-2 rounded-lg py-2.5 text-sm font-medium transition ${
-            inputMode === "text" ? "bg-teal-500 text-white shadow-sm" : "text-muted-foreground"
+            inputMode === "text" ? "bg-primary text-white shadow-sm" : "text-muted-foreground"
           }`}
         >
           <Keyboard className="size-4" /> Ketik
@@ -277,7 +277,7 @@ export default function VoiceInput({ onResult }: VoiceInputProps) {
         <button
           onClick={() => { reset(); setInputMode("voice") }}
           className={`flex-1 flex items-center justify-center gap-2 rounded-lg py-2.5 text-sm font-medium transition ${
-            inputMode === "voice" ? "bg-teal-500 text-white shadow-sm" : "text-muted-foreground"
+            inputMode === "voice" ? "bg-primary text-white shadow-sm" : "text-muted-foreground"
           }`}
         >
           <Mic className="size-4" /> Suara
@@ -292,13 +292,13 @@ export default function VoiceInput({ onResult }: VoiceInputProps) {
               value={manualText}
               onChange={(e) => setManualText(e.target.value)}
               placeholder='ketik: beli kopi 25rb, terima gaji 5jt'
-              className="flex-1 px-4 py-3 rounded-xl bg-teal-500/10 border border-teal-500/30 text-sm placeholder:text-teal-400/50 focus:border-teal-500 focus:ring-1 focus:ring-teal-500 outline-none transition"
+              className="flex-1 px-4 py-3 rounded-xl bg-primary/10 border border-primary/30 text-sm placeholder:text-primary/50 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition"
               disabled={status === "processing"}
             />
             <button
               type="submit"
               disabled={!manualText.trim() || status === "processing"}
-              className="px-4 py-3 rounded-xl bg-teal-500 text-white text-sm font-semibold hover:bg-teal-600 transition disabled:opacity-50 active:scale-95"
+              className="px-4 py-3 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-green-700 transition disabled:opacity-50 active:scale-95"
             >
               {status === "processing" ? <Loader2 className="size-4 animate-spin" /> : "→"}
             </button>
@@ -306,14 +306,14 @@ export default function VoiceInput({ onResult }: VoiceInputProps) {
 
           {/* Quick examples */}
           {status === "idle" && (
-            <div className="rounded-xl bg-teal-500/5 border border-teal-500/20 p-4 space-y-2">
-              <p className="text-xs text-teal-400 font-semibold">💡 Contoh:</p>
+            <div className="rounded-xl bg-primary/5 border border-primary/20 p-4 space-y-2">
+              <p className="text-xs text-primary font-semibold">💡 Contoh:</p>
               <div className="grid grid-cols-2 gap-1.5">
                 {['"Beli batagor 5 ribu"', '"Makan siang 25rb"', '"Terima gaji 5 juta"', '"Grab ke kantor 15rb"'].map((ex, i) => (
                   <button
                     key={i}
                     onClick={() => { setManualText(ex.replace(/"/g, '')); }}
-                    className="text-left text-[11px] text-teal-400/70 hover:text-teal-400 transition px-2 py-1.5 rounded-lg hover:bg-teal-500/10"
+                    className="text-left text-[11px] text-primary/70 hover:text-primary transition px-2 py-1.5 rounded-lg hover:bg-primary/10"
                   >
                     {ex}
                   </button>
@@ -332,9 +332,9 @@ export default function VoiceInput({ onResult }: VoiceInputProps) {
             {(status === "idle" || status === "error") && (
               <button
                 onClick={startVoice}
-                className="relative size-20 rounded-full flex items-center justify-center bg-teal-500/20 border-2 border-teal-500 hover:bg-teal-500/30 active:scale-95 transition"
+                className="relative size-20 rounded-full flex items-center justify-center bg-primary/20 border-2 border-primary hover:bg-primary/30 active:scale-95 transition"
               >
-                <Mic className="size-8 text-teal-400" />
+                <Mic className="size-8 text-primary" />
               </button>
             )}
 
@@ -348,8 +348,8 @@ export default function VoiceInput({ onResult }: VoiceInputProps) {
             )}
 
             {status === "processing" && (
-              <div className="relative size-20 rounded-full flex items-center justify-center bg-teal-500/20 border-2 border-teal-500">
-                <Loader2 className="size-8 text-teal-400 animate-spin" />
+              <div className="relative size-20 rounded-full flex items-center justify-center bg-primary/20 border-2 border-primary">
+                <Loader2 className="size-8 text-primary animate-spin" />
               </div>
             )}
 
@@ -357,7 +357,7 @@ export default function VoiceInput({ onResult }: VoiceInputProps) {
               {status === "idle" && (webSpeechSupported ? "Klik mic untuk mulai bicara" : "Klik mic untuk mulai merekam")}
               {status === "recording" && <span className="text-red-400 font-semibold">🔴 Merekam {formatTime(recordingTime)} — klik untuk stop</span>}
               {status === "processing" && "⏳ Memproses..."}
-              {status === "error" && <button onClick={reset} className="text-teal-400 underline underline-offset-2">Coba lagi</button>}
+              {status === "error" && <button onClick={reset} className="text-primary underline underline-offset-2">Coba lagi</button>}
             </p>
 
             {webSpeechSupported && (
@@ -367,9 +367,9 @@ export default function VoiceInput({ onResult }: VoiceInputProps) {
 
           {/* Interim text (realtime speech recognition) */}
           {interimText && status === "recording" && (
-            <div className="rounded-xl bg-teal-500/5 border border-teal-500/20 p-3">
-              <p className="text-xs text-teal-400/50 mb-1">Mendengarkan...</p>
-              <p className="text-sm text-teal-300 italic">{interimText}</p>
+            <div className="rounded-xl bg-primary/5 border border-primary/20 p-3">
+              <p className="text-xs text-primary/50 mb-1">Mendengarkan...</p>
+              <p className="text-sm text-primary/80 italic">{interimText}</p>
             </div>
           )}
         </div>
@@ -402,8 +402,8 @@ export default function VoiceInput({ onResult }: VoiceInputProps) {
 
       {/* ─── SHARED: Parsed Result ─── */}
       {parsed && status === "result" && (
-        <div className="rounded-xl border border-teal-500/30 bg-teal-500/5 p-4 space-y-3">
-          <p className="text-xs text-teal-400 font-semibold">Hasil Parsing:</p>
+        <div className="rounded-xl border border-primary/30 bg-primary/5 p-4 space-y-3">
+          <p className="text-xs text-primary font-semibold">Hasil Parsing:</p>
           <div className="space-y-2">
             <div className="flex justify-between">
               <span className="text-xs text-muted-foreground">Tipe</span>
@@ -430,7 +430,7 @@ export default function VoiceInput({ onResult }: VoiceInputProps) {
             <button onClick={reset} className="flex-1 flex items-center justify-center gap-2 rounded-lg border border-border px-4 py-2.5 text-sm text-muted-foreground hover:text-foreground transition">
               <X className="size-4" /> Batal
             </button>
-            <button onClick={() => { onResult(parsed); reset() }} className="flex-1 flex items-center justify-center gap-2 rounded-lg bg-teal-500 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-teal-600">
+            <button onClick={() => { onResult(parsed); reset() }} className="flex-1 flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-green-700">
               <Check className="size-4" /> Catat
             </button>
           </div>

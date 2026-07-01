@@ -48,8 +48,8 @@
   --color-warning-foreground: var(--warning-foreground);
 
   /* Clay colors */
-  --color-clay-purple: #e8ebe6;
-  --color-clay-purple-deep: #2ead4b;
+  --color-clay-green: #e8ebe6;
+  --color-clay-green-deep: #2ead4b;
   --color-clay-pink: #FFDCDC;
   --color-clay-yellow: #FFF8DC;
   --color-clay-blue: #DCEEFF;
@@ -125,8 +125,8 @@
   --sidebar-border: rgba(0, 0, 0, 0.08);
   --sidebar-ring: #2ead4b;
   /* Theme dynamic vars (overridden by JS theme picker) */
-  --color-clay-purple: #9fe870;
-  --color-clay-purple-deep: #2ead4b;
+  --color-clay-green: #9fe870;
+  --color-clay-green-deep: #2ead4b;
   --theme-shadow: rgba(46, 173, 75, 0.15);
   --theme-shadow-strong: rgba(46, 173, 75, 0.3);
 }
@@ -162,8 +162,8 @@
   --clay-greeting-dark: #1a2e12;
   --clay-nav-dark: var(--card);
   /* Theme dynamic vars (bottom nav, shadows) */
-  --color-clay-purple: #cdffad;
-  --color-clay-purple-deep: #9fe870;
+  --color-clay-green: #cdffad;
+  --color-clay-green-deep: #9fe870;
   --theme-shadow: rgba(159, 232, 112, 0.15);
   --theme-shadow-strong: rgba(159, 232, 112, 0.3);
   --chart-1: #9fe870;
@@ -232,8 +232,8 @@ html, html * {
     inset 0 1px 0 rgba(255, 255, 255, 0.06);
 }
 
-.clay-card-purple {
-  background: var(--color-clay-purple, #9fe870);
+.clay-card-sage {
+  background: var(--color-clay-green, #9fe870);
   box-shadow: 
     8px 8px 16px rgba(46, 173, 75, 0.15),
     -4px -4px 12px rgba(255, 255, 255, 0.8),
@@ -241,7 +241,7 @@ html, html * {
   border-radius: 24px;
 }
 
-.dark .clay-card-purple {
+.dark .clay-card-sage {
   background: var(--clay-greeting-dark, #1a2e12);
   box-shadow:
     0 4px 20px rgba(0, 0, 0, 0.25),
@@ -342,7 +342,7 @@ html, html * {
 
 /* ─── Clay Sidebar ─── */
 .clay-sidebar {
-  background: var(--color-clay-purple, #e8ebe6);
+  background: var(--color-clay-green, #e8ebe6);
   border-radius: 32px;
   box-shadow:
     8px 0 32px rgba(46, 173, 75, 0.15),

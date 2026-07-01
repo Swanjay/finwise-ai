@@ -189,7 +189,7 @@ export default function AdminCodes() {
   // ── LOGIN SCREEN ──
   if (!authed) {
     return (
-      <div className="flex min-h-dvh items-center justify-center bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-gray-950 dark:to-gray-900 p-6">
+      <div className="flex min-h-dvh items-center justify-center bg-gradient-to-br from-green-50 to-emerald-50 dark:from-gray-950 dark:to-gray-900 p-6">
         <form onSubmit={handleLogin} className="w-full max-w-sm space-y-5 rounded-2xl border border-border bg-card p-8 shadow-lg">
           <div className="text-center space-y-2">
             <div className="mx-auto flex size-14 items-center justify-center rounded-full bg-primary/10">
@@ -257,7 +257,7 @@ export default function AdminCodes() {
   const totalCapacity = codes.reduce((s, c) => s + c.max_uses, 0)
 
   return (
-    <div className="min-h-dvh bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-gray-950 dark:to-gray-900 p-4 sm:p-6">
+    <div className="min-h-dvh bg-gradient-to-br from-green-50 to-emerald-50 dark:from-gray-950 dark:to-gray-900 p-4 sm:p-6">
       <div className="mx-auto max-w-lg space-y-5">
         {/* Header */}
         <div className="flex items-center justify-between">

@@ -56,14 +56,14 @@ function VoicePageInner() {
             <ArrowLeft className="size-5" />
           </button>
           <h1 className="text-xl font-bold text-foreground flex items-center gap-2">
-            <Mic className="size-5 text-teal-400" />
+            <Mic className="size-5 text-primary" />
             Voice Input
           </h1>
         </div>
 
         {/* Description */}
-        <div className="rounded-xl bg-teal-500/10 border border-teal-500/30 p-4">
-          <p className="text-sm text-teal-300">
+        <div className="rounded-xl bg-primary/10 border border-primary/30 p-4">
+          <p className="text-sm text-primary/80">
             🎤 Catat transaksi dengan suara atau ketik! Cukup bilang apa yang kamu beli atau terima.
           </p>
         </div>
@@ -81,7 +81,7 @@ function VoicePageInner() {
 
         {/* Saving indicator */}
         {saving && (
-          <div className="flex items-center justify-center gap-2 text-teal-400">
+          <div className="flex items-center justify-center gap-2 text-primary">
             <Loader2 className="size-4 animate-spin" />
             <span className="text-sm">Menyimpan...</span>
           </div>
