@@ -13,8 +13,8 @@ const FEATURES = [
     icon: Sparkles,
     title: 'AI Scan Struk',
     desc: 'Foto struk belanja, otomatis tercatat. Gak perlu input manual lagi.',
-    color: 'text-purple-500',
-    bg: 'bg-purple-500/10',
+    color: 'text-primary',
+    bg: 'bg-primary/10',
   },
   {
     icon: BarChart3,

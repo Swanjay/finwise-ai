@@ -200,7 +200,7 @@ export default function HouseholdsPage() {
           </button>
           <button
             onClick={() => { setShowJoin(true); setShowCreate(false) }}
-            className="flex-1 flex items-center justify-center gap-2 rounded-xl bg-purple-500/20 border border-purple-500/30 px-4 py-3 text-sm font-semibold text-purple-400 transition hover:bg-purple-500/30"
+            className="flex-1 flex items-center justify-center gap-2 rounded-xl bg-primary/20 border border-primary/30 px-4 py-3 text-sm font-semibold text-primary transition hover:bg-primary/30"
           >
             <UserPlus className="size-4" />
             Gabung
@@ -237,12 +237,12 @@ export default function HouseholdsPage() {
               value={joinCode}
               onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
               placeholder="FW-XXXX"
-              className="w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm text-white placeholder:text-gray-500 outline-none focus:border-purple-500 font-mono"
+              className="w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm text-white placeholder:text-gray-500 outline-none focus:border-primary font-mono"
             />
             <button
               onClick={handleJoin}
               disabled={joining || !joinCode.trim()}
-              className="w-full rounded-lg bg-purple-500 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-purple-600 disabled:opacity-50"
+              className="w-full rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-green-700 disabled:opacity-50"
             >
               {joining ? <Loader2 className="size-4 animate-spin mx-auto" /> : "Gabung"}
             </button>

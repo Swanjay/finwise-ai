@@ -5,7 +5,7 @@ import { THEMES, applyTheme, getStoredThemeId, type ThemeColors } from '@/lib/th
 import { cn } from '@/lib/utils'
 
 export function ThemePicker() {
-  const [activeId, setActiveId] = useState<string>('purple')
+  const [activeId, setActiveId] = useState<string>('wise')
 
   useEffect(() => {
     // Set initial active

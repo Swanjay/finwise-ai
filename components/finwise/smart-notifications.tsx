@@ -69,7 +69,7 @@ const TYPE_CONFIG: Record<NotificationType, { label: string; color: string; bgCo
   budget_alert: { label: 'Anggaran', color: 'text-orange-600', bgColor: 'bg-orange-100 dark:bg-orange-900/30' },
   bill_reminder: { label: 'Tagihan', color: 'text-red-600', bgColor: 'bg-red-100 dark:bg-red-900/30' },
   weekly_summary: { label: 'Ringkasan', color: 'text-blue-600', bgColor: 'bg-blue-100 dark:bg-blue-900/30' },
-  unusual_spending: { label: 'Tidak Biasa', color: 'text-purple-600', bgColor: 'bg-purple-100 dark:bg-purple-900/30' },
+  unusual_spending: { label: 'Tidak Biasa', color: 'text-orange-600', bgColor: 'bg-orange-100 dark:bg-orange-900/30' },
 }
 
 function timeAgo(ts: number): string {

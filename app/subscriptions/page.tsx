@@ -171,7 +171,7 @@ export default function SubscriptionsPage() {
             <ArrowLeft className="size-5" />
           </button>
           <h1 className="text-xl font-bold text-white flex items-center gap-2">
-            <CreditCard className="size-5 text-purple-400" />
+            <CreditCard className="size-5 text-primary" />
             Subscription
           </h1>
         </div>
@@ -184,10 +184,10 @@ export default function SubscriptionsPage() {
         )}
 
         {/* Monthly Total Card */}
-        <div className="rounded-2xl bg-gradient-to-br from-purple-500/20 to-indigo-500/20 border border-purple-500/30 p-5">
-          <p className="text-sm text-purple-300">Total Pengeluaran Bulanan</p>
+        <div className="rounded-2xl bg-gradient-to-br from-primary/20 to-green-700/20 border border-primary/30 p-5">
+          <p className="text-sm text-primary">Total Pengeluaran Bulanan</p>
           <p className="text-3xl font-bold text-white mt-1">{formatCurrency(monthlyTotal)}</p>
-          <p className="text-xs text-purple-400 mt-2">{subscriptions.length} subscription aktif</p>
+          <p className="text-xs text-primary mt-2">{subscriptions.length} subscription aktif</p>
         </div>
 
         {/* Add Button */}

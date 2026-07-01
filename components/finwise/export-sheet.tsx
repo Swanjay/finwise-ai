@@ -975,7 +975,7 @@ export function ExportSheet({ onClose }: { onClose: () => void }) {
               const topCats = byCat.slice(0, 5)
 
               return (
-                <div className="bg-gradient-to-br from-indigo-500 to-purple-600 p-6 text-white">
+                <div className="bg-gradient-to-br from-primary to-green-700 p-6 text-white">
                   <div className="text-center mb-4">
                     <div className="text-2xl mb-1">🐱</div>
                     <div className="text-lg font-bold">FinWise</div>

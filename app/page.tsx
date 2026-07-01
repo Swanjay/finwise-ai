@@ -1243,7 +1243,7 @@ function UserAvatar({ onOpenSettings }: { onOpenSettings?: () => void }) {
                 <Users className="size-4 text-teal-400" /> Household
               </Link>
               <Link href="/subscriptions" onClick={() => setShowMenu(false)} className="flex items-center gap-2.5 rounded-lg px-2 py-2 text-sm hover:bg-muted transition">
-                <CreditCard className="size-4 text-purple-400" /> Subscription
+                <CreditCard className="size-4 text-primary" /> Subscription
               </Link>
               <Link href="/voice" onClick={() => setShowMenu(false)} className="flex items-center gap-2.5 rounded-lg px-2 py-2 text-sm hover:bg-muted transition">
                 <Mic className="size-4 text-orange-400" /> Voice Input
@@ -1436,7 +1436,7 @@ function AppShell() {
             <button
               onClick={() => { haptic.light(); setFabOpen(false); setSheet('voice') }}
               aria-label="Voice input"
-              className="flex size-10 items-center justify-center rounded-full bg-gradient-to-br from-purple-400 to-blue-500 text-white shadow-lg animate-in fade-in slide-in-from-bottom-2 duration-200 delay-75"
+              className="flex size-10 items-center justify-center rounded-full bg-gradient-to-br from-primary to-green-700 text-white shadow-lg animate-in fade-in slide-in-from-bottom-2 duration-200 delay-75"
             >
               <Mic className="size-5" />
             </button>
