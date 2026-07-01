@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import bcrypt from "bcryptjs"
 import { createClient } from "@supabase/supabase-js"
 import crypto from "crypto"
+import { rateLimitMiddleware } from "@/lib/rate-limit-kv"
 
 function getAuthSupabase() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL
@@ -13,6 +14,10 @@ function getAuthSupabase() {
 // POST /api/auth/register
 export async function POST(req: Request) {
   try {
+    // Rate limit: 5 registrations per minute per IP
+    const rateLimitResponse = await rateLimitMiddleware(req, { windowMs: 60_000, max: 5 })
+    if (rateLimitResponse) return rateLimitResponse
+
     let body: unknown
     try {
       body = await req.json()
