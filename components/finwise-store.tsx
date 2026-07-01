@@ -23,6 +23,7 @@ import {
   type RecurringItem,
 } from '@/lib/finwise'
 import { logTransactionAudit, logBudgetAudit } from '@/lib/audit'
+import { loadPlan, savePlan, type PlanTier } from '@/lib/plans'
 
 // Storage keys
 const KEYS = {
@@ -154,6 +155,10 @@ interface FinwiseStore {
   loaded: boolean
   setSetupDone: (v: boolean) => void
   syncNow: (reason?: string) => Promise<void>
+
+  // Plan / Subscription
+  plan: PlanTier
+  upgradePlan: (plan: PlanTier) => void
 }
 
 const Ctx = createContext<FinwiseStore | null>(null)
@@ -179,6 +184,7 @@ export function FinwiseProvider({ children }: { children: ReactNode }) {
   const [hideBalance, setHideBalance] = useState(false)
   const [tags, setTags] = useState<string[]>([])
   const [loaded, setLoaded] = useState(false)
+  const [plan, setPlan] = useState<PlanTier>('basic')
   const cloudSyncedRef = useRef(false)
   const syncTimerRef = useRef<NodeJS.Timeout | null>(null)
   const changeCountRef = useRef(0)
@@ -210,6 +216,7 @@ export function FinwiseProvider({ children }: { children: ReactNode }) {
     setHideBalance(loadJSON(KEYS.hideBalance, false))
     setTags(loadJSON(KEYS.tags, []))
     setIsLocked(loadJSON(KEYS.pin, null) ? true : false)
+    setPlan(loadPlan())
     setLoaded(true)
   }, [])
 
@@ -567,6 +574,8 @@ export function FinwiseProvider({ children }: { children: ReactNode }) {
         loaded,
         setSetupDone,
         syncNow: syncToCloudNow,
+        plan,
+        upgradePlan: (p: PlanTier) => { savePlan(p); setPlan(p) },
       }}
     >
       {children}

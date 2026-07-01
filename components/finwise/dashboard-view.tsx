@@ -21,10 +21,18 @@ import { StaggerList, StaggerItem } from './stagger-list'
 import { PressableCard, PressEffect } from './pressable-card'
 import { motion } from 'framer-motion'
 import { cn } from '@/lib/utils'
+import Link from 'next/link'
+
+const PLAN_BADGE: Record<string, { emoji: string; name: string }> = {
+  basic: { emoji: '🆓', name: 'Basic' },
+  pro: { emoji: '💎', name: 'Pro' },
+  premium: { emoji: '👑', name: 'Premium' },
+}
 
 export function DashboardView({ transactions, month, onOpenGoals, onOpenWallets, onOpenAdd, onOpenReports }: { transactions: Transaction[]; month: string; onOpenGoals?: () => void; onOpenWallets?: () => void; onOpenAdd?: () => void; onOpenReports?: () => void }) {
-  const { allCategories, hideBalance, toggleHideBalance, getTotalBalance, recurring, budgets, goals, wallets, getWalletBalance } = useFinwise()
+  const { allCategories, hideBalance, toggleHideBalance, getTotalBalance, recurring, budgets, goals, wallets, getWalletBalance, plan } = useFinwise()
   const { stats } = useGamification()
+  const planBadge = PLAN_BADGE[plan] || PLAN_BADGE.basic
   const { income, expense, surplus } = summarize(transactions)
   const totalBalance = getTotalBalance()
   const positive = totalBalance >= 0
@@ -103,8 +111,16 @@ export function DashboardView({ transactions, month, onOpenGoals, onOpenWallets,
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4, ease: 'easeOut' }}
+          className="flex items-center justify-between"
         >
           <LevelBadge stats={stats} />
+          {/* Plan Badge */}
+          <div className="flex items-center gap-2">
+            <Link href="/pricing" className="flex items-center gap-1.5 text-xs font-semibold bg-secondary px-2.5 py-1 rounded-full hover:bg-primary/10 transition">
+              {planBadge.emoji} <span>{planBadge.name}</span>
+              <ChevronRight className="size-3" />
+            </Link>
+          </div>
         </motion.div>
 
         {/* ─── Balance Hero Card ─── */}
