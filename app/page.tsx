@@ -181,11 +181,12 @@ function MonthNavigator({ monthKey, onChange }: { monthKey: string; onChange: (k
   )
 }
 
-// ─── Export Sheet (imported from component) ───
-import { ExportSheet as ExportSheetNew } from '@/components/finwise/export-sheet'
+// ─── Export Sheet (lazy-loaded — only opened on demand) ───
+import dynamic from 'next/dynamic'
 import { ErrorBoundary } from '@/components/error-boundary'
-import { OnboardingWizard } from '@/components/finwise/onboarding-wizard'
-import VoiceInput from '@/components/voice-input'
+const ExportSheetNew = dynamic(() => import('@/components/finwise/export-sheet').then(m => m.ExportSheet), { ssr: false })
+const OnboardingWizard = dynamic(() => import('@/components/finwise/onboarding-wizard').then(m => m.OnboardingWizard), { ssr: false, loading: () => <div className="min-h-screen bg-background" /> })
+const VoiceInput = dynamic(() => import('@/components/voice-input'), { ssr: false })
 import { detectLogo } from '@/lib/brand-logos'
 
 // ─── Backup/Restore Sheet ───
