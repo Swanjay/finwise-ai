@@ -21,28 +21,141 @@ import {
 
 function FinWiseCat({ size = 80 }: { size?: number }) {
   return (
-    <svg viewBox="0 0 160 160" fill="none" xmlns="http://www.w3.org/2000/svg" width={size} height={size}>
-      <ellipse cx="80" cy="105" rx="42" ry="35" fill="#f0f5e8"/>
-      <path d="M45 90C45 72 60 58 80 58C100 58 115 72 115 90V105C115 120 100 130 80 130C60 130 45 120 45 105V90Z" fill="#9fe870"/>
-      <path d="M55 95C55 82 66 72 80 72C94 72 105 82 105 95V105C105 115 94 122 80 122C66 122 55 115 55 105V95Z" fill="#cdffad"/>
-      <circle cx="80" cy="65" r="30" fill="#f8faf5"/>
-      <path d="M55 42L45 12L72 35" fill="#9fe870"/>
-      <path d="M105 42L115 12L88 35" fill="#9fe870"/>
-      <path d="M58 40L50 18L70 36" fill="#e2f6d5"/>
-      <path d="M102 40L110 18L90 36" fill="#e2f6d5"/>
-      <ellipse cx="68" cy="60" rx="6" ry="7" fill="#0e0f0c"/>
-      <ellipse cx="92" cy="60" rx="6" ry="7" fill="#0e0f0c"/>
-      <circle cx="66" cy="57" r="2.5" fill="white"/>
-      <circle cx="90" cy="57" r="2.5" fill="white"/>
-      <path d="M86 63 Q92 59 98 63" stroke="#0e0f0c" strokeWidth="2.5" strokeLinecap="round" fill="none"/>
-      <ellipse cx="80" cy="68" rx="3" ry="2" fill="#E8A0B0"/>
-      <path d="M75 73 Q80 78 85 73" stroke="#0e0f0c" strokeWidth="2" strokeLinecap="round" fill="none"/>
-      <ellipse cx="60" cy="68" rx="6" ry="4" fill="#FFB8C8" opacity="0.5"/>
-      <ellipse cx="100" cy="68" rx="6" ry="4" fill="#FFB8C8" opacity="0.5"/>
-      <ellipse cx="52" cy="108" rx="12" ry="8" fill="#f8faf5" transform="rotate(-15 52 108)"/>
-      <ellipse cx="108" cy="108" rx="12" ry="8" fill="#f8faf5" transform="rotate(15 108 108)"/>
-      <circle cx="48" cy="115" r="6" fill="#FFB8C8" opacity="0.6"/>
-      <circle cx="112" cy="115" r="6" fill="#FFB8C8" opacity="0.6"/>
+    <svg viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg" width={size} height={size}>
+      <defs>
+        <radialGradient id="lp-headGrad" cx="50%" cy="40%" r="50%">
+          <stop offset="0%" stopColor="#fefefe"/>
+          <stop offset="85%" stopColor="#f5f5f2"/>
+          <stop offset="100%" stopColor="#e8e8e4"/>
+        </radialGradient>
+        <radialGradient id="lp-bodyGrad" cx="50%" cy="30%" r="60%">
+          <stop offset="0%" stopColor="#b8f07a"/>
+          <stop offset="50%" stopColor="#9fe870"/>
+          <stop offset="100%" stopColor="#7acc52"/>
+        </radialGradient>
+        <radialGradient id="lp-bodyInnerGrad" cx="50%" cy="30%" r="55%">
+          <stop offset="0%" stopColor="#ddffc0"/>
+          <stop offset="100%" stopColor="#b8f07a"/>
+        </radialGradient>
+        <radialGradient id="lp-earGradL" cx="40%" cy="30%" r="65%">
+          <stop offset="0%" stopColor="#b8f07a"/>
+          <stop offset="100%" stopColor="#7acc52"/>
+        </radialGradient>
+        <radialGradient id="lp-earGradR" cx="60%" cy="30%" r="65%">
+          <stop offset="0%" stopColor="#b8f07a"/>
+          <stop offset="100%" stopColor="#7acc52"/>
+        </radialGradient>
+        <radialGradient id="lp-earInnerGrad" cx="50%" cy="40%" r="55%">
+          <stop offset="0%" stopColor="#f0fce0"/>
+          <stop offset="100%" stopColor="#d4f5b0"/>
+        </radialGradient>
+        <radialGradient id="lp-cheekGrad" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stopColor="#FFD0DC" stopOpacity="0.7"/>
+          <stop offset="100%" stopColor="#FFB8C8" stopOpacity="0"/>
+        </radialGradient>
+        <radialGradient id="lp-pawPadGrad" cx="50%" cy="30%" r="55%">
+          <stop offset="0%" stopColor="#FFCDD8"/>
+          <stop offset="100%" stopColor="#F0A0B5"/>
+        </radialGradient>
+        <radialGradient id="lp-eyeShine" cx="35%" cy="30%" r="50%">
+          <stop offset="0%" stopColor="#3a3a3a"/>
+          <stop offset="100%" stopColor="#0e0f0c"/>
+        </radialGradient>
+        <radialGradient id="lp-noseGrad" cx="50%" cy="30%" r="55%">
+          <stop offset="0%" stopColor="#F5B0C0"/>
+          <stop offset="100%" stopColor="#E8A0B0"/>
+        </radialGradient>
+        <radialGradient id="lp-tailGrad" cx="30%" cy="30%" r="60%">
+          <stop offset="0%" stopColor="#b8f07a"/>
+          <stop offset="100%" stopColor="#8ad45a"/>
+        </radialGradient>
+        <filter id="lp-softShadow" x="-20%" y="-20%" width="140%" height="140%">
+          <feGaussianBlur in="SourceAlpha" stdDeviation="3"/>
+          <feOffset dy="2"/>
+          <feComposite in2="SourceAlpha" operator="arithmetic" k2="-1" k3="1"/>
+          <feColorMatrix values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.12 0"/>
+          <feBlend in="SourceGraphic"/>
+        </filter>
+      </defs>
+
+      <ellipse cx="100" cy="175" rx="55" ry="8" fill="#0e0f0c" opacity="0.06"/>
+
+      <path d="M140 135 C155 128, 165 115, 158 102 C152 92, 142 98, 145 108 C147 115, 148 125, 138 132"
+            fill="url(#lp-tailGrad)" stroke="#8ad45a" strokeWidth="0.5" opacity="0.9"/>
+      <path d="M158 102 C156 98, 150 95, 148 100" fill="#f8faf5" stroke="none" opacity="0.6"/>
+
+      <ellipse cx="100" cy="145" rx="50" ry="38" fill="url(#lp-bodyGrad)"/>
+      <ellipse cx="100" cy="138" rx="36" ry="28" fill="url(#lp-bodyInnerGrad)"/>
+      <ellipse cx="100" cy="148" rx="28" ry="20" fill="#ddffc0" opacity="0.6"/>
+
+      <path d="M72 120 Q100 132, 128 120" stroke="#7acc52" strokeWidth="2" fill="none" strokeLinecap="round"/>
+      <path d="M76 122 Q100 133, 124 122" stroke="#b8f07a" strokeWidth="1" fill="none" opacity="0.5"/>
+
+      <ellipse cx="68" cy="168" rx="16" ry="11" fill="url(#lp-headGrad)" stroke="#e0e0dc" strokeWidth="0.5"/>
+      <ellipse cx="63" cy="172" rx="4" ry="3" fill="url(#lp-pawPadGrad)"/>
+      <ellipse cx="72" cy="173" rx="3" ry="2.5" fill="url(#lp-pawPadGrad)"/>
+      <circle cx="60" cy="168" r="2" fill="#FFD0DC" opacity="0.4"/>
+      <circle cx="66" cy="166" r="2" fill="#FFD0DC" opacity="0.4"/>
+      <circle cx="74" cy="167" r="2" fill="#FFD0DC" opacity="0.4"/>
+
+      <ellipse cx="132" cy="168" rx="16" ry="11" fill="url(#lp-headGrad)" stroke="#e0e0dc" strokeWidth="0.5"/>
+      <ellipse cx="137" cy="172" rx="4" ry="3" fill="url(#lp-pawPadGrad)"/>
+      <ellipse cx="128" cy="173" rx="3" ry="2.5" fill="url(#lp-pawPadGrad)"/>
+      <circle cx="140" cy="168" r="2" fill="#FFD0DC" opacity="0.4"/>
+      <circle cx="134" cy="166" r="2" fill="#FFD0DC" opacity="0.4"/>
+      <circle cx="126" cy="167" r="2" fill="#FFD0DC" opacity="0.4"/>
+
+      <ellipse cx="100" cy="82" rx="38" ry="35" fill="url(#lp-headGrad)" filter="url(#lp-softShadow)"/>
+      <ellipse cx="100" cy="108" rx="30" ry="8" fill="#e8e8e4" opacity="0.3"/>
+
+      <path d="M70 58 C62 30, 52 8, 58 6 C64 4, 76 22, 82 48" fill="url(#lp-earGradL)"/>
+      <path d="M68 54 C63 32, 56 14, 60 12 C64 10, 72 28, 78 48" fill="url(#lp-earInnerGrad)" opacity="0.8"/>
+      <path d="M62 20 Q65 25 67 18" stroke="#8ad45a" strokeWidth="0.5" fill="none" opacity="0.4"/>
+      <path d="M58 28 Q62 32 64 26" stroke="#8ad45a" strokeWidth="0.5" fill="none" opacity="0.3"/>
+
+      <path d="M130 58 C138 30, 148 8, 142 6 C136 4, 124 22, 118 48" fill="url(#lp-earGradR)"/>
+      <path d="M132 54 C137 32, 144 14, 140 12 C136 10, 128 28, 122 48" fill="url(#lp-earInnerGrad)" opacity="0.8"/>
+      <path d="M138 20 Q135 25 133 18" stroke="#8ad45a" strokeWidth="0.5" fill="none" opacity="0.4"/>
+      <path d="M142 28 Q138 32 136 26" stroke="#8ad45a" strokeWidth="0.5" fill="none" opacity="0.3"/>
+
+      <ellipse cx="85" cy="78" rx="9" ry="10" fill="url(#lp-eyeShine)"/>
+      <circle cx="82" cy="74" r="3.5" fill="white" opacity="0.95"/>
+      <circle cx="87" cy="80" r="1.8" fill="white" opacity="0.5"/>
+      <circle cx="83" cy="81" r="0.8" fill="white" opacity="0.3"/>
+      <ellipse cx="85" cy="78" rx="9" ry="10" fill="none" stroke="#2a2a2a" strokeWidth="0.5" opacity="0.3"/>
+
+      <ellipse cx="115" cy="78" rx="9" ry="10" fill="url(#lp-eyeShine)"/>
+      <circle cx="112" cy="74" r="3.5" fill="white" opacity="0.95"/>
+      <circle cx="117" cy="80" r="1.8" fill="white" opacity="0.5"/>
+      <circle cx="113" cy="81" r="0.8" fill="white" opacity="0.3"/>
+      <ellipse cx="115" cy="78" rx="9" ry="10" fill="none" stroke="#2a2a2a" strokeWidth="0.5" opacity="0.3"/>
+
+      <path d="M76 73 Q78 71 80 73" stroke="#3a3a3a" strokeWidth="0.6" fill="none" opacity="0.3"/>
+      <path d="M120 73 Q122 71 124 73" stroke="#3a3a3a" strokeWidth="0.6" fill="none" opacity="0.3"/>
+
+      <path d="M77 66 Q85 63 93 66" stroke="#c8c8c4" strokeWidth="1.2" fill="none" strokeLinecap="round" opacity="0.5"/>
+      <path d="M107 66 Q115 63 123 66" stroke="#c8c8c4" strokeWidth="1.2" fill="none" strokeLinecap="round" opacity="0.5"/>
+
+      <path d="M95 88 Q100 83 105 88 Q102 93 100 94 Q98 93 95 88Z" fill="url(#lp-noseGrad)"/>
+      <ellipse cx="100" cy="87" rx="2" ry="1" fill="white" opacity="0.3"/>
+
+      <path d="M93 94 Q97 98 100 95" stroke="#3a3a3a" strokeWidth="1.5" fill="none" strokeLinecap="round"/>
+      <path d="M100 95 Q103 98 107 94" stroke="#3a3a3a" strokeWidth="1.5" fill="none" strokeLinecap="round"/>
+
+      <line x1="62" y1="85" x2="78" y2="88" stroke="#c8c8c4" strokeWidth="0.8" strokeLinecap="round" opacity="0.5"/>
+      <line x1="60" y1="90" x2="78" y2="91" stroke="#c8c8c4" strokeWidth="0.8" strokeLinecap="round" opacity="0.4"/>
+      <line x1="62" y1="95" x2="78" y2="93" stroke="#c8c8c4" strokeWidth="0.8" strokeLinecap="round" opacity="0.3"/>
+      <line x1="138" y1="85" x2="122" y2="88" stroke="#c8c8c4" strokeWidth="0.8" strokeLinecap="round" opacity="0.5"/>
+      <line x1="140" y1="90" x2="122" y2="91" stroke="#c8c8c4" strokeWidth="0.8" strokeLinecap="round" opacity="0.4"/>
+      <line x1="138" y1="95" x2="122" y2="93" stroke="#c8c8c4" strokeWidth="0.8" strokeLinecap="round" opacity="0.3"/>
+
+      <ellipse cx="72" cy="90" rx="9" ry="6" fill="url(#lp-cheekGrad)"/>
+      <ellipse cx="128" cy="90" rx="9" ry="6" fill="url(#lp-cheekGrad)"/>
+
+      <path d="M88 62 Q92 58 96 62 Q100 58 104 62 Q108 58 112 62" stroke="#e0e0dc" strokeWidth="0.6" fill="none" opacity="0.3"/>
+
+      <path d="M62 82 Q58 80 60 77" stroke="#e0e0dc" strokeWidth="0.5" fill="none" opacity="0.3"/>
+      <path d="M138 82 Q142 80 140 77" stroke="#e0e0dc" strokeWidth="0.5" fill="none" opacity="0.3"/>
     </svg>
   )
 }
