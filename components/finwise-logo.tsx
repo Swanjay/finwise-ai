@@ -17,7 +17,7 @@ export default function FinWiseLogo({
   return (
     <div className={`flex items-center gap-2 ${className}`}>
       <Image
-        src="/mascot-128.png?v=2"
+        src="/mascot-128.png?v=3"
         alt="FinWise"
         width={size}
         height={size}

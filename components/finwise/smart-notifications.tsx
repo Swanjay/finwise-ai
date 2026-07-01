@@ -297,7 +297,7 @@ export function RequestNotificationButton() {
     if (result === 'granted') {
       new Notification('🐱 FinWise Notifikasi Aktif!', {
         body: 'Kamu akan dapat peringatan budget, tagihan, dan pola pengeluaran.',
-        icon: '/mascot-cat-192.png?v=2',
+        icon: '/mascot-cat-192.png?v=3',
         tag: 'finwise-welcome',
       })
     }

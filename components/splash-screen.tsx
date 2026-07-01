@@ -29,7 +29,7 @@ export function SplashScreen() {
             transition={{ duration: 0.8, ease: "easeOut" }}
           >
             <Image
-              src="/mascot-256.png?v=2"
+              src="/mascot-256.png?v=3"
               alt="FinWise Cat"
               width={180}
               height={180}
