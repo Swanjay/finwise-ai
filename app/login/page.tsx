@@ -392,11 +392,12 @@ export default function LoginPage() {
   const [authPassword, setAuthPassword] = useState("")
   const [showPassword, setShowPassword] = useState(false)
 
-  // ─── Registration (OTP + password) ───
+  // ─── Registration (OTP + password + invite) ───
   const [regPassword, setRegPassword] = useState("")
   const [regConfirm, setRegConfirm] = useState("")
   const [showRegPassword, setShowRegPassword] = useState(false)
   const [regStep, setRegStep] = useState<"form" | "otp" | "done">("form")
+  const [inviteCode, setInviteCode] = useState("")
 
   // ─── Telegram OTP ───
   const [tgStep, setTgStep] = useState<"idle" | "code" | "done">("idle")
@@ -435,10 +436,47 @@ export default function LoginPage() {
     if (!emailRegex.test(authEmail.trim())) return setError("Format email tidak valid")
     if (authPassword.length < 6) return setError("Password minimal 6 karakter")
     setLoading("credentials"); setError("")
+
+    // Validate invite code if provided
+    if (inviteCode.trim()) {
+      try {
+        const codeRes = await fetch(`/api/invite-codes/validate/${inviteCode.trim().toUpperCase()}`)
+        const codeData = await codeRes.json()
+        if (!codeData.valid) {
+          setError(codeData.error || "Kode invite tidak valid")
+          setLoading(null)
+          return
+        }
+      } catch {
+        setError("Gagal memverifikasi kode invite. Periksa kode dan internet.")
+        setLoading(null)
+        return
+      }
+    }
+
     try {
       const result = await signIn("email-password", { email: authEmail.trim().toLowerCase(), password: authPassword, redirect: false })
       if (result?.error) { setError("Email atau password salah"); setLoading(null) }
-      else if (result?.ok) { router.push("/"); router.refresh() }
+      else if (result?.ok) {
+        // Use invite code if provided after successful login
+        if (inviteCode.trim()) {
+          try {
+            const useCodeRes = await fetch("/api/invite-codes/use", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ code: inviteCode.trim().toUpperCase() })
+            })
+            const useCodeData = await useCodeRes.json()
+            if (useCodeRes.ok) {
+              console.log("Invite code activated:", useCodeData.plan_tier)
+            }
+          } catch {
+            console.warn("Failed to apply invite code (non-critical)")
+          }
+        }
+        router.push("/")
+        router.refresh()
+      }
     } catch { setError("Koneksi gagal. Periksa internet kamu."); setLoading(null) }
   }
 
@@ -450,6 +488,22 @@ export default function LoginPage() {
     if (!emailRegex.test(email.trim())) return setError("Format email tidak valid")
     if (regPassword.length < 6) return setError("Password minimal 6 karakter")
     if (regPassword !== regConfirm) return setError("Password tidak cocok")
+
+    // Validate invite code if provided
+    if (inviteCode.trim()) {
+      try {
+        const codeRes = await fetch(`/api/invite-codes/validate/${inviteCode.trim().toUpperCase()}`)
+        const codeData = await codeRes.json()
+        if (!codeData.valid) {
+          setError(codeData.error || "Kode invite tidak valid")
+          return
+        }
+      } catch {
+        setError("Gagal memverifikasi kode invite. Periksa kode dan internet.")
+        return
+      }
+    }
+
     setLoading("email"); setError("")
     try {
       const res = await fetch("/api/email-login", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "request", email: email.trim() }) })
@@ -488,7 +542,24 @@ export default function LoginPage() {
       }
       if (!regRes.ok) { setError(regData.error || "Gagal mendaftar"); setLoading(null); return }
 
-      // 3. Auto-login
+      // 3. Use invite code if provided
+      if (inviteCode.trim()) {
+        try {
+          const useCodeRes = await fetch("/api/invite-codes/use", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ code: inviteCode.trim().toUpperCase() })
+          })
+          const useCodeData = await useCodeRes.json()
+          if (useCodeRes.ok) {
+            console.log("Invite code activated:", useCodeData.plan_tier)
+          }
+        } catch {
+          console.warn("Failed to apply invite code (non-critical)")
+        }
+      }
+
+      // 4. Auto-login
       setRegStep("done")
       const loginResult = await signIn("email-password", { email: email.trim().toLowerCase(), password: regPassword, redirect: false })
       if (loginResult?.ok) { router.push("/"); router.refresh() }
@@ -655,6 +726,18 @@ export default function LoginPage() {
               <div className="clay-forgot-row">
                 <button onClick={() => { setView("forgot"); setError("") }} className="clay-forgot-link">Lupa Password?</button>
               </div>
+
+              {/* INVITE CODE INPUT (optional) — login */}
+              <div className="clay-input-group" style={{ marginBottom: 8 }}>
+                <div className="clay-input-icon" style={{ left: 12 }}>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="#2ead4b" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2v4m0 12v4M4.93 4.93l2.83 2.83m8.48 8.48l2.83 2.83M2 12h4m12 0h4M4.93 19.07l2.83-2.83m8.48-8.48l2.83-2.83"/></svg>
+                </div>
+                <input type="text" className="clay-input-field" placeholder="Kode Invite (opsional)"
+                  value={inviteCode.toUpperCase()} onChange={(e) => { setInviteCode(e.target.value.toUpperCase().replace(/[^A-Z0-9_]/g, '')); setError("") }}
+                  onKeyDown={(e) => e.key === "Enter" && handleEmailPasswordLogin()} disabled={isLoading}
+                />
+              </div>
+
               {/* Tombol Masuk */}
               <button className="clay-btn" onClick={handleEmailPasswordLogin} disabled={isLoading}>
                 {loading === "credentials" ? <Loader2 className="size-5 animate-spin mx-auto" /> : "Masuk"}
@@ -704,51 +787,63 @@ export default function LoginPage() {
           )}
 
           {/* ═══════════════════════════════════════
-              REGISTER VIEW (Email + Password + OTP)
+              REGISTER VIEW (Email + Password + OTP + Invite)
           ═══════════════════════════════════════ */}
-          {view === "register" && regStep === "form" && (
-            <div className="space-y-0">
-              <p className="text-sm text-center text-[#868685] mb-3">Daftar dengan email & password ✉️</p>
-              <div className="clay-input-group">
-                <div className="clay-input-icon">
-                  <svg viewBox="0 0 24 24"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z" /></svg>
-                </div>
-                <input type="email" className="clay-input-field" placeholder="Email"
-                  value={email} onChange={(e) => { setEmail(e.target.value); setError("") }}
-                  onKeyDown={(e) => e.key === "Enter" && handleRegisterRequest()} disabled={isLoading} autoFocus
-                />
-              </div>
-              <div className="clay-input-group">
-                <div className="clay-input-icon">
-                  <svg viewBox="0 0 24 24"><path d="M18 8h-1V6c0-2.8-2.2-5-5-5S7 3.2 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.7 1.3-3 3.1-3s3.1 1.3 3.1 3v2z" /></svg>
-                </div>
-                <input type={showRegPassword ? "text" : "password"} className="clay-input-field" placeholder="Password (min 6 karakter)"
-                  value={regPassword} onChange={(e) => { setRegPassword(e.target.value); setError("") }} disabled={isLoading}
-                />
-                <button type="button" className="clay-pwd-toggle" onClick={() => setShowRegPassword(!showRegPassword)}>
-                  {showRegPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
-                </button>
-              </div>
-              <div className="clay-input-group">
-                <div className="clay-input-icon">
-                  <svg viewBox="0 0 24 24"><path d="M18 8h-1V6c0-2.8-2.2-5-5-5S7 3.2 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.7 1.3-3 3.1-3s3.1 1.3 3.1 3v2z" /></svg>
-                </div>
-                <input type={showRegPassword ? "text" : "password"} className="clay-input-field" placeholder="Konfirmasi password"
-                  value={regConfirm} onChange={(e) => { setRegConfirm(e.target.value); setError("") }}
-                  onKeyDown={(e) => e.key === "Enter" && handleRegisterRequest()} disabled={isLoading}
-                />
-              </div>
-              <button className="clay-btn mt-2" onClick={handleRegisterRequest} disabled={isLoading}>
-                {loading === "email" ? <Loader2 className="size-5 animate-spin mx-auto" /> : "Daftar 🚀"}
-              </button>
-              <div className="text-center mt-4">
-                <button onClick={() => { setView("login"); setError(""); setRegStep("form"); setRegPassword(""); setRegConfirm("") }}
-                  className="text-xs text-[#868685] hover:text-[#0e0f0c] transition flex items-center justify-center gap-1 mx-auto font-600">
-                  <ArrowLeft className="size-3" /> Sudah punya akun? Masuk
-                </button>
-              </div>
-            </div>
-          )}
+                  {view === "register" && regStep === "form" && (
+                    <div className="space-y-0">
+                      <p className="text-sm text-center text-[#868685] mb-3">Daftar dengan email & password ✉️</p>
+                      <div className="clay-input-group">
+                        <div className="clay-input-icon">
+                          <svg viewBox="0 0 24 24"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z" /></svg>
+                        </div>
+                        <input type="email" className="clay-input-field" placeholder="Email"
+                          value={email} onChange={(e) => { setEmail(e.target.value); setError("") }}
+                          onKeyDown={(e) => e.key === "Enter" && handleRegisterRequest()} disabled={isLoading} autoFocus
+                        />
+                      </div>
+                      <div className="clay-input-group">
+                        <div className="clay-input-icon">
+                          <svg viewBox="0 0 24 24"><path d="M18 8h-1V6c0-2.8-2.2-5-5-5S7 3.2 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.7 1.3-3 3.1-3s3.1 1.3 3.1 3v2z" /></svg>
+                        </div>
+                        <input type={showRegPassword ? "text" : "password"} className="clay-input-field" placeholder="Password (min 6 karakter)"
+                          value={regPassword} onChange={(e) => { setRegPassword(e.target.value); setError("") }} disabled={isLoading}
+                        />
+                        <button type="button" className="clay-pwd-toggle" onClick={() => setShowRegPassword(!showRegPassword)}>
+                          {showRegPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                        </button>
+                      </div>
+                      <div className="clay-input-group">
+                        <div className="clay-input-icon">
+                          <svg viewBox="0 0 24 24"><path d="M18 8h-1V6c0-2.8-2.2-5-5-5S7 3.2 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.7 1.3-3 3.1-3s3.1 1.3 3.1 3v2z" /></svg>
+                        </div>
+                        <input type={showRegPassword ? "text" : "password"} className="clay-input-field" placeholder="Konfirmasi password"
+                          value={regConfirm} onChange={(e) => { setRegConfirm(e.target.value); setError("") }}
+                          onKeyDown={(e) => e.key === "Enter" && handleRegisterRequest()} disabled={isLoading}
+                        />
+                      </div>
+
+                      {/* INVITE CODE INPUT (optional) */}
+                      <div className="clay-input-group mt-1">
+                        <div className="clay-input-icon" style={{ left: 12 }}>
+                          <svg viewBox="0 0 24 24" fill="none" stroke="#2ead4b" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2v4m0 12v4M4.93 4.93l2.83 2.83m8.48 8.48l2.83 2.83M2 12h4m12 0h4M4.93 19.07l2.83-2.83m8.48-8.48l2.83-2.83"/></svg>
+                        </div>
+                        <input type="text" className="clay-input-field" placeholder="Kode Invite (opsional)"
+                          value={inviteCode.toUpperCase()} onChange={(e) => { setInviteCode(e.target.value.toUpperCase().replace(/[^A-Z0-9_]/g, '')); setError("") }}
+                          onKeyDown={(e) => e.key === "Enter" && handleRegisterRequest()} disabled={isLoading}
+                        />
+                      </div>
+
+                      <button className="clay-btn mt-2" onClick={handleRegisterRequest} disabled={isLoading}>
+                        {loading === "email" ? <Loader2 className="size-5 animate-spin mx-auto" /> : "Daftar 🚀"}
+                      </button>
+                      <div className="text-center mt-4">
+                        <button onClick={() => { setView("login"); setError(""); setRegStep("form"); setRegPassword(""); setRegConfirm(""); setInviteCode("") }}
+                          className="text-xs text-[#868685] hover:text-[#0e0f0c] transition flex items-center justify-center gap-1 mx-auto font-600">
+                          <ArrowLeft className="size-3" /> Sudah punya akun? Masuk
+                        </button>
+                      </div>
+                    </div>
+                  )}
 
           {view === "register" && regStep === "otp" && (
             <div className="space-y-4">
@@ -766,7 +861,7 @@ export default function LoginPage() {
                   {loading === "register" ? <Loader2 className="size-5 animate-spin" /> : <CheckCircle className="size-5" />}
                 </button>
               </div>
-              <button onClick={() => { setRegStep("form"); setEmailCode(""); setError("") }}
+              <button onClick={() => { setRegStep("form"); setEmailCode(""); setError(""); setInviteCode("") }}
                 className="flex w-full items-center justify-center gap-1.5 text-xs text-[#868685] hover:text-[#0e0f0c] transition py-1">
                 <ArrowLeft className="size-3" /> Ubah data
               </button>
