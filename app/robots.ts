@@ -9,11 +9,9 @@ export default function robots(): MetadataRoute.Robots {
         disallow: [
           '/admin',
           '/api/',
-          '/expenses',
-          '/recurring',
+          '/login',
           '/reports',
           '/score',
-          '/verify-invite',
         ],
       },
       // Block AI crawlers explicitly
