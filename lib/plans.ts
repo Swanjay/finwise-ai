@@ -10,6 +10,7 @@ export interface PlanDef {
   price: number // IDR/month
   badge: string // emoji badge
   color: string // tailwind class
+  description?: string // Optional feature description
   features: FeatureDef[]
 }
 
@@ -21,28 +22,28 @@ export interface FeatureDef {
   premium?: boolean | number
 }
 
-// ─── Feature limits per tier ───
+// ─── Feature definitions per tier ───
 export const FEATURES: FeatureDef[] = [
-  { key: 'transactions', label: 'Transaksi/bulan', free: 50, pro: true, premium: true },
-  { key: 'wallets', label: 'Dompet (Wallet)', free: 1, pro: true, premium: true },
+  { key: 'transactions', label: 'Transaksi Bulanan', free: 50, pro: true, premium: true },
+  { key: 'wallets', label: 'Dompet & Rekening', free: 1, pro: true, premium: true },
   { key: 'custom_categories', label: 'Kategori Custom', free: 5, pro: true, premium: true },
-  { key: 'budgets', label: 'Budget per kategori', free: false, pro: true, premium: true },
-  { key: 'recurring', label: 'Transaksi Berulang', free: false, pro: true, premium: true },
-  { key: 'goals', label: 'Target Tabungan', free: false, pro: true, premium: true },
-  { key: 'reports_charts', label: 'Laporan Grafik', free: false, pro: true, premium: true },
-  { key: 'export_csv', label: 'Export CSV', free: false, pro: true, premium: true },
-  { key: 'export_pdf', label: 'Export PDF', free: false, pro: false, premium: true },
-  { key: 'ai_advisor', label: 'AI Advisor', free: false, pro: false, premium: true },
-  { key: 'ai_scan', label: 'Scan Struk AI', free: false, pro: false, premium: true },
-  { key: 'household', label: 'Household (shared)', free: false, pro: false, premium: true },
-  { key: 'split_bill', label: 'Split Bill', free: false, pro: false, premium: true },
-  { key: 'tags', label: 'Tags/Label', free: false, pro: true, premium: true },
+  { key: 'budgets', label: 'Budgeting Per Kategori', free: false, pro: true, premium: true },
+  { key: 'recurring', label: 'Transaksi Berulang Otomatis', free: false, pro: true, premium: true },
+  { key: 'goals', label: 'Target Tabungan Cerdas', free: false, pro: true, premium: true },
+  { key: 'reports_charts', label: 'Laporan & Grafik Visual', free: false, pro: true, premium: true },
+  { key: 'export_csv', label: 'Export Data (CSV)', free: false, pro: true, premium: true },
+  { key: 'export_pdf', label: 'Export Laporan PDF', free: false, pro: false, premium: true },
+  { key: 'ai_advisor', label: 'AI Financial Advisor', free: false, pro: false, premium: true },
+  { key: 'ai_scan', label: 'Scan Struk AI (OCR)', free: false, pro: false, premium: true },
+  { key: 'household', label: 'Household Sharing', free: false, pro: false, premium: true },
+  { key: 'split_bill', label: 'Split Bill Bersama', free: false, pro: false, premium: true },
+  { key: 'tags', label: 'Tags & Labeling', free: false, pro: true, premium: true },
   { key: 'notifications', label: 'Notifikasi Pintar', free: false, pro: true, premium: true },
-  { key: 'gamification', label: 'Gamification', free: true, pro: true, premium: true },
+  { key: 'gamification', label: 'Gamification & Badges', free: true, pro: true, premium: true },
 ]
 
 // ─── Plan definitions for pricing page ───
-export const PLANS: (PlanDef & { features: FeatureWithIncluded[] })[] = [
+export const PLANS: (PlanDef & { features: FeatureWithIncluded[]; description?: string })[] = [
   {
     id: 'basic',
     name: 'Basic',
@@ -50,6 +51,7 @@ export const PLANS: (PlanDef & { features: FeatureWithIncluded[] })[] = [
     price: 0,
     badge: '🆓',
     color: 'from-zinc-500 to-zinc-400',
+    description: 'Perfect untuk mulai kelola keuangan pribadi dengan fitur dasar yang esensial.',
     features: FEATURES.map(f => ({ ...f, included: f.free !== false })),
   },
   {
@@ -59,6 +61,7 @@ export const PLANS: (PlanDef & { features: FeatureWithIncluded[] })[] = [
     price: 10000,
     badge: '💎',
     color: 'from-blue-500 to-cyan-400',
+    description: 'Upgrade ke unlimited transaksi, budgeting, laporan visual, dan tools produktivitas lengkap.',
     features: FEATURES.map(f => ({ ...f, included: f.pro !== false })),
   },
   {
@@ -68,6 +71,7 @@ export const PLANS: (PlanDef & { features: FeatureWithIncluded[] })[] = [
     price: 20000,
     badge: '👑',
     color: 'from-amber-500 to-orange-400',
+    description: 'All-in-one solution dengan AI advisor, scan struk otomatis, PDF reports, dan fitur kolaborasi household.',
     features: FEATURES.map(f => ({ ...f, included: true })),
   },
 ]

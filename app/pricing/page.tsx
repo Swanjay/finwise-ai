@@ -47,6 +47,13 @@ function PricingCard({ plan, isCurrent, onSelect }: {
           </div>
         </div>
 
+        {/* Description */}
+        {plan.description && (
+          <div className="text-center text-xs text-muted-foreground px-2 py-2 rounded-lg bg-secondary/50 border border-border">
+            💡 {plan.description}
+          </div>
+        )}
+
         {/* Features */}
         <div className="flex flex-col gap-1.5">
           {features.map((f: FeatureWithIncluded) => (
