@@ -10,6 +10,7 @@ interface InviteCode {
   description: string | null
   created_at: string
   expires_at: string | null
+  plan_tier?: string | null
 }
 
 interface Usage {
@@ -36,6 +37,7 @@ export default function AdminCodes() {
   const [newCode, setNewCode] = useState("")
   const [maxUses, setMaxUses] = useState(1)
   const [desc, setDesc] = useState("")
+  const [planTier, setPlanTier] = useState<"basic" | "pro" | "premium">("pro")
   const [creating, setCreating] = useState(false)
   const [copied, setCopied] = useState("")
   const [showUsage, setShowUsage] = useState<string | null>(null)
@@ -48,6 +50,7 @@ export default function AdminCodes() {
   const [editExpiry, setEditExpiry] = useState("")
   const [editMaxUses, setEditMaxUses] = useState(1)
   const [editDesc, setEditDesc] = useState("")
+  const [editPlanTier, setEditPlanTier] = useState<"basic" | "pro" | "premium">("pro")
   const [saving, setSaving] = useState(false)
 
   // Check if already logged in
@@ -107,6 +110,7 @@ export default function AdminCodes() {
           code: newCode.trim() || undefined,
           maxUses,
           description: desc.trim() || undefined,
+          planTier,
           expiresAt: expiresAt || null,
         }),
       })
@@ -115,6 +119,7 @@ export default function AdminCodes() {
         setNewCode("")
         setDesc("")
         setMaxUses(1)
+        setPlanTier("pro")
         fetchData()
       } else {
         setError(data.error || "Gagal membuat kode")
@@ -141,6 +146,7 @@ export default function AdminCodes() {
     setEditExpiry(c.expires_at ? c.expires_at.slice(0, 10) : "")
     setEditMaxUses(c.max_uses)
     setEditDesc(c.description || "")
+    setEditPlanTier((c.plan_tier as "basic" | "pro" | "premium") || "pro")
   }
 
   async function handleUpdate() {
@@ -157,6 +163,7 @@ export default function AdminCodes() {
           expiresAt: editExpiry || null,
           maxUses: editMaxUses,
           description: editDesc.trim() || null,
+          planTier: editPlanTier,
         }),
       })
       const data = await res.json()
@@ -339,6 +346,30 @@ export default function AdminCodes() {
           </div>
 
           <div>
+            <label className="text-xs text-muted-foreground">Paket Akses</label>
+            <div className="mt-1 flex gap-2">
+              {(["basic", "pro", "premium"] as const).map(tier => (
+                <button
+                  key={tier}
+                  type="button"
+                  onClick={() => setPlanTier(tier)}
+                  className={`flex-1 rounded-lg border px-3 py-2 text-sm font-semibold transition ${
+                    planTier === tier
+                      ? tier === "basic"
+                        ? "border-zinc-400 bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300"
+                        : tier === "pro"
+                        ? "border-blue-500 bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300"
+                        : "border-amber-500 bg-amber-50 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300"
+                      : "border-border bg-background text-muted-foreground hover:bg-muted"
+                  }`}
+                >
+                  {tier === "basic" ? "🆓 Basic" : tier === "pro" ? "💎 Pro" : "👑 Premium"}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div>
             <label className="text-xs text-muted-foreground">Masa Berlaku</label>
             <div className="mt-1 flex gap-2 items-center">
               <input
@@ -437,10 +468,21 @@ export default function AdminCodes() {
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                    <div className="flex items-center gap-3 text-xs text-muted-foreground flex-wrap">
                       <span>Terpakai: <strong>{c.used_count}</strong> / {c.max_uses || "∞"}</span>
                       {c.description && <span className="italic">• {c.description}</span>}
-                      <span className="ml-auto text-[10px]">{new Date(c.created_at).toLocaleDateString('id-ID')}</span>
+                      {c.plan_tier && (
+                        <span className={`ml-auto text-[10px] font-semibold px-2 py-0.5 rounded-full ${
+                          c.plan_tier === "basic"
+                            ? "bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300"
+                            : c.plan_tier === "pro"
+                            ? "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300"
+                            : "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300"
+                        }`}>
+                          {c.plan_tier === "basic" ? "🆓 Basic" : c.plan_tier === "pro" ? "💎 Pro" : "👑 Premium"}
+                        </span>
+                      )}
+                      <span className="text-[10px]">{new Date(c.created_at).toLocaleDateString('id-ID')}</span>
                       {c.expires_at && (
                         <>
                           <span className="ml-2">
@@ -545,6 +587,31 @@ export default function AdminCodes() {
                             />
                           </div>
                         </div>
+
+                        <div>
+                          <label className="text-[10px] text-muted-foreground">Paket Akses</label>
+                          <div className="mt-1 flex gap-1">
+                            {(["basic", "pro", "premium"] as const).map(tier => (
+                              <button
+                                key={tier}
+                                type="button"
+                                onClick={() => setEditPlanTier(tier)}
+                                className={`flex-1 rounded-md border px-2 py-1 text-[10px] font-semibold transition ${
+                                  editPlanTier === tier
+                                    ? tier === "basic"
+                                      ? "border-zinc-400 bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300"
+                                      : tier === "pro"
+                                      ? "border-blue-500 bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300"
+                                      : "border-amber-500 bg-amber-50 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300"
+                                    : "border-border bg-background text-muted-foreground hover:bg-muted"
+                                }`}
+                              >
+                                {tier === "basic" ? "🆓 Basic" : tier === "pro" ? "💎 Pro" : "👑 Premium"}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+
                         <div className="flex gap-2">
                           <button
                             onClick={handleUpdate}

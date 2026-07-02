@@ -69,10 +69,12 @@ export async function POST(req: Request) {
 
     const code = body.code || generateCode()
     const expiresAt = body.expiresAt || null
+    const planTier = body.planTier || 'pro'
     const { error } = await supabase.from('invite_codes').insert({
       code,
       max_uses: body.max_uses || 1,
       description: body.description || null,
+      plan_tier: planTier,
       expires_at: expiresAt,
     })
 
@@ -100,7 +102,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: true })
   }
 
-  // Edit code (update expiry/description/maxUses)
+  // Edit code (update expiry/description/maxUses/plan_tier)
   if (body.action === 'update') {
     const supabase = getSupabase()
     if (!supabase) return NextResponse.json({ ok: false, error: 'DB error' }, { status: 500 })
@@ -109,6 +111,7 @@ export async function POST(req: Request) {
     if (body.expiresAt !== undefined) updates.expires_at = body.expiresAt || null
     if (body.description !== undefined) updates.description = body.description || null
     if (body.max_uses !== undefined) updates.max_uses = body.max_uses
+    if (body.planTier && ['basic', 'pro', 'premium'].includes(body.planTier)) updates.plan_tier = body.planTier
 
     if (Object.keys(updates).length === 0) {
       return NextResponse.json({ ok: false, error: 'Tidak ada perubahan' }, { status: 400 })
@@ -137,7 +140,7 @@ export async function GET(req: Request) {
 
   const { data, error } = await supabase
     .from('invite_codes')
-    .select('code, max_uses, used_count, description, created_at, expires_at')
+    .select('code, max_uses, used_count, description, created_at, expires_at, plan_tier')
     .order('created_at', { ascending: false })
 
   if (error) return NextResponse.json({ ok: false, error: error.message }, { status: 500 })
