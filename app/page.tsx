@@ -1389,9 +1389,6 @@ function AppShell() {
         {tab === 'transactions' && <TransactionsView />}
         {tab === 'trends' && <TrendsView />}
         {tab === 'budget' && <BudgetTab transactions={monthTx} />}
-
-        {/* Pricing Table Footer */}
-        {tab === 'home' && <PricingTableFooter currentPlan={plan} onUpgrade={() => setSheet('voucher')} />}
       </main>
 
       {/* Bottom nav — Clay Style */}
