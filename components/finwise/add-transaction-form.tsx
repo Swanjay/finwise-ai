@@ -16,9 +16,12 @@ import { LocationPicker, type LocationData } from '@/components/finwise/location
 import { cn } from '@/lib/utils'
 import { CustomKeypad } from '@/components/finwise/custom-keypad'
 import { detectLogo } from '@/lib/brand-logos'
+import { useFeatureAccess } from '@/hooks/use-feature-access'
+import { getFeatureLimit, canAccess } from '@/lib/plans'
 
 export function AddTransactionForm({ onDone }: { onDone: () => void }) {
-  const { addTransaction, tags: savedTags, addTag: saveTag, wallets, getWalletBalance, hideBalance } = useFinwise()
+  const { addTransaction, tags: savedTags, addTag: saveTag, wallets, getWalletBalance, hideBalance, plan, transactions } = useFinwise()
+  const { checkAccess, checkLimit } = useFeatureAccess()
   const [type, setType] = useState<TxType>('expense')
   const [amount, setAmount] = useState('')
   const [category, setCategory] = useState<CategoryId>('food')
@@ -37,6 +40,10 @@ export function AddTransactionForm({ onDone }: { onDone: () => void }) {
   const tagSuggestions = savedTags.filter(
     (t) => !selectedTags.includes(t) && t.includes(tagInput.toLowerCase().trim())
   )
+
+  // Calculate current month transactions for limit check
+  const currentMonthTx = transactions.filter(tx => tx.date.startsWith(new Date().toISOString().slice(0, 7)))
+  const txLimit = checkLimit('transactions')
 
   function addTagToTransaction(tag: string) {
     const clean = tag.trim().toLowerCase()
@@ -63,6 +70,12 @@ export function AddTransactionForm({ onDone }: { onDone: () => void }) {
 
   function saveTransaction() {
     if (!valid || isSubmitting) return
+    
+    // Check transaction limit for Basic plan
+    if (typeof txLimit === 'number' && currentMonthTx.length >= txLimit) {
+      alert(`⚠️ Batas transaksi bulan ini tercapai!\n\nKamu sudah mencapai batas ${txLimit} transaksi pada paket Basic.\n\nUpgrade ke Pro atau Premium untuk transaksi tak terbatas.`)
+      return
+    }
     
     setIsSubmitting(true)
     
@@ -92,6 +105,23 @@ export function AddTransactionForm({ onDone }: { onDone: () => void }) {
 
   return (
     <form onSubmit={submit} className="flex flex-col gap-4">
+      {/* Transaction Limit Indicator for Basic Plan */}
+      {plan === 'basic' && (
+        <div className="rounded-lg border border-amber-500/30 bg-amber-500/5 px-3 py-2 text-xs">
+          <div className="flex items-center justify-between">
+            <span className="text-muted-foreground">
+              Transaksi bulan ini: <strong className="text-foreground">{currentMonthTx.length}</strong> / {typeof txLimit === 'number' ? txLimit : '50'}
+            </span>
+            {typeof txLimit === 'number' && currentMonthTx.length >= txLimit && (
+              <span className="text-amber-600 font-semibold">⚠️ Batas tercapai</span>
+            )}
+          </div>
+          {typeof txLimit === 'number' && currentMonthTx.length >= txLimit * 0.8 && currentMonthTx.length < txLimit && (
+            <p className="text-amber-600 mt-1">Hampir mencapai batas! Upgrade untuk unlimited.</p>
+          )}
+        </div>
+      )}
+
       <Tabs value={type} onValueChange={(v) => setType(v as TxType)}>
         <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="expense">Pengeluaran</TabsTrigger>

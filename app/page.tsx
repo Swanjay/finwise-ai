@@ -50,6 +50,9 @@ import {
   WALLET_ICON_OPTIONS, WALLET_COLOR_PRESETS,
 } from '@/lib/finwise'
 import { cn } from '@/lib/utils'
+import { FeatureGate, FeatureLimit } from '@/components/feature-gate'
+import { useFeatureAccess, FEATURE_NAMES } from '@/hooks/use-feature-access'
+import { loadPlan, canAccess } from '@/lib/plans'
 
 type Tab = 'home' | 'transactions' | 'trends' | 'budget'
 type Sheet = 'add' | 'scan' | 'advisor' | 'settings' | 'goals' | 'wallets' | 'transfer' | 'recurring' | 'export' | 'categories' | 'pin' | 'benchmark' | 'smart-budget' | 'split-bill' | 'notifications' | 'voice' | null
@@ -1274,7 +1277,7 @@ function UserAvatar({ onOpenSettings }: { onOpenSettings?: () => void }) {
 
 // ─── Main App Shell ───
 function AppShell() {
-  const { transactions, isLocked, pin, tipsDismissed, dismissTips, allCategories, addTransaction, wallets, theme, toggleTheme } = useFinwise()
+  const { transactions, isLocked, pin, tipsDismissed, dismissTips, allCategories, addTransaction, wallets, theme, toggleTheme, plan } = useFinwise()
   const { stats, newBadge, clearNewBadge } = useGamification()
   const router = useRouter()
   const [tab, setTab] = useState<Tab>('home')
@@ -1282,6 +1285,7 @@ function AppShell() {
   const [monthKey, setMonthKey] = useState(getMonthKey(new Date()))
   const [isLoading, setIsLoading] = useState(true)
   const [fabOpen, setFabOpen] = useState(false)
+  const [showUpgradeModal, setShowUpgradeModal] = useState<string | null>(null)
 
   // Simulate loading on mount
   useEffect(() => {
@@ -1336,27 +1340,40 @@ function AppShell() {
       {/* Quick Actions Bar */}
       <div className="px-5 pb-3 flex gap-2 overflow-x-auto no-scrollbar">
         {[
-          { icon: Sparkles, label: 'AI Advisor', sheet: 'advisor' as Sheet },
-          { icon: Camera, label: 'Scan', sheet: 'scan' as Sheet },
-          { icon: Target, label: 'Target', sheet: 'goals' as Sheet },
-          { icon: Wallet, label: 'Dompet', sheet: 'wallets' as Sheet },
-          { icon: ArrowLeftRight, label: 'Transfer', sheet: 'transfer' as Sheet },
-          { icon: Repeat, label: 'Berulang', sheet: 'recurring' as Sheet },
-          { icon: Download, label: 'Export', sheet: 'export' as Sheet },
-          { icon: Upload, label: 'Backup', sheet: 'export' as Sheet },
-          { icon: BarChart3, label: 'Benchmark', sheet: 'benchmark' as Sheet },
-          { icon: FileText, label: 'Kategori', sheet: 'categories' as Sheet },
-          { icon: Lock, label: 'PIN', sheet: 'pin' as Sheet },
+          { icon: Sparkles, label: 'AI Advisor', sheet: 'advisor' as Sheet, feature: 'ai_advisor' },
+          { icon: Camera, label: 'Scan', sheet: 'scan' as Sheet, feature: 'ai_scan' },
+          { icon: Target, label: 'Target', sheet: 'goals' as Sheet, feature: 'goals' },
+          { icon: Wallet, label: 'Dompet', sheet: 'wallets' as Sheet, feature: 'wallets' },
+          { icon: ArrowLeftRight, label: 'Transfer', sheet: 'transfer' as Sheet, feature: null },
+          { icon: Repeat, label: 'Berulang', sheet: 'recurring' as Sheet, feature: 'recurring' },
+          { icon: Download, label: 'Export', sheet: 'export' as Sheet, feature: 'export_csv' },
+          { icon: Upload, label: 'Backup', sheet: 'export' as Sheet, feature: 'export_csv' },
+          { icon: BarChart3, label: 'Benchmark', sheet: 'benchmark' as Sheet, feature: 'reports_charts' },
+          { icon: FileText, label: 'Kategori', sheet: 'categories' as Sheet, feature: 'custom_categories' },
+          { icon: Lock, label: 'PIN', sheet: 'pin' as Sheet, feature: null },
         ].map((a) => {
           const Icon = a.icon
+          const isLocked = a.feature && !canAccess(plan, a.feature)
           return (
             <button
               key={a.label}
-              onClick={() => setSheet(a.sheet)}
-              className="flex shrink-0 items-center gap-1.5 rounded-full bg-card px-3 py-1.5 text-[11px] font-semibold text-primary hover:bg-muted transition"
-              style={{ boxShadow: '0 3px 10px var(--theme-shadow, rgba(46,173,75,0.15))' }}
+              onClick={() => {
+                if (a.feature && !canAccess(plan, a.feature)) {
+                  setShowUpgradeModal(a.feature)
+                  return
+                }
+                setSheet(a.sheet)
+              }}
+              className={cn(
+                'flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-semibold transition',
+                isLocked
+                  ? 'bg-muted/50 text-muted-foreground/50 cursor-not-allowed'
+                  : 'bg-card text-primary hover:bg-muted',
+              )}
+              style={!isLocked ? { boxShadow: '0 3px 10px var(--theme-shadow, rgba(46,173,75,0.15))' } : undefined}
             >
-              <Icon className="size-3.5" />{a.label}
+              {isLocked ? <Lock className="size-3" /> : <Icon className="size-3.5" />}
+              {a.label}
             </button>
           )
         })}
@@ -1473,6 +1490,27 @@ function AppShell() {
           })
           setSheet(null)
         }} /></BottomSheet>
+
+      {/* Upgrade Modal */}
+      {showUpgradeModal && (
+        <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center px-6">
+          <div className="bg-card border border-border rounded-2xl p-6 w-full max-w-sm space-y-4 text-center">
+            <div className="text-3xl">🔒</div>
+            <h2 className="font-heading text-lg font-bold">Fitur Premium</h2>
+            <p className="text-sm text-muted-foreground">
+              {FEATURE_NAMES[showUpgradeModal] || showUpgradeModal} hanya tersedia untuk paket <strong>Pro</strong> atau <strong>Premium</strong>.
+            </p>
+            <div className="flex flex-col gap-2 pt-2">
+              <Link href="/pricing">
+                <Button className="w-full gap-2">
+                  <Sparkles className="size-4" /> Lihat Paket Harga
+                </Button>
+              </Link>
+              <Button variant="ghost" onClick={() => setShowUpgradeModal(null)}>Nanti Saja</Button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Badge unlock toast */}
       {newBadge && <BadgeUnlockToast badge={newBadge} onClose={clearNewBadge} />}
