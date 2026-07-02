@@ -392,12 +392,11 @@ export default function LoginPage() {
   const [authPassword, setAuthPassword] = useState("")
   const [showPassword, setShowPassword] = useState(false)
 
-  // ─── Registration (OTP + password + invite) ───
+  // ─── Registration (OTP + password) ───
   const [regPassword, setRegPassword] = useState("")
   const [regConfirm, setRegConfirm] = useState("")
   const [showRegPassword, setShowRegPassword] = useState(false)
   const [regStep, setRegStep] = useState<"form" | "otp" | "done">("form")
-  const [inviteCode, setInviteCode] = useState("")
 
   // ─── Telegram OTP ───
   const [tgStep, setTgStep] = useState<"idle" | "code" | "done">("idle")
@@ -437,43 +436,10 @@ export default function LoginPage() {
     if (authPassword.length < 6) return setError("Password minimal 6 karakter")
     setLoading("credentials"); setError("")
 
-    // Validate invite code if provided
-    if (inviteCode.trim()) {
-      try {
-        const codeRes = await fetch(`/api/invite-codes/validate/${inviteCode.trim().toUpperCase()}`)
-        const codeData = await codeRes.json()
-        if (!codeData.valid) {
-          setError(codeData.error || "Kode invite tidak valid")
-          setLoading(null)
-          return
-        }
-      } catch {
-        setError("Gagal memverifikasi kode invite. Periksa kode dan internet.")
-        setLoading(null)
-        return
-      }
-    }
-
     try {
       const result = await signIn("email-password", { email: authEmail.trim().toLowerCase(), password: authPassword, redirect: false })
       if (result?.error) { setError("Email atau password salah"); setLoading(null) }
       else if (result?.ok) {
-        // Use invite code if provided after successful login
-        if (inviteCode.trim()) {
-          try {
-            const useCodeRes = await fetch("/api/invite-codes/use", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ code: inviteCode.trim().toUpperCase() })
-            })
-            const useCodeData = await useCodeRes.json()
-            if (useCodeRes.ok) {
-              console.log("Invite code activated:", useCodeData.plan_tier)
-            }
-          } catch {
-            console.warn("Failed to apply invite code (non-critical)")
-          }
-        }
         router.push("/")
         router.refresh()
       }
@@ -488,21 +454,6 @@ export default function LoginPage() {
     if (!emailRegex.test(email.trim())) return setError("Format email tidak valid")
     if (regPassword.length < 6) return setError("Password minimal 6 karakter")
     if (regPassword !== regConfirm) return setError("Password tidak cocok")
-
-    // Validate invite code if provided
-    if (inviteCode.trim()) {
-      try {
-        const codeRes = await fetch(`/api/invite-codes/validate/${inviteCode.trim().toUpperCase()}`)
-        const codeData = await codeRes.json()
-        if (!codeData.valid) {
-          setError(codeData.error || "Kode invite tidak valid")
-          return
-        }
-      } catch {
-        setError("Gagal memverifikasi kode invite. Periksa kode dan internet.")
-        return
-      }
-    }
 
     setLoading("email"); setError("")
     try {
@@ -542,24 +493,7 @@ export default function LoginPage() {
       }
       if (!regRes.ok) { setError(regData.error || "Gagal mendaftar"); setLoading(null); return }
 
-      // 3. Use invite code if provided
-      if (inviteCode.trim()) {
-        try {
-          const useCodeRes = await fetch("/api/invite-codes/use", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ code: inviteCode.trim().toUpperCase() })
-          })
-          const useCodeData = await useCodeRes.json()
-          if (useCodeRes.ok) {
-            console.log("Invite code activated:", useCodeData.plan_tier)
-          }
-        } catch {
-          console.warn("Failed to apply invite code (non-critical)")
-        }
-      }
-
-      // 4. Auto-login
+      // 3. Auto-login (default plan: Basic)
       setRegStep("done")
       const loginResult = await signIn("email-password", { email: email.trim().toLowerCase(), password: regPassword, redirect: false })
       if (loginResult?.ok) { router.push("/"); router.refresh() }
@@ -727,17 +661,6 @@ export default function LoginPage() {
                 <button onClick={() => { setView("forgot"); setError("") }} className="clay-forgot-link">Lupa Password?</button>
               </div>
 
-              {/* INVITE CODE INPUT (optional) — login */}
-              <div className="clay-input-group" style={{ marginBottom: 8 }}>
-                <div className="clay-input-icon" style={{ left: 12 }}>
-                  <svg viewBox="0 0 24 24" fill="none" stroke="#2ead4b" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2v4m0 12v4M4.93 4.93l2.83 2.83m8.48 8.48l2.83 2.83M2 12h4m12 0h4M4.93 19.07l2.83-2.83m8.48-8.48l2.83-2.83"/></svg>
-                </div>
-                <input type="text" className="clay-input-field" placeholder="Kode Invite (opsional)"
-                  value={inviteCode.toUpperCase()} onChange={(e) => { setInviteCode(e.target.value.toUpperCase().replace(/[^A-Z0-9_]/g, '')); setError("") }}
-                  onKeyDown={(e) => e.key === "Enter" && handleEmailPasswordLogin()} disabled={isLoading}
-                />
-              </div>
-
               {/* Tombol Masuk */}
               <button className="clay-btn" onClick={handleEmailPasswordLogin} disabled={isLoading}>
                 {loading === "credentials" ? <Loader2 className="size-5 animate-spin mx-auto" /> : "Masuk"}
@@ -822,22 +745,11 @@ export default function LoginPage() {
                         />
                       </div>
 
-                      {/* INVITE CODE INPUT (optional) */}
-                      <div className="clay-input-group mt-1">
-                        <div className="clay-input-icon" style={{ left: 12 }}>
-                          <svg viewBox="0 0 24 24" fill="none" stroke="#2ead4b" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2v4m0 12v4M4.93 4.93l2.83 2.83m8.48 8.48l2.83 2.83M2 12h4m12 0h4M4.93 19.07l2.83-2.83m8.48-8.48l2.83-2.83"/></svg>
-                        </div>
-                        <input type="text" className="clay-input-field" placeholder="Kode Invite (opsional)"
-                          value={inviteCode.toUpperCase()} onChange={(e) => { setInviteCode(e.target.value.toUpperCase().replace(/[^A-Z0-9_]/g, '')); setError("") }}
-                          onKeyDown={(e) => e.key === "Enter" && handleRegisterRequest()} disabled={isLoading}
-                        />
-                      </div>
-
                       <button className="clay-btn mt-2" onClick={handleRegisterRequest} disabled={isLoading}>
                         {loading === "email" ? <Loader2 className="size-5 animate-spin mx-auto" /> : "Daftar 🚀"}
                       </button>
                       <div className="text-center mt-4">
-                        <button onClick={() => { setView("login"); setError(""); setRegStep("form"); setRegPassword(""); setRegConfirm(""); setInviteCode("") }}
+                        <button onClick={() => { setView("login"); setError(""); setRegStep("form"); setRegPassword(""); setRegConfirm("") }}
                           className="text-xs text-[#868685] hover:text-[#0e0f0c] transition flex items-center justify-center gap-1 mx-auto font-600">
                           <ArrowLeft className="size-3" /> Sudah punya akun? Masuk
                         </button>
@@ -861,7 +773,7 @@ export default function LoginPage() {
                   {loading === "register" ? <Loader2 className="size-5 animate-spin" /> : <CheckCircle className="size-5" />}
                 </button>
               </div>
-              <button onClick={() => { setRegStep("form"); setEmailCode(""); setError(""); setInviteCode("") }}
+              <button onClick={() => { setRegStep("form"); setEmailCode(""); setError("") }}
                 className="flex w-full items-center justify-center gap-1.5 text-xs text-[#868685] hover:text-[#0e0f0c] transition py-1">
                 <ArrowLeft className="size-3" /> Ubah data
               </button>

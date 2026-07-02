@@ -12,7 +12,7 @@ import {
   ToggleRight, CalendarClock, Shield, Eye, EyeOff, Moon, Sun,
   PiggyBank, ReceiptText, ShieldCheck, Upload, LogOut,
   ArrowDownUp, ArrowLeftRight, Pencil,
-  Users, CreditCard, Mic, Heart, User,
+  Users, CreditCard, Mic, Heart, User, Ticket,
 } from 'lucide-react'
 import { useSession, signOut } from 'next-auth/react'
 import { FinwiseProvider, useFinwise } from '@/components/finwise-store'
@@ -29,6 +29,8 @@ import { SmartNotifications, NotificationBell, NotificationCenter, RequestNotifi
 import { useGamification, BadgeGrid, BadgeUnlockToast } from '@/components/finwise/gamification'
 import { SmartBudgetSheet } from '@/components/finwise/smart-budget'
 import { SplitBillSheet } from '@/components/finwise/split-bill'
+import { VoucherSheet } from '@/components/finwise/voucher-sheet'
+import { PricingTableFooter } from '@/components/finwise/pricing-table-footer'
 import { haptic } from '@/lib/haptics'
 import FinWiseLogo from '@/components/finwise-logo'
 import { ThemePicker } from '@/components/finwise/theme-picker'
@@ -55,7 +57,7 @@ import { useFeatureAccess, FEATURE_NAMES } from '@/hooks/use-feature-access'
 import { loadPlan, canAccess } from '@/lib/plans'
 
 type Tab = 'home' | 'transactions' | 'trends' | 'budget'
-type Sheet = 'add' | 'scan' | 'advisor' | 'settings' | 'goals' | 'wallets' | 'transfer' | 'recurring' | 'export' | 'categories' | 'pin' | 'benchmark' | 'smart-budget' | 'split-bill' | 'notifications' | 'voice' | null
+type Sheet = 'add' | 'scan' | 'advisor' | 'settings' | 'goals' | 'wallets' | 'transfer' | 'recurring' | 'export' | 'categories' | 'pin' | 'benchmark' | 'smart-budget' | 'split-bill' | 'notifications' | 'voice' | 'voucher' | null
 
 // ─── PIN Lock Screen ───
 function PinLock() {
@@ -1351,6 +1353,7 @@ function AppShell() {
           { icon: BarChart3, label: 'Benchmark', sheet: 'benchmark' as Sheet, feature: 'reports_charts' },
           { icon: FileText, label: 'Kategori', sheet: 'categories' as Sheet, feature: 'custom_categories' },
           { icon: Lock, label: 'PIN', sheet: 'pin' as Sheet, feature: null },
+          { icon: Ticket, label: 'Voucher', sheet: 'voucher' as Sheet, feature: null },
         ].map((a) => {
           const Icon = a.icon
           const isLocked = a.feature && !canAccess(plan, a.feature)
@@ -1386,6 +1389,9 @@ function AppShell() {
         {tab === 'transactions' && <TransactionsView />}
         {tab === 'trends' && <TrendsView />}
         {tab === 'budget' && <BudgetTab transactions={monthTx} />}
+
+        {/* Pricing Table Footer */}
+        {tab === 'home' && <PricingTableFooter currentPlan={plan} onUpgrade={() => setSheet('voucher')} />}
       </main>
 
       {/* Bottom nav — Clay Style */}
@@ -1490,6 +1496,11 @@ function AppShell() {
           })
           setSheet(null)
         }} /></BottomSheet>
+
+      {/* Voucher Sheet */}
+      <BottomSheet open={sheet === 'voucher'} onClose={() => setSheet(null)} title="🎫 Tukar Voucher">
+        <VoucherSheet onClose={() => setSheet(null)} />
+      </BottomSheet>
 
       {/* Upgrade Modal */}
       {showUpgradeModal && (
