@@ -226,6 +226,135 @@ export default function PricingPage() {
         </p>
       </div>
 
+      {/* Feature Guide */}
+      <div className="mt-8 space-y-4 border-t border-border pt-6">
+        <h2 className="font-heading text-lg font-bold text-center">📋 Panduan Fitur</h2>
+        <p className="text-xs text-muted-foreground text-center">
+          Penjelasan lengkap setiap fitur yang tersedia di FinWise
+        </p>
+
+        <div className="space-y-3">
+          {[
+            {
+              icon: '📝',
+              title: 'Transaksi Bulanan',
+              desc: 'Batas jumlah transaksi yang bisa kamu catat setiap bulan. Basic dibatasi 50 transaksi, Pro dan Premium tidak terbatas — cocok untuk bisnis kecil atau keluarga yang banyak transaksi.',
+              tiers: 'Basic: 50/bulan | Pro: Unlimited | Premium: Unlimited',
+            },
+            {
+              icon: '👛',
+              title: 'Dompet & Rekening',
+              desc: 'Kelola berbagai sumber keuangan dalam satu tempat. Pisahkan rekening bank, e-wallet, dan uang tunai. Basic hanya 1 dompet, Pro & Premium bisa multiple.',
+              tiers: 'Basic: 1 dompet | Pro: Unlimited | Premium: Unlimited',
+            },
+            {
+              icon: '🏷️',
+              title: 'Kategori Custom',
+              desc: 'Buat kategori pengeluaran sendiri seperti "Ngopi", "Nonton", "Hobi". Basic hanya 5 kategori, Pro & Premium bisa buat kategori sebanyak yang kamu mau.',
+              tiers: 'Basic: 5 kategori | Pro: Unlimited | Premium: Unlimited',
+            },
+            {
+              icon: '💰',
+              title: 'Budgeting Per Kategori',
+              desc: 'Atur batas pengeluaran untuk setiap kategori (makan, transport, hiburan). Dapatkan notifikasi saat hampir melebihi budget. Membantu kontrol pengeluaran bulanan.',
+              tiers: 'Basic: ❌ | Pro: ✅ | Premium: ✅',
+            },
+            {
+              icon: '🔄',
+              title: 'Transaksi Berulang Otomatis',
+              desc: 'Atur transaksi yang terjadi rutin — seperti gaji bulanan, langganan Netflix, atau cicilan. Input sekali, FinWise catat otomatis tiap bulan tanpa perlu input ulang.',
+              tiers: 'Basic: ❌ | Pro: ✅ | Premium: ✅',
+            },
+            {
+              icon: '🎯',
+              title: 'Target Tabungan Cerdas',
+              desc: 'Tentukan target nabung (beli motor, liburan, dana darurat) dan pantau progresnya. FinWise akan menghitung estimasi waktu tercapai berdasarkan pola menabung kamu.',
+              tiers: 'Basic: ❌ | Pro: ✅ | Premium: ✅',
+            },
+            {
+              icon: '📊',
+              title: 'Laporan & Grafik Visual',
+              desc: 'Lihat ringkasan keuangan dalam bentuk grafik interaktif — pie chart untuk kategori, bar chart untuk tren bulanan, dan line chart untuk perkembangan tabungan.',
+              tiers: 'Basic: ❌ | Pro: ✅ | Premium: ✅',
+            },
+            {
+              icon: '📥',
+              title: 'Export Data (CSV)',
+              desc: 'Download data transaksi dalam format CSV yang bisa dibuka di Excel atau Google Sheets. Cocok untuk analisis lanjutan atau laporan keuangan.',
+              tiers: 'Basic: ❌ | Pro: ✅ | Premium: ✅',
+            },
+            {
+              icon: '📄',
+              title: 'Export Laporan PDF',
+              desc: 'Generate laporan keuangan profesional dalam format PDF. Bisa di-custom dengan periode, kategori, dan format yang rapi. Cocok untuk keperluan administrasi atau pajak.',
+              tiers: 'Basic: ❌ | Pro: ❌ | Premium: ✅',
+            },
+            {
+              icon: '🤖',
+              title: 'AI Financial Advisor',
+              desc: 'Konsultan keuangan pribadi berbasis AI. Tanya tentang cara hemat, strategi investasi, atau analisis pengeluaran. Dapatkan saran personal berdasarkan data keuangan kamu.',
+              tiers: 'Basic: ❌ | Pro: ❌ | Premium: ✅',
+            },
+            {
+              icon: '📸',
+              title: 'Scan Struk AI (OCR)',
+              desc: 'Foto struk belanja, AI otomatis membaca dan mencatat setiap item sebagai transaksi. Tidak perlu input manual — hemat waktu untuk yang sering belanja.',
+              tiers: 'Basic: ❌ | Pro: ❌ | Premium: ✅',
+            },
+            {
+              icon: '👨‍👩‍👧‍👦',
+              title: 'Household Sharing',
+              desc: 'Kelola keuangan bersama keluarga atau teman serumah. Bagikan budget, catatan pengeluaran, dan target tabungan dalam satu akun household.',
+              tiers: 'Basic: ❌ | Pro: ❌ | Premium: ✅',
+            },
+            {
+              icon: '💸',
+              title: 'Split Bill Bersama',
+              desc: 'Split tagihan dengan teman — makan bareng, patungan hadiah, atau biaya jalan-jalan. FinWise hitung otomatis siapa bayar berapa dan tracking status pembayaran.',
+              tiers: 'Basic: ❌ | Pro: ❌ | Premium: ✅',
+            },
+            {
+              icon: '🏷️',
+              title: 'Tags & Labeling',
+              desc: 'Beri tag pada transaksi untuk filter dan analisis lebih detail. Misalnya tag "Urgent", "Bisnis", atau "Personal" untuk memisahkan pengeluaran pribadi dan usaha.',
+              tiers: 'Basic: ❌ | Pro: ✅ | Premium: ✅',
+            },
+            {
+              icon: '🔔',
+              title: 'Notifikasi Pintar',
+              desc: 'Pengingat otomatis untuk tagihan jatuh tempo, budget yang hampir habis, target nabung, atau transaksi tidak biasa. Bisa diatur sesuai preferensi.',
+              tiers: 'Basic: ❌ | Pro: ✅ | Premium: ✅',
+            },
+            {
+              icon: '🏆',
+              title: 'Gamification & Badges',
+              desc: 'Dapatkan badges dan achievements saat mencapai milestone keuangan — seperti "Hemat Sebulan", "Nabung 1 Juta", atau "Budget Master". Bikin kelola uang jadi lebih seru!',
+              tiers: 'Basic: ✅ | Pro: ✅ | Premium: ✅',
+            },
+          ].map((feature) => (
+            <div
+              key={feature.title}
+              className="rounded-xl border border-border bg-card/50 p-4 transition-all hover:shadow-sm"
+            >
+              <div className="flex items-start gap-3">
+                <span className="text-xl mt-0.5">{feature.icon}</span>
+                <div className="flex-1 min-w-0">
+                  <h3 className="text-sm font-bold text-foreground">{feature.title}</h3>
+                  <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
+                    {feature.desc}
+                  </p>
+                  <div className="mt-2 pt-2 border-t border-border/50">
+                    <span className="text-[10px] font-medium text-muted-foreground bg-secondary/50 px-2 py-0.5 rounded-full">
+                      {feature.tiers}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
       {/* Downgrade Confirmation */}
       {showConfirm && (
         <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center px-6">
