@@ -34,7 +34,7 @@ export const FEATURES: FeatureDef[] = [
   { key: 'export_csv', label: 'Export Data (CSV)', free: false, pro: true, premium: true },
   { key: 'export_pdf', label: 'Export Laporan PDF', free: false, pro: false, premium: true },
   { key: 'ai_advisor', label: 'AI Financial Advisor', free: false, pro: false, premium: true },
-  { key: 'ai_scan', label: 'Scan Struk AI (OCR)', free: true, pro: true, premium: true },
+  { key: 'ai_scan', label: 'Scan Struk AI (OCR)', free: false, pro: false, premium: true },
   { key: 'household', label: 'Household Sharing', free: false, pro: false, premium: true },
   { key: 'split_bill', label: 'Split Bill Bersama', free: false, pro: false, premium: true },
   { key: 'tags', label: 'Tags & Labeling', free: false, pro: true, premium: true },
@@ -131,18 +131,56 @@ export function getUpgradeMessage(featureKey: string): string {
   return `Fitur ${names[featureKey] || featureKey} hanya tersedia di **Pro** atau **Premium**.`
 }
 
-// ─── Storage key ───
+// ─── Storage keys ───
 const PLAN_KEY = 'fw.plan.v1'
+const PLAN_EXPIRY_KEY = 'fw.plan.expiry'
 
 export function loadPlan(): PlanTier {
   if (typeof window === 'undefined') return 'basic'
   try {
+    // Check if plan has expired
     const raw = localStorage.getItem(PLAN_KEY)
+    const expiry = localStorage.getItem(PLAN_EXPIRY_KEY)
+    if (expiry && (raw === 'pro' || raw === 'premium')) {
+      const expiryDate = new Date(expiry)
+      if (expiryDate < new Date()) {
+        // Plan expired — downgrade to basic
+        localStorage.setItem(PLAN_KEY, 'basic')
+        localStorage.removeItem(PLAN_EXPIRY_KEY)
+        return 'basic'
+      }
+      return raw
+    }
     if (raw === 'pro' || raw === 'premium') return raw
   } catch { /* */ }
   return 'basic'
 }
 
-export function savePlan(plan: PlanTier) {
-  try { localStorage.setItem(PLAN_KEY, plan) } catch { /* */ }
+export function savePlan(plan: PlanTier, expiresAt?: string) {
+  try {
+    localStorage.setItem(PLAN_KEY, plan)
+    if (plan === 'basic') {
+      localStorage.removeItem(PLAN_EXPIRY_KEY)
+    } else if (expiresAt) {
+      localStorage.setItem(PLAN_EXPIRY_KEY, expiresAt)
+    }
+  } catch { /* */ }
+}
+
+export function getPlanInfo(): { tier: PlanTier; expiresAt?: string; isActive: boolean } {
+  const tier = loadPlan()
+  try {
+    const expiry = localStorage.getItem(PLAN_EXPIRY_KEY)
+    if (tier === 'basic') {
+      return { tier, isActive: true }
+    }
+    if (expiry) {
+      const expiresAt = new Date(expiry)
+      return { tier, expiresAt: expiry, isActive: expiresAt > new Date() }
+    }
+    // No expiry set — assume active (manual/legacy plan)
+    return { tier, isActive: true }
+  } catch {
+    return { tier, isActive: true }
+  }
 }

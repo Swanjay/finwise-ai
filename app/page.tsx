@@ -54,7 +54,7 @@ import {
 import { cn } from '@/lib/utils'
 import { FeatureGate, FeatureLimit } from '@/components/feature-gate'
 import { useFeatureAccess, FEATURE_NAMES } from '@/hooks/use-feature-access'
-import { loadPlan, canAccess } from '@/lib/plans'
+import { loadPlan, canAccess, getPlanInfo } from '@/lib/plans'
 
 type Tab = 'home' | 'transactions' | 'trends' | 'budget'
 type Sheet = 'add' | 'scan' | 'advisor' | 'settings' | 'goals' | 'wallets' | 'transfer' | 'recurring' | 'export' | 'categories' | 'pin' | 'benchmark' | 'smart-budget' | 'split-bill' | 'notifications' | 'voice' | 'voucher' | null
@@ -1334,10 +1334,46 @@ function AppShell() {
           </div>
         </div>
         <div className="flex items-center gap-2">
+          {/* Plan Badge */}
+          <button onClick={() => setSheet('voucher')} className={cn(
+            'flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-bold transition-all hover:scale-105',
+            plan === 'basic' ? 'bg-zinc-100 text-zinc-600 border border-zinc-200 dark:bg-zinc-800 dark:text-zinc-400 dark:border-zinc-700' :
+            plan === 'pro' ? 'bg-blue-50 text-blue-700 border border-blue-200 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-800' :
+            'bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-900/30 dark:text-amber-300 dark:border-amber-800',
+          )}>
+            <span>{plan === 'basic' ? '🆓' : plan === 'pro' ? '💎' : '👑'}</span>
+            <span>{plan === 'basic' ? 'Basic' : plan === 'pro' ? 'Pro' : 'Premium'}</span>
+          </button>
           <MonthNavigator monthKey={monthKey} onChange={setMonthKey} />
           <UserAvatar onOpenSettings={() => setSheet('settings')} />
         </div>
       </header>
+
+      {/* Plan Expiry Notice */}
+      {plan !== 'basic' && (() => {
+        const planInfo = getPlanInfo()
+        if (!planInfo.expiresAt) return null
+        const expiry = new Date(planInfo.expiresAt)
+        const daysLeft = Math.ceil((expiry.getTime() - Date.now()) / (1000 * 60 * 60 * 24))
+        const isExpiringSoon = daysLeft <= 7 && daysLeft > 0
+        const isExpired = daysLeft <= 0
+        if (isExpired) return null // Plan already downgraded by loadPlan()
+        return (
+          <div className={cn(
+            'mx-5 mb-2 rounded-lg px-3 py-1.5 text-[10px] font-medium flex items-center justify-between',
+            isExpiringSoon
+              ? 'bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-900/20 dark:text-amber-300 dark:border-amber-800'
+              : 'bg-primary/5 text-primary border border-primary/20',
+          )}>
+            <span>
+              {isExpiringSoon ? '⚠️ ' : '✅ '}Aktif sampai {expiry.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })} ({daysLeft} hari lagi)
+            </span>
+            {isExpiringSoon && (
+              <button onClick={() => setSheet('voucher')} className="text-[10px] font-bold underline">Perpanjang</button>
+            )}
+          </div>
+        )
+      })()}
 
       {/* Quick Actions Bar */}
       <div className="px-5 pb-3 flex gap-2 overflow-x-auto no-scrollbar">
@@ -1389,6 +1425,9 @@ function AppShell() {
         {tab === 'transactions' && <TransactionsView />}
         {tab === 'trends' && <TrendsView />}
         {tab === 'budget' && <BudgetTab transactions={monthTx} />}
+
+        {/* Pricing Table Footer */}
+        {tab === 'home' && <PricingTableFooter currentPlan={plan} onUpgrade={() => setSheet('voucher')} />}
       </main>
 
       {/* Bottom nav — Clay Style */}

@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { useFinwise } from '@/components/finwise-store'
 import { cn } from '@/lib/utils'
+import { savePlan as savePlanLocal } from '@/lib/plans'
 
 export function VoucherSheet({ onClose }: { onClose: () => void }) {
   const { plan, upgradePlan } = useFinwise()
@@ -31,6 +32,10 @@ export function VoucherSheet({ onClose }: { onClose: () => void }) {
       if (res.ok && data.success) {
         setResult({ success: true, message: data.message })
         upgradePlan(data.plan_tier)
+        // Save expiry to localStorage
+        if (data.expires_at) {
+          savePlanLocal(data.plan_tier, data.expires_at)
+        }
         setTimeout(() => onClose(), 2000)
       } else {
         setResult({ success: false, message: data.error || 'Gagal mengaktifkan voucher' })
