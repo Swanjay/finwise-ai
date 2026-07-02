@@ -154,8 +154,8 @@ export async function createInviteCode(options: {
 // ===== ADMIN: LIST ALL CODES =====
 export async function listInviteCodes(): Promise<Array<{
   code: string
-  maxUses: number
-  usedCount: number
+  max_uses: number
+  used_count: number
   createdBy: string | null
   description: string | null
   expiresAt: string | null
@@ -173,8 +173,8 @@ export async function listInviteCodes(): Promise<Array<{
 
   return data.map((r: Record<string, unknown>) => ({
     code: r.code as string,
-    maxUses: r.max_uses as number,
-    usedCount: r.used_count as number,
+    max_uses: r.max_uses as number,
+    used_count: r.used_count as number,
     createdBy: r.created_by as string | null,
     description: r.description as string | null,
     expiresAt: r.expires_at as string | null,

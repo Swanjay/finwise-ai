@@ -438,7 +438,7 @@ export default function AdminCodes() {
                     </div>
 
                     <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                      <span>Terpakai: <strong>{c.used_count}</strong>/{c.max_uses}</span>
+                      <span>Terpakai: <strong>{c.used_count}</strong> / {c.max_uses || "∞"}</span>
                       {c.description && <span className="italic">• {c.description}</span>}
                       <span className="ml-auto text-[10px]">{new Date(c.created_at).toLocaleDateString('id-ID')}</span>
                       {c.expires_at && (

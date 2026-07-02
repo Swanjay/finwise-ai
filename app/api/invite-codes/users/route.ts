@@ -29,28 +29,40 @@ export async function GET() {
   }
 
   try {
-    const { data: users, error } = await supabase
+    // Get users with plan info first
+    const { data: plans, error: plansError } = await supabase
       .from("users_plan")
       .select(`
-        user_id, plan_tier, source_code, assigned_at,
-        user:auth.users(email)
+        user_id, plan_tier, source_code, assigned_at
       `)
       .order("assigned_at", { ascending: false })
 
-    if (error) {
-      console.error("[invite-codes/users] Fetch error:", error)
+    if (plansError) {
+      console.error("[invite-codes/users] Fetch plans error:", plansError)
       return NextResponse.json({ error: "Gagal memuat data user" }, { status: 500 })
+    }
+
+    // Then get email for each user separately
+    const usersWithEmail = []
+    for (const plan of plans || []) {
+      const { data: userData } = await supabase
+        .from("profiles")
+        .select("email")
+        .eq("id", plan.user_id)
+        .single()
+
+      usersWithEmail.push({
+        user_id: plan.user_id,
+        plan_tier: plan.plan_tier,
+        source_code: plan.source_code,
+        assigned_at: plan.assigned_at,
+        email: userData?.email || "unknown"
+      })
     }
 
     return NextResponse.json({
       ok: true,
-      users: users.map(u => ({
-        user_id: u.user_id,
-        plan_tier: u.plan_tier,
-        source_code: u.source_code,
-        assigned_at: u.assigned_at,
-        email: u.user?.email || "unknown"
-      }))
+      users: usersWithEmail
     })
   } catch (err) {
     console.error("[invite-codes/users] Error:", err)

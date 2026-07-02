@@ -8,7 +8,7 @@ interface InviteCode {
   code: string
   plan_tier: string
   max_uses: number
-  uses: number
+  used_count: number
   created_by: { email: string } | null
   notes: string
   is_active: boolean
@@ -309,7 +309,7 @@ export default function InviteCodesAdmin() {
                         </button>
                       </div>
                       <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                        <span>Terpakai: <strong>{c.uses}</strong> / {c.maxUses || "∞"}</span>
+                        <span>Terpakai: <strong>{c.used_count}</strong> / {c.max_uses || "∞"}</span>
                         {c.notes && <span className="italic">📝 {c.notes}</span>}
                         {c.expires_at && (
                           <span className="flex items-center gap-1">
@@ -321,7 +321,7 @@ export default function InviteCodesAdmin() {
                       {c.max_uses && (
                         <div className="h-1.5 w-full rounded-full bg-muted">
                           <div className="h-full rounded-full bg-primary transition-all"
-                            style={{ width: `${Math.min(100, (c.uses / c.max_uses) * 100)}%` }}
+                            style={{ width: `${Math.min(100, (c.used_count / c.max_uses) * 100)}%` }}
                           />
                         </div>
                       )}

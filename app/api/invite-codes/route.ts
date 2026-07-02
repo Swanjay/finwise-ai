@@ -30,7 +30,7 @@ export async function POST(req: Request) {
 
   try {
     const body = await req.json()
-    const { quantity, planTier, maxUses, notes, expiresDays } = body
+    const { quantity, planTier, max_uses, notes, expiresDays } = body
 
     if (!["pro", "premium"].includes(planTier)) {
       return NextResponse.json({ error: "Invalid plan tier. Must be 'pro' or 'premium'" }, { status: 400 })
@@ -57,7 +57,7 @@ export async function POST(req: Request) {
       code,
       plan_tier: planTier,
       is_active: true,
-      max_uses: maxUses || null,
+      max_uses: max_uses || null,
       uses: 0,
       created_by: userId,
       notes: notes || "",

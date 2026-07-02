@@ -35,6 +35,7 @@ export async function middleware(req: NextRequest) {
     '/_next', '/logo.svg', '/favicon.ico', '/mascot-', '/finwise-cat-',
     '/logo-', '/manifest.json', '/sw.js', '/workbox-',
     '/sitemap.xml', '/robots.txt', '/about', '/privacy', '/terms',
+    '/pricing',  // Add pricing page to public routes
   ]
   const isPublic = publicPaths.some(p => pathname.startsWith(p))
   if (isPublic) return NextResponse.next()

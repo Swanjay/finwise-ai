@@ -13,18 +13,21 @@ function getSupabase() {
 // GET /api/invite-codes/[code] — Validate an invite code
 export async function GET(
   req: Request,
-  { params }: { params: { code: string } }
+  { params }: { params: Promise<{ code: string }> }
 ) {
   const supabase = getSupabase()
   if (!supabase) {
     return NextResponse.json({ error: "Database not configured" }, { status: 500 })
   }
 
-  const code = params.code?.toUpperCase().trim()
+  // Extract code from URL using URL constructor
+  const url = new URL(req.url)
+  const pathParts = url.pathname.split('/')
+  const code = pathParts[pathParts.length - 1]?.toUpperCase().trim()
+  
   if (!code) {
     return NextResponse.json({ error: "Code required" }, { status: 400 })
   }
-
   try {
     // Check if code exists and is active
     const { data: codeEntry, error: codeError } = await supabase

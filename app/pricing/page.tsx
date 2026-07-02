@@ -117,7 +117,7 @@ export default function PricingPage() {
   const [animating, setAnimating] = useState<PlanTier | null>(null)
   const [showConfirm, setShowConfirm] = useState<PlanTier | null>(null)
 
-  function handleSelect(planId: PlanTier) {
+  async function handleSelect(planId: PlanTier) {
     if (planId === currentPlan) return
 
     if (planId === 'basic') {
@@ -126,13 +126,32 @@ export default function PricingPage() {
       return
     }
 
-    // Pro/Premium — simulate upgrade (payment integration TBD)
+    // Pro/Premium — initiate payment
     setAnimating(planId)
-    setTimeout(() => {
-      savePlan(planId)
-      setCurrentPlan(planId)
+    
+    try {
+      const response = await fetch('/api/payment/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          plan_tier: planId,
+          payment_method: 'midtrans' // or whatever payment gateway
+        })
+      })
+      
+      const data = await response.json()
+      
+      if (!response.ok) {
+        throw new Error(data.error || 'Payment initiation failed')
+      }
+      
+      // Redirect to payment processor
+      window.location.href = data.redirect_url
+    } catch (error) {
+      console.error('Payment error:', error)
       setAnimating(null)
-    }, 800)
+      alert('Gagal memproses pembayaran: ' + (error as Error).message)
+    }
   }
 
   function confirmDowngrade() {

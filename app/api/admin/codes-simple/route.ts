@@ -71,7 +71,7 @@ export async function POST(req: Request) {
     const expiresAt = body.expiresAt || null
     const { error } = await supabase.from('invite_codes').insert({
       code,
-      max_uses: body.maxUses || 1,
+      max_uses: body.max_uses || 1,
       description: body.description || null,
       expires_at: expiresAt,
     })
@@ -108,7 +108,7 @@ export async function POST(req: Request) {
     const updates: Record<string, unknown> = {}
     if (body.expiresAt !== undefined) updates.expires_at = body.expiresAt || null
     if (body.description !== undefined) updates.description = body.description || null
-    if (body.maxUses !== undefined) updates.max_uses = body.maxUses
+    if (body.max_uses !== undefined) updates.max_uses = body.max_uses
 
     if (Object.keys(updates).length === 0) {
       return NextResponse.json({ ok: false, error: 'Tidak ada perubahan' }, { status: 400 })
