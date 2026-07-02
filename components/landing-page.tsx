@@ -138,6 +138,13 @@ export default function LandingPage() {
                 Mulai Gratis <ArrowRight className="h-5 w-5" />
               </Link>
               <Link
+                href="/pricing"
+                className="inline-flex items-center gap-2 rounded-2xl bg-card px-8 py-4 text-lg font-bold text-primary shadow-md transition-all hover:scale-105 hover:shadow-xl"
+                style={{ border: '2px solid #2ead4b', color: '#2ead4b' }}
+              >
+                💰 Lihat Harga
+              </Link>
+              <Link
                 href="/login"
                 className="inline-flex items-center rounded-2xl border border-border px-8 py-4 text-lg font-semibold text-foreground transition-all hover:bg-muted"
               >
@@ -258,6 +265,7 @@ export default function LandingPage() {
             <div className="flex flex-wrap items-center gap-6 text-sm text-muted-foreground">
               <Link href="/login" className="transition-colors hover:text-primary" style={{ '--tw-hover-color': '#2ead4b' } as React.CSSProperties}>Masuk</Link>
               <Link href="/register" className="transition-colors hover:text-primary" style={{ '--tw-hover-color': '#2ead4b' } as React.CSSProperties}>Daftar</Link>
+              <Link href="/pricing" className="transition-colors hover:text-primary font-semibold" style={{ '--tw-hover-color': '#2ead4b' } as React.CSSProperties}>💰 Paket & Harga</Link>
               <Link href="/privacy" className="transition-colors hover:text-primary" style={{ '--tw-hover-color': '#2ead4b' } as React.CSSProperties}>Privasi</Link>
               <Link href="/terms" className="transition-colors hover:text-primary" style={{ '--tw-hover-color': '#2ead4b' } as React.CSSProperties}>Syarat</Link>
             </div>
