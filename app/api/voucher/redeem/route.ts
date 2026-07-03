@@ -75,11 +75,11 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Kode voucher sudah pernah digunakan", success: false }, { status: 400 })
     }
 
-    // Calculate expiry date (30 days from now)
+    // Calculate mock expiry date (30 days from now) for response
     const expiresAt = new Date()
     expiresAt.setDate(expiresAt.getDate() + 30)
 
-    // Update user's plan with expiry
+    // Update user's plan
     const { error: updateError } = await supabase
       .from("users_plan")
       .upsert({
@@ -87,7 +87,6 @@ export async function POST(req: Request) {
         plan_tier: voucher.plan_tier,
         source_code: code,
         assigned_at: new Date().toISOString(),
-        expires_at: expiresAt.toISOString(),
       })
 
     if (updateError) {

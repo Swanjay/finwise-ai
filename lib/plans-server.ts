@@ -15,20 +15,11 @@ export async function getUserPlan(userId: string): Promise<PlanTier> {
   try {
     const { data, error } = await supabase
       .from('users_plan')
-      .select('plan_tier, expires_at')
+      .select('plan_tier')
       .eq('user_id', userId)
       .single()
 
     if (error || !data) return 'basic'
-
-    // Check expiry
-    if (data.expires_at) {
-      const expiry = new Date(data.expires_at)
-      if (expiry < new Date()) {
-        // Plan expired (we don't delete immediately from DB but treat as basic)
-        return 'basic'
-      }
-    }
 
     return (data.plan_tier || 'basic') as PlanTier
   } catch {
