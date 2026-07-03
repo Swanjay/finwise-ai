@@ -333,6 +333,25 @@ export function FinwiseProvider({ children }: { children: ReactNode }) {
         cloudSyncedRef.current = true
         // Cloud data loaded & merged
 
+        // Sync plan from server (authoritative source)
+        try {
+          const planRes = await fetch('/api/plan')
+          if (planRes.ok) {
+            const planData = await planRes.json()
+            if (planData.plan) {
+              if (planData.plan === 'basic') {
+                savePlan('basic')
+                setPlan('basic')
+              } else {
+                const expiresAt = new Date()
+                expiresAt.setDate(expiresAt.getDate() + (planData.expiryDays !== null ? planData.expiryDays : 30))
+                savePlan(planData.plan, expiresAt.toISOString())
+                setPlan(planData.plan)
+              }
+            }
+          }
+        } catch { /* ignore */ }
+
         // If merge added local-only items, sync back to cloud
         if (mergedExtra) {
           // Local had extra data — syncing back to cloud
