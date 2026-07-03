@@ -2,6 +2,13 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/auth'
 import { checkRateLimit } from '@/lib/rate-limit'
 import { advisorSchema } from '@/lib/validate'
+import { getUserPlan } from '@/lib/plans-server'
+import { createHash } from 'crypto'
+
+function emailToUserId(email: string): string {
+  const hash = createHash('md5').update(email.toLowerCase().trim()).digest('hex')
+  return `${hash.slice(0,8)}-${hash.slice(8,12)}-${hash.slice(12,16)}-${hash.slice(16,20)}-${hash.slice(20,32)}`
+}
 
 export const maxDuration = 30
 
@@ -462,7 +469,16 @@ function createLocalStream(text: string) {
 
 export async function POST(req: Request) {
   const session = await getServerSession(authOptions)
-  if (!session) return Response.json({ error: 'Unauthorized' }, { status: 401 })
+  if (!session || !session.user?.email) return Response.json({ error: 'Unauthorized' }, { status: 401 })
+
+  // Plan check — Premium only for AI Advisor
+  const plan = await getUserPlan(emailToUserId(session.user.email))
+  if (plan !== 'premium') {
+    return Response.json(
+      { error: 'AI Financial Advisor hanya tersedia di paket Premium.' },
+      { status: 403 }
+    )
+  }
 
   const ip = getClientIp(req)
   const rl = checkRateLimit(`advisor:${ip}`, { windowMs: 60_000, max: 20 })

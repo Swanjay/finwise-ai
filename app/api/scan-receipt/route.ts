@@ -2,6 +2,13 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/auth'
 import { checkRateLimit } from '@/lib/rate-limit'
 import { scanReceiptSchema } from '@/lib/validate'
+import { getUserPlan } from '@/lib/plans-server'
+import { createHash } from 'crypto'
+
+function emailToUserId(email: string): string {
+  const hash = createHash('md5').update(email.toLowerCase().trim()).digest('hex')
+  return `${hash.slice(0,8)}-${hash.slice(8,12)}-${hash.slice(12,16)}-${hash.slice(16,20)}-${hash.slice(20,32)}`
+}
 
 export const maxDuration = 30
 
@@ -233,8 +240,17 @@ export async function POST(req: Request) {
   try {
     // Auth check — require authenticated session
     const session = await getServerSession(authOptions)
-    if (!session) {
+    if (!session || !session.user?.email) {
       return Response.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    // Plan check — Premium only for scan-receipt
+    const plan = await getUserPlan(emailToUserId(session.user.email))
+    if (plan !== 'premium') {
+      return Response.json(
+        { error: 'Fitur Scan Struk AI hanya tersedia di paket Premium.' },
+        { status: 403 }
+      )
     }
 
     // Rate limit: 10 scans per minute per IP

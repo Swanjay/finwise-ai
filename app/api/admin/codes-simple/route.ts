@@ -28,8 +28,11 @@ function verifyAdminCookie(req: Request): boolean {
   const match = cookie.match(/fw-admin=([^;]+)/)
   if (!match) return false
   const expected = createAdminToken(ADMIN_PASS)
-  // Constant-time comparison
-  return crypto.timingSafeEqual(Buffer.from(decodeURIComponent(match[1])), Buffer.from(expected))
+  try {
+    return crypto.timingSafeEqual(Buffer.from(decodeURIComponent(match[1])), Buffer.from(expected))
+  } catch {
+    return false
+  }
 }
 
 // ── POST /api/admin/codes-simple → login ──
@@ -43,7 +46,15 @@ export async function POST(req: Request) {
     if (!adminUser || !adminPass) {
       return NextResponse.json({ ok: false, error: 'Admin not configured' }, { status: 500 })
     }
-    if (body.user === adminUser && body.pass === adminPass) {
+    if (!body.user || !body.pass) {
+      return NextResponse.json({ ok: false, error: 'Username atau password salah' }, { status: 401 })
+    }
+    // Constant-time HMAC comparison to prevent timing attack
+    const expected = createAdminToken(adminPass)
+    const actual = createAdminToken(String(body.pass))
+    const userMatch = body.user === adminUser
+    const passMatch = userMatch && expected.length === actual.length && crypto.timingSafeEqual(Buffer.from(actual), Buffer.from(expected))
+    if (userMatch && passMatch) {
       const token = createAdminToken(adminPass)
       const res = NextResponse.json({ ok: true })
       res.cookies.set('fw-admin', token, {

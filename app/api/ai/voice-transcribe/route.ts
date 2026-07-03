@@ -2,6 +2,13 @@ import { NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/auth"
 import { traceAI } from "@/lib/langfuse"
+import { getUserPlan } from "@/lib/plans-server"
+import { createHash } from "crypto"
+
+function emailToUserId(email: string): string {
+  const hash = createHash('md5').update(email.toLowerCase().trim()).digest('hex')
+  return `${hash.slice(0,8)}-${hash.slice(8,12)}-${hash.slice(12,16)}-${hash.slice(16,20)}-${hash.slice(20,32)}`
+}
 
 export const maxDuration = 30
 
@@ -14,6 +21,12 @@ export async function POST(req: Request) {
   const session = await getServerSession(authOptions)
   if (!session?.user?.email) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  }
+
+  // Plan check — Premium only for voice features
+  const userPlan = await getUserPlan(emailToUserId(session.user.email))
+  if (userPlan !== 'premium') {
+    return NextResponse.json({ error: "Voice input hanya tersedia di paket Premium." }, { status: 403 })
   }
 
   try {

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/auth"
 import { createClient } from "@supabase/supabase-js"
+import { rateLimitMiddleware } from "@/lib/rate-limit-kv"
 
 function getSupabase() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL
@@ -12,6 +13,10 @@ function getSupabase() {
 
 // POST /api/voucher/redeem — Redeem voucher to upgrade plan
 export async function POST(req: Request) {
+  // Rate limit: 5 attempts per minute per IP (prevent brute-force voucher codes)
+  const rateLimitResponse = await rateLimitMiddleware(req, { windowMs: 60_000, max: 5 })
+  if (rateLimitResponse) return rateLimitResponse
+
   const session = await getServerSession(authOptions)
   if (!session?.user?.email) {
     return NextResponse.json({ error: "Unauthorized", success: false }, { status: 401 })
