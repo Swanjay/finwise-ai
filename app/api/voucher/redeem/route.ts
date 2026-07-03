@@ -64,30 +64,28 @@ export async function POST(req: Request) {
     }
 
     // Check if user already redeemed this voucher
-    const { data: existingRedemption } = await supabase
-      .from("users_plan")
-      .select("source_code")
+    const { data: existingPlan } = await supabase
+      .from("settings")
+      .select("value")
       .eq("user_id", userId)
-      .eq("source_code", code)
-      .single()
+      .eq("key", "plan_source_code")
+      .eq("value", code)
+      .maybeSingle()
 
-    if (existingRedemption) {
+    if (existingPlan) {
       return NextResponse.json({ error: "Kode voucher sudah pernah digunakan", success: false }, { status: 400 })
     }
 
-    // Calculate mock expiry date (30 days from now) for response
-    const expiresAt = new Date()
-    expiresAt.setDate(expiresAt.getDate() + 30)
+    const now = new Date().toISOString()
 
-    // Update user's plan
+    // Store plan in settings table (key-value store, no FK constraints)
     const { error: updateError } = await supabase
-      .from("users_plan")
-      .upsert({
-        user_id: userId,
-        plan_tier: voucher.plan_tier,
-        source_code: code,
-        assigned_at: new Date().toISOString(),
-      })
+      .from("settings")
+      .upsert([
+        { user_id: userId, key: "plan_tier", value: voucher.plan_tier },
+        { user_id: userId, key: "plan_assigned_at", value: now },
+        { user_id: userId, key: "plan_source_code", value: code },
+      ], { onConflict: "user_id,key" })
 
     if (updateError) {
       console.error("[voucher/redeem] Error updating plan:", updateError)
@@ -109,8 +107,12 @@ export async function POST(req: Request) {
       code: voucher.code,
       user_id: userId,
       email: session.user.email,
-      used_at: new Date().toISOString(),
+      used_at: now,
     })
+
+    // Calculate mock expiry date (30 days from now) for response
+    const expiresAt = new Date()
+    expiresAt.setDate(expiresAt.getDate() + 30)
 
     return NextResponse.json({
       success: true,
