@@ -1449,7 +1449,11 @@ function AppShell() {
           ))}
           <div className="flex justify-center">
             <button
-              onClick={() => { haptic.medium(); setSheet('scan') }}
+              onClick={() => {
+                haptic.medium()
+                if (!canAccess(plan, 'ai_scan')) { setShowUpgradeModal('ai_scan'); return }
+                setSheet('scan')
+              }}
               aria-label="Scan struk"
               className="clay-btn -mt-5 flex size-14 items-center justify-center"
             >
@@ -1487,14 +1491,24 @@ function AppShell() {
         {fabOpen && (
           <>
             <button
-              onClick={() => { haptic.light(); setFabOpen(false); setSheet('scan') }}
+              onClick={() => {
+                haptic.light()
+                setFabOpen(false)
+                if (!canAccess(plan, 'ai_scan')) { setShowUpgradeModal('ai_scan'); return }
+                setSheet('scan')
+              }}
               aria-label="Scan struk"
               className="flex size-10 items-center justify-center rounded-full bg-gradient-to-br from-green-400 to-primary text-white shadow-lg animate-in fade-in slide-in-from-bottom-2 duration-200"
             >
               <Camera className="size-5" />
             </button>
             <button
-              onClick={() => { haptic.light(); setFabOpen(false); setSheet('voice') }}
+              onClick={() => {
+                haptic.light()
+                setFabOpen(false)
+                if (!canAccess(plan, 'voice_input')) { setShowUpgradeModal('voice_input'); return }
+                setSheet('voice')
+              }}
               aria-label="Voice input"
               className="flex size-10 items-center justify-center rounded-full bg-gradient-to-br from-primary to-green-700 text-white shadow-lg animate-in fade-in slide-in-from-bottom-2 duration-200 delay-75"
             >

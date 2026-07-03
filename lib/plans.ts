@@ -35,6 +35,7 @@ export const FEATURES: FeatureDef[] = [
   { key: 'export_pdf', label: 'Export Laporan PDF', free: false, pro: false, premium: true },
   { key: 'ai_advisor', label: 'AI Financial Advisor', free: false, pro: false, premium: true },
   { key: 'ai_scan', label: 'Scan Struk AI (OCR)', free: false, pro: false, premium: true },
+  { key: 'voice_input', label: 'Catat Transaksi Suara (AI)', free: false, pro: false, premium: true },
   { key: 'household', label: 'Household Sharing', free: false, pro: false, premium: true },
   { key: 'split_bill', label: 'Split Bill Bersama', free: false, pro: false, premium: true },
   { key: 'tags', label: 'Tags & Labeling', free: false, pro: true, premium: true },
