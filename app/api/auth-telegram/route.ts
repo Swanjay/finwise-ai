@@ -25,8 +25,12 @@ export async function POST(req: Request) {
     // Verify HMAC signature — must match createTelegramSignature() from auth.ts
     const expected = createTelegramSignature(id, username)
 
-    if (sig !== expected) {
+    try {
+      if (!crypto.timingSafeEqual(Buffer.from(sig), Buffer.from(expected))) {
       console.error("[auth/telegram] Sig mismatch", { id, username })
+      return NextResponse.json({ error: "Signature tidak valid" }, { status: 401 })
+      }
+    } catch {
       return NextResponse.json({ error: "Signature tidak valid" }, { status: 401 })
     }
 

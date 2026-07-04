@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/auth"
 import { createClient } from "@supabase/supabase-js"
+import crypto from "crypto"
 
 function getSupabase() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL
@@ -47,7 +48,7 @@ export async function POST(req: Request) {
     for (let i = 0; i < quantity; i++) {
       // Format: PRO_XXXX or PREM_XXXX (4 random chars)
       const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
-      const random = Array.from({ length: 4 }, () => chars[Math.floor(Math.random() * chars.length)]).join("")
+      const random = Array.from({ length: 4 }, () => chars[crypto.randomInt(chars.length)]).join("")
       const code = planTier === "pro" ? `PRO_${random}` : `PREM_${random}`
       codes.push(code)
     }

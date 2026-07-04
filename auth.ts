@@ -86,7 +86,9 @@ export const authOptions: NextAuthOptions = {
 
         // Verify HMAC signature — same pattern as Telegram
         const expectedSig = createTelegramSignature(credentials.id, credentials.email)
-        if (credentials.sig !== expectedSig) return null
+        try {
+          if (!crypto.timingSafeEqual(Buffer.from(credentials.sig), Buffer.from(expectedSig))) return null
+        } catch { return null }
 
         return {
           id: credentials.id,
@@ -110,7 +112,9 @@ export const authOptions: NextAuthOptions = {
 
         // Verify HMAC signature — prevents client-side forgery
         const expectedSig = createTelegramSignature(credentials.id, credentials.username)
-        if (credentials.sig !== expectedSig) return null
+        try {
+          if (!crypto.timingSafeEqual(Buffer.from(credentials.sig), Buffer.from(expectedSig))) return null
+        } catch { return null }
 
         return {
           id: credentials.id,

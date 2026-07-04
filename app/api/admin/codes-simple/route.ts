@@ -52,7 +52,14 @@ export async function POST(req: Request) {
     // Constant-time HMAC comparison to prevent timing attack
     const expected = createAdminToken(adminPass)
     const actual = createAdminToken(String(body.pass))
-    const userMatch = body.user === adminUser
+    // Timing-safe comparison for username to prevent timing attacks
+    let userMatch = false
+    try {
+      userMatch = crypto.timingSafeEqual(
+        Buffer.from(body.user.padEnd(128)),
+        Buffer.from(adminUser.padEnd(128))
+      )
+    } catch { userMatch = false }
     const passMatch = userMatch && expected.length === actual.length && crypto.timingSafeEqual(Buffer.from(actual), Buffer.from(expected))
     if (userMatch && passMatch) {
       const token = createAdminToken(adminPass)
@@ -169,7 +176,7 @@ function generateCode() {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
   let result = 'FW-'
   for (let i = 0; i < 6; i++) {
-    result += chars.charAt(Math.floor(Math.random() * chars.length))
+    result += chars.charAt(crypto.randomInt(chars.length))
   }
   return result
 }

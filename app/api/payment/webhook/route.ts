@@ -103,16 +103,15 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Failed to update transaction" }, { status: 500 })
     }
 
-    // If payment successful, update user plan
+    // If payment successful, update user plan in settings table (key-value store, no FK constraints)
     if (newPlanTier && newStatus === "completed") {
       const { error: planError } = await supabase
-        .from("users_plan")
-        .upsert({
-          user_id: transaction.user_id,
-          plan_tier: newPlanTier,
-          source_code: `WEBHOOK_${transactionId.substring(0, 8)}`,
-          assigned_at: new Date().toISOString(),
-        })
+        .from("settings")
+        .upsert([
+          { user_id: transaction.user_id, key: "plan_tier", value: newPlanTier },
+          { user_id: transaction.user_id, key: "plan_assigned_at", value: new Date().toISOString() },
+          { user_id: transaction.user_id, key: "plan_source_code", value: `WEBHOOK_${transactionId.substring(0, 8)}` },
+        ], { onConflict: "user_id,key" })
 
       if (planError) {
         console.error("[webhook] Update plan error:", planError)

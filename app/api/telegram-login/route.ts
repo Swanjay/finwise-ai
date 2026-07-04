@@ -133,7 +133,10 @@ export async function POST(req: Request) {
         return NextResponse.json({ error: "Kode sudah expired" }, { status: 400 })
       }
 
-      if (stored.code !== code) {
+      // Timing-safe comparison to prevent character-by-character brute force
+      const codeA = Buffer.from(stored.code)
+      const codeB = Buffer.from((code || '').padEnd(stored.code.length))
+      if (codeA.length !== codeB.length || !crypto.timingSafeEqual(codeA, codeB)) {
         return NextResponse.json({ error: "Kode salah" }, { status: 400 })
       }
 

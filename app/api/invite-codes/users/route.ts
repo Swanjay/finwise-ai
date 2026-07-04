@@ -29,40 +29,37 @@ export async function GET() {
   }
 
   try {
-    // Get users with plan info first
-    const { data: plans, error: plansError } = await supabase
-      .from("users_plan")
-      .select(`
-        user_id, plan_tier, source_code, assigned_at
-      `)
-      .order("assigned_at", { ascending: false })
+    // Get plan tiers from settings table (key-value store)
+    const { data: planSettings, error: plansError } = await supabase
+      .from("settings")
+      .select("user_id, key, value")
+      .in("key", ["plan_tier", "plan_assigned_at", "plan_source_code"])
+      .order("user_id")
 
     if (plansError) {
       console.error("[invite-codes/users] Fetch plans error:", plansError)
       return NextResponse.json({ error: "Gagal memuat data user" }, { status: 500 })
     }
 
-    // Then get email for each user separately
-    const usersWithEmail = []
-    for (const plan of plans || []) {
-      const { data: userData } = await supabase
-        .from("profiles")
-        .select("email")
-        .eq("id", plan.user_id)
-        .single()
-
-      usersWithEmail.push({
-        user_id: plan.user_id,
-        plan_tier: plan.plan_tier,
-        source_code: plan.source_code,
-        assigned_at: plan.assigned_at,
-        email: userData?.email || "unknown"
-      })
+    // Group settings by user_id
+    const userMap: Record<string, Record<string, string>> = {}
+    for (const row of planSettings || []) {
+      if (!userMap[row.user_id]) userMap[row.user_id] = {}
+      userMap[row.user_id][row.key] = row.value
     }
+
+    // Build user list
+    const users = Object.entries(userMap).map(([userId, settings]) => ({
+      user_id: userId,
+      plan_tier: settings.plan_tier || "basic",
+      source_code: settings.plan_source_code || null,
+      assigned_at: settings.plan_assigned_at || null,
+      email: userId.startsWith("email:") ? userId.replace("email:", "") : userId,
+    }))
 
     return NextResponse.json({
       ok: true,
-      users: usersWithEmail
+      users,
     })
   } catch (err) {
     console.error("[invite-codes/users] Error:", err)
