@@ -1,8 +1,9 @@
 "use client"
-import { useState, useRef, useEffect } from "react"
+import { useState, useRef, useEffect, useMemo } from "react"
 import { signIn } from "next-auth/react"
-import { Loader2, MessageCircle, CheckCircle, ArrowLeft, Send, HelpCircle, Eye, EyeOff } from "lucide-react"
+import { Loader2, MessageCircle, CheckCircle, ArrowLeft, Send, HelpCircle, Eye, EyeOff, ExternalLink } from "lucide-react"
 import { useRouter } from "next/navigation"
+import { isNativePlatform } from "@/lib/platform"
 
 /* ═══════════════════════════════════════════
    WISE STYLE DESIGN SYSTEM
@@ -379,6 +380,7 @@ type View = "login" | "register" | "forgot" | "telegram" | "email-otp"
 
 export default function LoginPage() {
   const router = useRouter()
+  const isNative = useMemo(() => isNativePlatform(), [])
 
   // ─── Global state ───
   const [loading, setLoading] = useState<"google" | "telegram" | "email" | "credentials" | "register" | null>(null)
@@ -669,7 +671,13 @@ export default function LoginPage() {
               {/* Pembatas */}
               <div className="clay-divider">atau masuk dengan</div>
 
-              {/* Google */}
+              {/* Google — hidden in native APK because OAuth opens external browser */}
+              {isNative ? (
+                <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-center text-xs text-amber-700 mb-3">
+                  <strong>📱 Mode APK:</strong> Login Google tidak tersedia.
+                  <br />Gunakan <b>Email + Password</b>, <b>Telegram OTP</b>, atau <b>Email OTP</b>.
+                </div>
+              ) : (
               <button className="clay-social-btn clay-social-google mb-3" onClick={handleGoogleLogin} disabled={isLoading}>
                 {loading === "google" ? <Loader2 className="size-5 animate-spin text-gray-400" /> : (
                   <svg viewBox="0 0 24 24">
@@ -681,6 +689,7 @@ export default function LoginPage() {
                 )}
                 <span>Google</span>
               </button>
+              )}
 
               {/* Telegram & Email OTP */}
               <div className="flex flex-col gap-2 mb-4">

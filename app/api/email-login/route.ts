@@ -68,14 +68,29 @@ export async function POST(req: Request) {
         console.log(`[email-login] Verification code for ${normalizedEmail}: ${verificationCode}`)
       }
 
-      // TODO: When SMTP is configured, send email here:
-      // await sendEmail({
-      //   to: normalizedEmail,
-      //   subject: "Kode Verifikasi FinWise",
-      //   text: `Kode verifikasi kamu: ${verificationCode}. Berlaku 5 menit.`,
-      // })
+      // Send OTP email via Resend
+      const { Resend } = await import("resend")
+      const resend = new Resend(process.env.RESEND_API_KEY)
 
-      return NextResponse.json({ ok: true, message: "Kode terkirim" })
+      const fromAddress = process.env.RESEND_FROM || "FinWise <noreply@finny.biz.id>"
+      const { error: sendError } = await resend.emails.send({
+        from: fromAddress,
+        to: normalizedEmail,
+        subject: "🔐 Kode Verifikasi FinWise",
+        html: `<div style="font-family:system-ui,sans-serif;max-width:400px;margin:0 auto;padding:32px;text-align:center;background:#f5f8ee;border-radius:16px">
+          <h2 style="color:#0e0f0c;margin:0 0 8px">FinWise</h2>
+          <p style="color:#868685;font-size:14px;margin:0 0 24px">Kode verifikasi kamu:</p>
+          <div style="font-size:36px;font-weight:900;letter-spacing:8px;color:#2ead4b;background:white;display:inline-block;padding:16px 32px;border-radius:16px;box-shadow:0 4px 12px rgba(0,0,0,0.06)">${verificationCode}</div>
+          <p style="color:#868685;font-size:13px;margin:24px 0 0">Berlaku selama <b>5 menit</b>. Jangan bagikan kode ini ke siapa pun.</p>
+        </div>`,
+      })
+
+      if (sendError) {
+        console.error("[email-login] Resend error:", sendError)
+        return NextResponse.json({ error: "Gagal mengirim email. Coba lagi." }, { status: 500 })
+      }
+
+      return NextResponse.json({ ok: true, message: "Kode terkirim ke email kamu" })
     }
 
     // ─── VERIFY CODE ───
