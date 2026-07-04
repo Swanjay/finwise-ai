@@ -35,8 +35,14 @@ function verifyAdminCookie(req: Request): boolean {
   }
 }
 
+import { rateLimitMiddleware } from "@/lib/rate-limit-kv"
+
 // ── POST /api/admin/codes-simple → login ──
 export async function POST(req: Request) {
+  // Rate limit: 5 requests per minute per IP for admin routes
+  const rateLimitResponse = await rateLimitMiddleware(req, { windowMs: 60_000, max: 5 })
+  if (rateLimitResponse) return rateLimitResponse
+
   const body = await req.json().catch(() => ({}))
 
   // Login action

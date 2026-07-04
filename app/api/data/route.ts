@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/auth"
 import { getSupabase } from "@/lib/supabase-server"
 import { createHash } from "crypto"
+import { dataSyncSchema } from "@/lib/validate"
 
 // Deterministic UUID from email — same email always gives same ID
 function emailToUserId(email: string): string {
@@ -99,33 +100,45 @@ export async function POST(req: Request) {
   if (!session?.user?.email) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
   const supabase = getSupabase()
-  const body = await req.json()
+  let body: unknown
+  try {
+    body = await req.json()
+  } catch {
+    return NextResponse.json({ error: "Request body tidak valid" }, { status: 400 })
+  }
+
+  const parsed = dataSyncSchema.safeParse(body)
+  if (!parsed.success) {
+    return NextResponse.json({ error: "Data tidak valid", details: parsed.error.flatten() }, { status: 400 })
+  }
+
+  const validated = parsed.data
   const uid = emailToUserId(session.user.email)
   const results: Record<string, string> = {}
 
-  // 1. Transactions
-  if (body.transactions?.length) {
-    const rows = body.transactions.map((t: any) => ({
+  // 1. Transactions (validated & sanitized)
+  if (validated.transactions.length) {
+    const rows = validated.transactions.map((t) => ({
       id: t.id,
       user_id: uid,
       type: t.type,
-      amount: Number(t.amount),
+      amount: t.amount,
       category: t.category,
-      note: t.description || t.note || "",
+      note: t.note || "",
       date: t.date,
-      wallet: t.walletId || t.wallet || "cash",
+      wallet: t.wallet || "cash",
     }))
     const { error } = await supabase.from("transactions").upsert(rows, { onConflict: "id" })
     results.transactions = error ? `Error: ${error.message}` : `OK (${rows.length})`
   }
 
-  // 2. Wallets
-  if (body.wallets?.length) {
-    const rows = body.wallets.map((w: any) => ({
+  // 2. Wallets (validated & sanitized)
+  if (validated.wallets.length) {
+    const rows = validated.wallets.map((w) => ({
       id: w.id,
       user_id: uid,
       name: w.name,
-      balance: Number(w.initialBalance ?? w.balance ?? 0),
+      balance: w.balance,
       color: w.color || "#00ff9d",
       icon: w.icon || "💵",
     }))
@@ -133,14 +146,14 @@ export async function POST(req: Request) {
     results.wallets = error ? `Error: ${error.message}` : `OK (${rows.length})`
   }
 
-  // 3. Goals
-  if (body.goals?.length) {
-    const rows = body.goals.map((g: any) => ({
+  // 3. Goals (validated & sanitized)
+  if (validated.goals.length) {
+    const rows = validated.goals.map((g) => ({
       id: g.id,
       user_id: uid,
       name: g.name,
-      target: Number(g.targetAmount ?? g.target ?? 0),
-      saved: Number(g.currentAmount ?? g.saved ?? 0),
+      target: g.target,
+      saved: g.saved || 0,
       color: g.color || "#a78bfa",
       emoji: g.emoji || "🎯",
       deadline: g.deadline || null,
@@ -149,42 +162,41 @@ export async function POST(req: Request) {
     results.goals = error ? `Error: ${error.message}` : `OK (${rows.length})`
   }
 
-  // 4. Budgets
-  if (body.budgets && typeof body.budgets === "object") {
-    const rows = Object.entries(body.budgets)
-      .filter(([, v]) => Number(v) > 0)
+  // 4. Budgets (validated & sanitized)
+  if (validated.budgets && typeof validated.budgets === "object") {
+    const rows = Object.entries(validated.budgets)
+      .filter(([, v]) => v > 0)
       .map(([cat, amount]) => ({
         user_id: uid,
         category: cat,
-        limit_amount: Number(amount),
+        limit_amount: amount,
       }))
     if (rows.length) {
-      // Delete existing budgets for this user, then insert fresh
       await supabase.from("budgets").delete().eq("user_id", uid)
       const { error } = await supabase.from("budgets").insert(rows)
       results.budgets = error ? `Error: ${error.message}` : `OK (${rows.length})`
     }
   }
 
-  // 5. Recurring
-  if (body.recurring?.length) {
-    const rows = body.recurring.map((r: any) => ({
+  // 5. Recurring (validated & sanitized)
+  if (validated.recurring.length) {
+    const rows = validated.recurring.map((r) => ({
       id: r.id,
       user_id: uid,
       type: r.type,
-      amount: Number(r.amount),
+      amount: r.amount,
       category: r.category,
-      note: r.description || r.note || "",
+      note: r.note || "",
       frequency: r.frequency || "monthly",
-      wallet: r.walletId || r.wallet || "cash",
+      wallet: r.wallet || "cash",
     }))
     const { error } = await supabase.from("recurring").upsert(rows, { onConflict: "id" })
     results.recurring = error ? `Error: ${error.message}` : `OK (${rows.length})`
   }
 
-  // 6. Settings (key-value)
-  if (body.settings && typeof body.settings === "object") {
-    const rows = Object.entries(body.settings).map(([key, value]) => ({
+  // 6. Settings (key-value, validated & sanitized)
+  if (validated.settings && typeof validated.settings === "object") {
+    const rows = Object.entries(validated.settings).map(([key, value]) => ({
       user_id: uid,
       key,
       value: String(value),
