@@ -1433,54 +1433,26 @@ function AppShell() {
         {tab !== 'home' && <PricingTableFooter currentPlan={plan} onUpgrade={() => setSheet('voucher')} />}
       </main>
 
-      {/* Bottom nav — hidden */}
-      {false && (
-      <nav className="fixed inset-x-0 bottom-4 z-40 mx-auto max-w-[360px] px-4">
-        <div className="clay-bottom-nav grid grid-cols-5 items-center px-3 py-2">
-          {navItems.slice(0, 2).map((item) => (
-            <button
-              key={item.id}
-              onClick={() => { haptic.light(); setTab(item.id) }}
-              className={cn(
-                'flex flex-col items-center gap-0.5 rounded-2xl py-1.5 px-2 text-[10px] font-semibold transition',
-                tab === item.id
-                  ? 'bg-[var(--color-clay-green,#9fe870)] text-primary'
-                  : 'text-muted-foreground hover:text-primary'
-              )}
-            >
-              <item.icon className="size-5" />{item.label}
-            </button>
-          ))}
-          <div className="flex justify-center">
-            <button
-              onClick={() => {
-                haptic.medium()
-                if (!canAccess(plan, 'ai_scan')) { setShowUpgradeModal('ai_scan'); return }
-                setSheet('scan')
-              }}
-              aria-label="Scan struk"
-              className="clay-btn -mt-5 flex size-14 items-center justify-center"
-            >
-              <Camera className="size-6" />
-            </button>
-          </div>
-          {navItems.slice(2).map((item) => (
-            <button
-              key={item.id}
-              onClick={() => { haptic.light(); setTab(item.id) }}
-              className={cn(
-                'flex flex-col items-center gap-0.5 rounded-2xl py-1.5 px-2 text-[10px] font-semibold transition',
-                tab === item.id
-                  ? 'bg-[var(--color-clay-green,#9fe870)] text-primary'
-                  : 'text-muted-foreground hover:text-primary'
-              )}
-            >
-              <item.icon className="size-5" />{item.label}
-            </button>
-          ))}
-        </div>
+      {/* Permanent Bottom Nav */}
+      <nav className="fixed inset-x-0 bottom-0 z-50 flex items-center justify-around border-t border-border bg-card h-16 max-w-md mx-auto w-full">
+        {[
+          { id: 'home' as Tab, icon: Home, label: 'Home' },
+          { id: 'trends' as Tab, icon: BarChart3, label: 'Rencana' },
+          { id: 'transactions' as Tab, icon: ArrowDownUp, label: 'Tx' },
+          { id: 'budget' as Tab, icon: User, label: 'Profile' },
+        ].map((item) => (
+          <button
+            key={item.id}
+            onClick={() => { haptic.light(); setTab(item.id) }}
+            className="flex flex-col items-center gap-0.5"
+          >
+            <item.icon className={cn('w-5 h-5', tab === item.id ? 'text-primary' : 'text-muted-foreground')} />
+            <span className={cn('text-[9px] font-semibold', tab === item.id ? 'text-primary' : 'text-muted-foreground')}>
+              {item.label}
+            </span>
+          </button>
+        ))}
       </nav>
-      )}
 
       {/* FAB — hidden */}
       {false && (

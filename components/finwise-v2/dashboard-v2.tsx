@@ -5,7 +5,7 @@ import { useFinwise } from '@/components/finwise-store'
 import { formatIDRShort, summarize, filterByMonth, getMonthKey } from '@/lib/finwise'
 import { cn } from '@/lib/utils'
 import {
-  Home, Wallet, CreditCard, ArrowDownUp, BarChart3, Target, ReceiptText,
+  Home, Wallet, ArrowDownUp, BarChart3, Target, ReceiptText,
   TrendingUp, Lightbulb, Settings, User, Bell, Eye, EyeOff,
   ChevronLeft, ChevronRight, ArrowUpRight,
 } from 'lucide-react'
@@ -241,11 +241,6 @@ export function DashboardV2({ onOpenSheet, onNavigate }: DashboardV2Props) {
             </div>
           ))}
         </main>
-        <BottomNav activeScreen={currentScreen} onNavigate={(s) => {
-          if (s === 'home') setCurrentScreen('home')
-          else if (s === 'profile') setCurrentScreen('settings')
-          else if (onNavigate) onNavigate(s)
-        }} />
       </div>
     )
   }
@@ -364,43 +359,9 @@ export function DashboardV2({ onOpenSheet, onNavigate }: DashboardV2Props) {
           if (onNavigate) onNavigate('transactions')
         }} />
       </main>
-
-      {/* Bottom Nav */}
-      <BottomNav activeScreen={currentScreen} onNavigate={(s) => {
-        if (s === 'home') setCurrentScreen('home')
-        else if (s === 'profile') setCurrentScreen('settings')
-        else if (onNavigate) onNavigate(s)
-      }} />
     </div>
   )
 }
 
 // ─── Bottom Nav ───
-function BottomNav({ activeScreen, onNavigate }: { activeScreen: string; onNavigate: (screen: string) => void }) {
-  const navItems = [
-    { id: 'home', icon: Home, label: 'Home' },
-    { id: 'transactions', icon: BarChart3, label: 'Rencana' },
-    { id: 'add', icon: ArrowDownUp, label: 'Tx' },
-    { id: 'profile', icon: User, label: 'Profile' },
-  ]
-
-  return (
-    <div className="h-16 flex items-center justify-around border-t border-border bg-card">
-      {navItems.map((item) => (
-        <button key={item.id} onClick={() => onNavigate(item.id)}
-          className="flex flex-col items-center gap-0.5">
-          <item.icon className={cn('w-5 h-5',
-            (item.id === 'home' && activeScreen === 'home') ||
-            (item.id === 'profile' && activeScreen === 'settings')
-              ? 'text-primary' : 'text-muted-foreground'
-          )} />
-          <span className={cn('text-[9px] font-semibold',
-            (item.id === 'home' && activeScreen === 'home') ||
-            (item.id === 'profile' && activeScreen === 'settings')
-              ? 'text-primary' : 'text-muted-foreground'
-          )}>{item.label}</span>
-        </button>
-      ))}
-    </div>
-  )
-}
+// Moved to AppShell in page.tsx - always visible across all tabs
