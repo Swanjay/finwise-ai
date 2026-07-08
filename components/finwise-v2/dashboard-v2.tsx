@@ -195,8 +195,6 @@ export function DashboardV2({ onOpenSheet, onNavigate }: DashboardV2Props) {
     { icon: BarChart3, label: 'Budget', sheet: 'smart-budget' },
     { icon: TrendingUp, label: 'Invest', sheet: 'benchmark' },
     { icon: Lightbulb, label: 'AI Insight', sheet: 'advisor' },
-    { icon: CreditCard, label: 'Cards', sheet: 'wallets' },
-    { icon: Wallet, label: 'Accounts', sheet: 'wallets' },
   ]
 
   const formatBal = (n: number) => hideBalance ? '••••••' : formatIDRShort(n)
@@ -281,13 +279,13 @@ export function DashboardV2({ onOpenSheet, onNavigate }: DashboardV2Props) {
             className="h-12 rounded-xl bg-primary text-primary-foreground flex items-center justify-center shadow-sm">
             <Wallet className="w-5 h-5" />
           </button>
-          <button onClick={() => openSheet('wallets')}
+          <button onClick={() => openSheet('transfer')}
             className="h-12 rounded-xl bg-primary text-primary-foreground flex items-center justify-center shadow-sm">
-            <CreditCard className="w-5 h-5" />
+            <ArrowDownUp className="w-5 h-5" />
           </button>
           <button onClick={() => onNavigate ? onNavigate('transactions') : null}
             className="h-12 rounded-xl bg-primary text-primary-foreground flex items-center justify-center shadow-sm">
-            <TrendingUp className="w-5 h-5" />
+            <BarChart3 className="w-5 h-5" />
           </button>
           <button onClick={() => openSheet('add')}
             className="h-12 rounded-xl bg-primary text-primary-foreground flex items-center justify-center shadow-sm">
@@ -301,7 +299,7 @@ export function DashboardV2({ onOpenSheet, onNavigate }: DashboardV2Props) {
             <h3 className="text-sm font-bold text-foreground">Services</h3>
             <span className="text-xs font-semibold text-primary cursor-pointer">Edit</span>
           </div>
-          <div className="grid grid-cols-4 gap-3">
+          <div className="grid grid-cols-3 gap-3">
             {services.map((svc) => (
               <button key={svc.label} onClick={() => openSheet(svc.sheet)}
                 className="flex flex-col items-center gap-1.5">
@@ -381,7 +379,7 @@ export function DashboardV2({ onOpenSheet, onNavigate }: DashboardV2Props) {
 function BottomNav({ activeScreen, onNavigate }: { activeScreen: string; onNavigate: (screen: string) => void }) {
   const navItems = [
     { id: 'home', icon: Home, label: 'Home' },
-    { id: 'transactions', icon: CreditCard, label: 'Cards' },
+    { id: 'transactions', icon: BarChart3, label: 'Rencana' },
     { id: 'add', icon: ArrowDownUp, label: 'Tx' },
     { id: 'profile', icon: User, label: 'Profile' },
   ]
