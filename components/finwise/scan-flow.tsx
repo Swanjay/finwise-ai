@@ -370,9 +370,10 @@ export function ScanFlow({ onDone }: { onDone: () => void }) {
 
   const MAX_RETRIES = 2
 
-  async function processImage(image: string, isRetry = false) {
+  async function processImage(image: string, isRetry = false, attempt = 0) {
     setError(null)
     setStep('scanning')
+    setRetryCount(attempt)
     if (!isRetry) {
       setCapturedPhoto(image)
       // Generate compressed thumbnail in background
@@ -390,7 +391,9 @@ export function ScanFlow({ onDone }: { onDone: () => void }) {
       if (!res.ok) {
         const data = await res.json().catch(() => ({}))
         if (res.status === 401) throw new Error('Silakan login dulu untuk scan struk.')
+        if (res.status === 403) throw new Error(data.error || 'Fitur Scan Struk AI hanya tersedia di paket Premium.')
         if (res.status === 429) throw new Error(data.error || 'Terlalu banyak scan. Tunggu sebentar.')
+        if (res.status === 400) throw new Error(data.error || 'Gambar tidak valid.')
         throw new Error(data.error || 'Gagal membaca struk.')
       }
 
@@ -418,13 +421,15 @@ export function ScanFlow({ onDone }: { onDone: () => void }) {
       setStep(items.length > 0 ? 'edit' : 'confirm')
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Gagal membaca struk.'
-      if (retryCount < MAX_RETRIES && !msg.includes('login') && !msg.includes('Tunggu')) {
-        // Auto-retry with backoff
-        setRetryCount((c) => c + 1)
-        const delay = 1000 * Math.pow(2, retryCount)
-        setTimeout(() => processImage(image, true), delay)
+      const permanent = msg.includes('login') || msg.includes('Premium') || msg.includes('Tunggu') || msg.includes('Gambar tidak valid')
+      if (attempt < MAX_RETRIES && !permanent) {
+        const nextAttempt = attempt + 1
+        setRetryCount(nextAttempt)
+        const delay = 1000 * Math.pow(2, attempt)
+        window.setTimeout(() => processImage(image, true, nextAttempt), delay)
         return
       }
+      setRetryCount(0)
       setError(msg)
       setIsRetrying(false)
       setStep('idle')

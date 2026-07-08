@@ -27,7 +27,7 @@ export const telegramLoginSchema = z.discriminatedUnion('action', [
 ])
 
 export const scanReceiptSchema = z.object({
-  image: z.string().min(1).max(50_000_000), // base64 image (up to ~37MB decoded)
+  image: z.string().min(1).max(10_000_000), // base64 image (~7.5MB decoded); frontend compresses before upload
 })
 
 export const advisorSchema = z.object({

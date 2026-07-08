@@ -89,28 +89,34 @@ function extractItems(text: string): { name: string; price: number; qty?: number
 }
 
 // Extract amount from OCR text
+function normalizeAmount(raw: string): number {
+  const num = parseInt(raw.replace(/[^\d]/g, ''))
+  return Number.isFinite(num) && num > 0 && num < 100_000_000 ? num : 0
+}
+
 function extractAmount(text: string): number {
-  const totalPatterns = [
-    /(?:grand\s*total|total\s*belanja|total\s*pembayaran|total|bayar|payment|amount|subtotal)[:\s]*rp\.?\s*([\d.,]+)/gi,
-    /(?:Rp|IDR)\s*([\d.,]+)/gi,
+  const lines = text.split('\n').map(l => l.trim()).filter(Boolean)
+  const totalLinePatterns = [
+    /(?:grand\s*total|total\s*belanja|total\s*pembayaran|total\s*due|total\s*amount|jumlah\s*bayar|total)\D{0,20}(\d{1,3}(?:[.,]\d{3})+|\d{4,})/i,
+    /(?:bayar|payment|amount)\D{0,20}(\d{1,3}(?:[.,]\d{3})+|\d{4,})/i,
   ]
 
-  let amounts: number[] = []
-  for (const pattern of totalPatterns) {
-    const matches = [...text.matchAll(pattern)]
-    for (const m of matches) {
-      const num = parseInt(m[1].replace(/[.,]/g, ''))
-      if (num > 0 && num < 100_000_000) amounts.push(num)
+  for (const pattern of totalLinePatterns) {
+    for (const line of lines) {
+      const m = line.match(pattern)
+      if (m) {
+        const amount = normalizeAmount(m[1])
+        if (amount) return amount
+      }
     }
   }
 
-  if (amounts.length > 0) {
-    return Math.max(...amounts)
-  }
+  const itemTotal = extractItems(text).reduce((sum, item) => sum + item.price * (item.qty || 1), 0)
+  if (itemTotal > 0) return itemTotal
 
-  const fallback = text.match(/(\d{1,3}(?:\.\d{3})+|\d{4,})/g)
+  const fallback = text.match(/(?:Rp|IDR)\s*(\d{1,3}(?:[.,]\d{3})+|\d{4,})/gi)
   if (fallback) {
-    const nums = fallback.map(f => parseInt(f.replace(/[.,]/g, ''))).filter(n => n > 1000 && n < 100_000_000)
+    const nums = fallback.map(f => normalizeAmount(f)).filter(n => n > 1000 && n < 100_000_000)
     if (nums.length > 0) return Math.max(...nums)
   }
 
@@ -286,13 +292,16 @@ export async function POST(req: Request) {
 
     // Step 2: Parse the OCR text
     const items = extractItems(ocrText)
-    const result = {
+    const result: Record<string, unknown> = {
       store: extractStore(ocrText),
       amount: extractAmount(ocrText),
       category: detectCategory(ocrText),
       date: extractDate(ocrText),
       items,
-      ocrText, // raw OCR text for debugging
+    }
+
+    if (process.env.NODE_ENV !== 'production') {
+      result.ocrText = ocrText
     }
 
     return Response.json(result)
