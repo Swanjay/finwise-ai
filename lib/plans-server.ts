@@ -8,6 +8,15 @@ function getSupabase() {
   return createClient(url, key)
 }
 
+function candidateUserIds(userId: string): string[] {
+  const ids = new Set<string>([userId])
+  if (userId.startsWith('email:')) {
+    const email = userId.slice('email:'.length).toLowerCase().trim()
+    ids.add(email)
+  }
+  return Array.from(ids)
+}
+
 export async function getUserPlan(userId: string): Promise<PlanTier> {
   const supabase = getSupabase()
   if (!supabase) return 'basic'
@@ -15,14 +24,16 @@ export async function getUserPlan(userId: string): Promise<PlanTier> {
   try {
     const { data, error } = await supabase
       .from('settings')
-      .select('key, value')
-      .eq('user_id', userId)
+      .select('user_id, key, value')
+      .in('user_id', candidateUserIds(userId))
       .in('key', ['plan_tier', 'plan_assigned_at'])
 
     if (error || !data || data.length === 0) return 'basic'
 
-    const planTier = data.find(r => r.key === 'plan_tier')?.value
-    const assignedAt = data.find(r => r.key === 'plan_assigned_at')?.value
+    const preferred = data.some(r => r.user_id === userId && r.key === 'plan_tier') ? userId : data.find(r => r.key === 'plan_tier')?.user_id
+    const rows = data.filter(r => r.user_id === preferred)
+    const planTier = rows.find(r => r.key === 'plan_tier')?.value
+    const assignedAt = rows.find(r => r.key === 'plan_assigned_at')?.value
 
     if (!planTier || planTier === 'basic') return 'basic'
 
@@ -51,14 +62,16 @@ export async function getPlanExpiryDays(userId: string): Promise<number | null> 
   try {
     const { data, error } = await supabase
       .from('settings')
-      .select('key, value')
-      .eq('user_id', userId)
+      .select('user_id, key, value')
+      .in('user_id', candidateUserIds(userId))
       .in('key', ['plan_tier', 'plan_assigned_at'])
 
     if (error || !data || data.length === 0) return null
 
-    const planTier = data.find(r => r.key === 'plan_tier')?.value
-    const assignedAt = data.find(r => r.key === 'plan_assigned_at')?.value
+    const preferred = data.some(r => r.user_id === userId && r.key === 'plan_tier') ? userId : data.find(r => r.key === 'plan_tier')?.user_id
+    const rows = data.filter(r => r.user_id === preferred)
+    const planTier = rows.find(r => r.key === 'plan_tier')?.value
+    const assignedAt = rows.find(r => r.key === 'plan_assigned_at')?.value
 
     if (!planTier || planTier === 'basic' || !assignedAt) return null
 
