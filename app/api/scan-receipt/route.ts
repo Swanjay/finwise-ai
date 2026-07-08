@@ -71,11 +71,15 @@ function extractItems(text: string): { name: string; price: number; qty?: number
     .filter(Boolean)
 
   const patterns: RegExp[] = [
+    // 1 Gurame goreng Rp.65.000 Rp.65.000
+    /^(\d{1,3})\s+(.+?)\s+(?:Rp\.?\s*)?([\d.,]+)\s+(?:Rp\.?\s*)?([\d.,]+)\s*$/,
+    // 1 Nasi Tunjang 36.000 / 1 Gurame goreng Rp.65.000
+    /^(\d{1,3})\s+(.+?)\s+(?:Rp\.?\s*)?([\d.,]+)\s*$/,
     // Item 2 x 15.000 30.000
     /^(.+?)\s+(\d{1,3})\s*[xX×]\s*(?:Rp\.?\s*)?([\d.,]+)\s+(?:Rp\.?\s*)?([\d.,]+)\s*$/,
     // Item 2 15.000 30.000
     /^(.+?)\s+(\d{1,3})\s+(?:Rp\.?\s*)?([\d.,]+)\s+(?:Rp\.?\s*)?([\d.,]+)\s*$/,
-    // Item x2 15.000
+    // Item x2 15.000 / Fried Kwetiau x1 Rp99.000
     /^(.+?)\s+[xX×](\d{1,3})\s+(?:Rp\.?\s*)?([\d.,]+)\s*$/,
     // Item 2 x 15.000
     /^(.+?)\s+(\d{1,3})\s*[xX×]\s*(?:Rp\.?\s*)?([\d.,]+)\s*$/,
@@ -96,15 +100,27 @@ function extractItems(text: string): { name: string; price: number; qty?: number
       let unitPrice = 0
       let lineTotal = 0
 
-      if (i === 0 || i === 1) {
-        name = cleanItemName(m[1])
-        qty = parseInt(m[2], 10)
+      if (i === 0) {
+        qty = parseInt(m[1], 10)
+        name = cleanItemName(m[2])
         unitPrice = parseMoney(m[3])
         lineTotal = parseMoney(m[4])
         if (qty > 0 && lineTotal > 0 && (unitPrice === 0 || Math.abs(unitPrice * qty - lineTotal) > Math.max(100, lineTotal * 0.05))) {
           unitPrice = Math.round(lineTotal / qty)
         }
+      } else if (i === 1) {
+        qty = parseInt(m[1], 10)
+        name = cleanItemName(m[2])
+        unitPrice = parseMoney(m[3])
       } else if (i === 2 || i === 3) {
+        name = cleanItemName(m[1])
+        qty = parseInt(m[2], 10)
+        unitPrice = parseMoney(m[3])
+        lineTotal = parseMoney(m[4] || '0')
+        if (qty > 0 && lineTotal > 0 && Math.abs(unitPrice * qty - lineTotal) > Math.max(100, lineTotal * 0.05)) {
+          unitPrice = Math.round(lineTotal / qty)
+        }
+      } else if (i === 4 || i === 5) {
         name = cleanItemName(m[1])
         qty = parseInt(m[2], 10)
         unitPrice = parseMoney(m[3])
