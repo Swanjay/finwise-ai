@@ -1320,14 +1320,14 @@ function AppShell() {
 
   return (
     <div className="mx-auto flex min-h-screen w-full max-w-md flex-col bg-background">
-      {/* Header — Clay Style */}
+      {/* Header — Clay Style (hidden on home, DashboardV2 has its own) */}
+      {tab !== 'home' && (
       <header className="flex items-center justify-between px-5 pb-3 pt-6">
         <div className="flex items-center gap-2.5">
           <FinWiseLogo size={36} showText={false} />
           <div>
             <p className="text-xs text-muted-foreground font-medium">Selamat datang 👋</p>
             <h2 className="font-heading text-base font-bold text-foreground leading-tight">
-              {tab === 'home' && 'Home'}
               {tab === 'transactions' && 'Transaksi'}
               {tab === 'trends' && 'Rencana'}
               {tab === 'budget' && 'Kesehatan'}
@@ -1349,9 +1349,10 @@ function AppShell() {
           <UserAvatar onOpenSettings={() => setSheet('settings')} />
         </div>
       </header>
+      )}
 
       {/* Plan Expiry Notice */}
-      {plan !== 'basic' && (() => {
+      {tab !== 'home' && plan !== 'basic' && (() => {
         const planInfo = getPlanInfo()
         if (!planInfo.expiresAt) return null
         const expiry = new Date(planInfo.expiresAt)
@@ -1376,7 +1377,8 @@ function AppShell() {
         )
       })()}
 
-      {/* Quick Actions Bar */}
+      {/* Quick Actions Bar (hidden on home) */}
+      {tab !== 'home' && (
       <div className="px-5 pb-3 flex gap-2 overflow-x-auto no-scrollbar">
         {[
           { icon: Sparkles, label: 'AI Advisor', sheet: 'advisor' as Sheet, feature: 'ai_advisor' },
@@ -1418,17 +1420,17 @@ function AppShell() {
           )
         })}
       </div>
+      )}
 
       {/* Content */}
       <main className="flex-1 px-4 pb-32">
-        {!tipsDismissed && tab === 'home' && <OnboardingTips onDismiss={dismissTips} />}
-        {tab === 'home' && <DashboardV2 />}
+        {tab === 'home' && <DashboardV2 onOpenSheet={(s) => setSheet(s as Sheet)} onNavigate={(s) => { if (s === 'transactions') setTab('transactions'); }} />}
         {tab === 'transactions' && <TransactionsView />}
         {tab === 'trends' && <TrendsView />}
         {tab === 'budget' && <BudgetTab transactions={monthTx} />}
 
         {/* Pricing Table Footer */}
-        {tab === 'home' && <PricingTableFooter currentPlan={plan} onUpgrade={() => setSheet('voucher')} />}
+        {tab !== 'home' && <PricingTableFooter currentPlan={plan} onUpgrade={() => setSheet('voucher')} />}
       </main>
 
       {/* Bottom nav — hidden */}
