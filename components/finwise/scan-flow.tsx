@@ -17,6 +17,7 @@ import {
   type CategoryId,
   type ReceiptLineItem,
 } from '@/lib/finwise'
+import { loadPlan } from '@/lib/plans'
 import { useFinwise } from '@/components/finwise-store'
 import { cn } from '@/lib/utils'
 
@@ -383,7 +384,10 @@ export function ScanFlow({ onDone }: { onDone: () => void }) {
     try {
       const res = await fetch('/api/scan-receipt', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'X-FinWise-Plan': loadPlan(),
+        },
         credentials: 'same-origin',
         body: JSON.stringify({ image }),
       })

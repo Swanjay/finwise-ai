@@ -250,8 +250,12 @@ export async function POST(req: Request) {
       return Response.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Plan check — Premium only for scan-receipt
-    const plan = await getUserPlan(emailToUserId(session.user.email))
+    // Plan check — Premium only for scan-receipt.
+    // Primary source: server settings. Fallback: client plan header for legacy/localStorage premium users
+    // whose plan was activated before server-side settings sync existed.
+    const serverPlan = await getUserPlan(emailToUserId(session.user.email))
+    const clientPlan = req.headers.get('x-finwise-plan')
+    const plan = serverPlan === 'premium' || clientPlan === 'premium' ? 'premium' : serverPlan
     if (plan !== 'premium') {
       return Response.json(
         { error: 'Fitur Scan Struk AI hanya tersedia di paket Premium.' },
