@@ -17,7 +17,6 @@ import {
 import { useSession, signOut } from 'next-auth/react'
 import { FinwiseProvider, useFinwise } from '@/components/finwise-store'
 import { DashboardView } from '@/components/finwise/dashboard-view'
-import { DashboardV2 } from '@/components/finwise-v2/dashboard-v2'
 import { TransactionsView } from '@/components/finwise/transactions-view'
 import { TrendsView } from '@/components/finwise/trends-view'
 import { BottomSheet } from '@/components/finwise/bottom-sheet'
@@ -1320,14 +1319,14 @@ function AppShell() {
 
   return (
     <div className="mx-auto flex min-h-screen w-full max-w-md flex-col bg-background">
-      {/* Header — Clay Style (hidden on home, DashboardV2 has its own) */}
-      {tab !== 'home' && (
+      {/* Header — Clay Style */}
       <header className="flex items-center justify-between px-5 pb-3 pt-6">
         <div className="flex items-center gap-2.5">
           <FinWiseLogo size={36} showText={false} />
           <div>
             <p className="text-xs text-muted-foreground font-medium">Selamat datang 👋</p>
             <h2 className="font-heading text-base font-bold text-foreground leading-tight">
+              {tab === 'home' && 'Home'}
               {tab === 'transactions' && 'Transaksi'}
               {tab === 'trends' && 'Rencana'}
               {tab === 'budget' && 'Kesehatan'}
@@ -1349,10 +1348,9 @@ function AppShell() {
           <UserAvatar onOpenSettings={() => setSheet('settings')} />
         </div>
       </header>
-      )}
 
       {/* Plan Expiry Notice */}
-      {tab !== 'home' && plan !== 'basic' && (() => {
+      {plan !== 'basic' && (() => {
         const planInfo = getPlanInfo()
         if (!planInfo.expiresAt) return null
         const expiry = new Date(planInfo.expiresAt)
@@ -1377,8 +1375,7 @@ function AppShell() {
         )
       })()}
 
-      {/* Quick Actions Bar (hidden on home) */}
-      {tab !== 'home' && (
+      {/* Quick Actions Bar */}
       <div className="px-5 pb-3 flex gap-2 overflow-x-auto no-scrollbar">
         {[
           { icon: Sparkles, label: 'AI Advisor', sheet: 'advisor' as Sheet, feature: 'ai_advisor' },
@@ -1420,49 +1417,67 @@ function AppShell() {
           )
         })}
       </div>
-      )}
 
       {/* Content */}
       <main className="flex-1 px-4 pb-32">
-        {tab === 'home' && <DashboardV2 onOpenSheet={(s) => setSheet(s as Sheet)} onNavigate={(s) => { if (s === 'transactions') setTab('transactions'); }} />}
+        {!tipsDismissed && tab === 'home' && <OnboardingTips onDismiss={dismissTips} />}
+        {tab === 'home' && <DashboardView transactions={monthTx} month={getMonthLabel(monthKey)} onOpenGoals={() => setSheet('goals')} onOpenWallets={() => setSheet('wallets')} onOpenAdd={() => setSheet('add')} onOpenReports={() => router.push('/reports')} />}
         {tab === 'transactions' && <TransactionsView />}
         {tab === 'trends' && <TrendsView />}
         {tab === 'budget' && <BudgetTab transactions={monthTx} />}
 
         {/* Pricing Table Footer */}
-        {tab !== 'home' && <PricingTableFooter currentPlan={plan} onUpgrade={() => setSheet('voucher')} />}
+        {tab === 'home' && <PricingTableFooter currentPlan={plan} onUpgrade={() => setSheet('voucher')} />}
       </main>
 
-      {/* Permanent Bottom Nav */}
-      <nav className="fixed inset-x-0 bottom-0 z-50 flex items-center justify-around border-t border-border bg-card h-16 max-w-md mx-auto w-full">
-        {[
-          { id: 'home' as Tab, icon: Home, label: 'Home' },
-          { id: 'trends' as Tab, icon: BarChart3, label: 'Rencana' },
-          { id: 'transactions' as Tab, icon: ArrowDownUp, label: 'Transaksi' },
-          { id: 'settings', icon: User, label: 'Profil', action: 'sheet' as const, sheet: 'settings' },
-        ].map((item) => (
-          <button
-            key={item.id}
-            onClick={() => {
-              haptic.light()
-              if (item.action === 'sheet') {
-                setSheet(item.sheet as Sheet)
-              } else {
-                setTab(item.id)
-              }
-            }}
-            className="flex flex-col items-center gap-0.5"
-          >
-            <item.icon className={cn('w-5 h-5', tab === item.id ? 'text-primary' : 'text-muted-foreground')} />
-            <span className={cn('text-[9px] font-semibold', tab === item.id ? 'text-primary' : 'text-muted-foreground')}>
-              {item.label}
-            </span>
-          </button>
-        ))}
+      {/* Bottom nav — Clay Style */}
+      <nav className="fixed inset-x-0 bottom-4 z-40 mx-auto max-w-[360px] px-4">
+        <div className="clay-bottom-nav grid grid-cols-5 items-center px-3 py-2">
+          {navItems.slice(0, 2).map((item) => (
+            <button
+              key={item.id}
+              onClick={() => { haptic.light(); setTab(item.id) }}
+              className={cn(
+                'flex flex-col items-center gap-0.5 rounded-2xl py-1.5 px-2 text-[10px] font-semibold transition',
+                tab === item.id
+                  ? 'bg-[var(--color-clay-green,#9fe870)] text-primary'
+                  : 'text-muted-foreground hover:text-primary'
+              )}
+            >
+              <item.icon className="size-5" />{item.label}
+            </button>
+          ))}
+          <div className="flex justify-center">
+            <button
+              onClick={() => {
+                haptic.medium()
+                if (!canAccess(plan, 'ai_scan')) { setShowUpgradeModal('ai_scan'); return }
+                setSheet('scan')
+              }}
+              aria-label="Scan struk"
+              className="clay-btn -mt-5 flex size-14 items-center justify-center"
+            >
+              <Camera className="size-6" />
+            </button>
+          </div>
+          {navItems.slice(2).map((item) => (
+            <button
+              key={item.id}
+              onClick={() => { haptic.light(); setTab(item.id) }}
+              className={cn(
+                'flex flex-col items-center gap-0.5 rounded-2xl py-1.5 px-2 text-[10px] font-semibold transition',
+                tab === item.id
+                  ? 'bg-[var(--color-clay-green,#9fe870)] text-primary'
+                  : 'text-muted-foreground hover:text-primary'
+              )}
+            >
+              <item.icon className="size-5" />{item.label}
+            </button>
+          ))}
+        </div>
       </nav>
 
-      {/* FAB — hidden */}
-      {false && (
+      {/* FAB — Expandable */}
       <div className="fixed bottom-20 right-5 z-30 flex flex-col-reverse items-center gap-3 sm:hidden">
         {/* Main FAB button — toggles menu */}
         <button
@@ -1502,7 +1517,6 @@ function AppShell() {
           </>
         )}
       </div>
-      )}
 
       {/* Bottom Sheets */}
       <BottomSheet open={sheet === 'add'} onClose={() => setSheet(null)} title="Catat Transaksi"><AddTransactionForm onDone={() => setSheet(null)} /></BottomSheet>
