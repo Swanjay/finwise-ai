@@ -13,7 +13,7 @@ import {
 } from 'framer-motion'
 
 /* ───────── constants ───────── */
-const SNAP_RATIOS = [0.5, 0.9, 1.0] as const // 50%, 90%, 100% of viewport
+const SNAP_RATIOS = [0.9, 1.0] as const // 90%, 100% of viewport
 
 /** Convert a snap ratio (0–1) to the Y offset from top.
  *  ratio 0.5 → sheet covers bottom 50% → y = 50vh
@@ -58,13 +58,13 @@ export function BottomSheet({
   onClose,
   title,
   children,
-  initialSnap = 0.5,
+  initialSnap = 0.9,
 }: {
   open: boolean
   onClose: () => void
   title: string
   children: React.ReactNode
-  initialSnap?: 0.5 | 0.9 | 1.0
+  initialSnap?: 0.9 | 1.0
 }) {
   const contentRef = useRef<HTMLDivElement>(null)
   const dragControls = useDragControls()

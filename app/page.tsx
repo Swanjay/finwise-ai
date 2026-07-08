@@ -1519,18 +1519,18 @@ function AppShell() {
       </div>
 
       {/* Bottom Sheets */}
-      <BottomSheet open={sheet === 'add'} onClose={() => setSheet(null)} title="Catat Transaksi"><AddTransactionForm onDone={() => setSheet(null)} /></BottomSheet>
-      <BottomSheet open={sheet === 'scan'} onClose={() => setSheet(null)} title="Scan Struk"><ScanFlow onDone={() => setSheet(null)} /></BottomSheet>
-      <BottomSheet open={sheet === 'settings'} onClose={() => setSheet(null)} title="Pengaturan"><SettingsSheet onClose={() => setSheet(null)} onOpenSheet={setSheet} /></BottomSheet>
-      <BottomSheet open={sheet === 'goals'} onClose={() => setSheet(null)} title="Target Tabungan"><GoalsSheet onClose={() => setSheet(null)} /></BottomSheet>
-      <BottomSheet open={sheet === 'wallets'} onClose={() => setSheet(null)} title="Dompet & Rekening"><WalletsSheet onClose={() => setSheet(null)} /></BottomSheet>
-      <BottomSheet open={sheet === 'transfer'} onClose={() => setSheet(null)} title="Transfer Antar Dompet"><TransferSheet onClose={() => setSheet(null)} /></BottomSheet>
+      <BottomSheet open={sheet === 'add'} onClose={() => setSheet(null)} title="Catat Transaksi" initialSnap={0.9}><AddTransactionForm onDone={() => setSheet(null)} /></BottomSheet>
+      <BottomSheet open={sheet === 'scan'} onClose={() => setSheet(null)} title="Scan Struk" initialSnap={0.9}><ScanFlow onDone={() => setSheet(null)} /></BottomSheet>
+      <BottomSheet open={sheet === 'settings'} onClose={() => setSheet(null)} title="Pengaturan" initialSnap={0.9}><SettingsSheet onClose={() => setSheet(null)} onOpenSheet={setSheet} /></BottomSheet>
+      <BottomSheet open={sheet === 'goals'} onClose={() => setSheet(null)} title="Target Tabungan" initialSnap={0.9}><GoalsSheet onClose={() => setSheet(null)} /></BottomSheet>
+      <BottomSheet open={sheet === 'wallets'} onClose={() => setSheet(null)} title="Dompet & Rekening" initialSnap={0.9}><WalletsSheet onClose={() => setSheet(null)} /></BottomSheet>
+      <BottomSheet open={sheet === 'transfer'} onClose={() => setSheet(null)} title="Transfer Antar Dompet" initialSnap={0.9}><TransferSheet onClose={() => setSheet(null)} /></BottomSheet>
       <BottomSheet open={sheet === 'recurring'} onClose={() => setSheet(null)} title="Transaksi Berulang"><RecurringSheet onClose={() => setSheet(null)} /></BottomSheet>
       <BottomSheet open={sheet === 'export'} onClose={() => setSheet(null)} title="Export & Backup"><ExportSheetNew onClose={() => setSheet(null)} /></BottomSheet>
       <BottomSheet open={sheet === 'categories'} onClose={() => setSheet(null)} title="Kategori Custom"><CategoriesSheet onClose={() => setSheet(null)} /></BottomSheet>
       <BottomSheet open={sheet === 'pin'} onClose={() => setSheet(null)} title="Pengaman PIN"><PinSheet onClose={() => setSheet(null)} /></BottomSheet>
       <BottomSheet open={sheet === 'benchmark'} onClose={() => setSheet(null)} title="Benchmark"><BenchmarkSheet onClose={() => setSheet(null)} /></BottomSheet>
-      <BottomSheet open={sheet === 'advisor'} onClose={() => setSheet(null)} title="AI Advisor"><AdvisorChat /></BottomSheet>
+      <BottomSheet open={sheet === 'advisor'} onClose={() => setSheet(null)} title="AI Advisor" initialSnap={0.9}><AdvisorChat /></BottomSheet>
       <BottomSheet open={sheet === 'smart-budget'} onClose={() => setSheet(null)} title="🤖 Smart Budget"><SmartBudgetSheet onClose={() => setSheet(null)} /></BottomSheet>
       <BottomSheet open={sheet === 'split-bill'} onClose={() => setSheet(null)} title="👥 Split Bill"><SplitBillSheet onClose={() => setSheet(null)} /></BottomSheet>
       <BottomSheet open={sheet === 'notifications'} onClose={() => setSheet(null)} title="🔔 Notifikasi"><NotificationCenter onClose={() => setSheet(null)} /></BottomSheet>
