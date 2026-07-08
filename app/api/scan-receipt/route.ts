@@ -43,46 +43,94 @@ const CATEGORY_KEYWORDS: Record<CategoryId, string[]> = {
     'telkomsel', 'indosat', 'tri', 'axis'],
 }
 
-// Extract individual line items from receipt text
-function extractItems(text: string): { name: string; price: number; qty?: number }[] {
-  const items: { name: string; price: number; qty?: number }[] = []
-  const lines = text.split('\n')
+function cleanItemName(raw: string): string {
+  return raw
+    .replace(/^\d+[.)\-\s]+/, '')
+    .replace(/\s{2,}/g, ' ')
+    .trim()
+}
 
-  // Pattern: "Item Name  2 x 15.000" or "Item Name  15.000" or "Item Name   Rp 15.000"
-  const itemPatterns = [
-    /^(.+?)\s+(\d+)\s*[xX×]\s*(?:Rp\.?\s*)?([\d.,]+)\s*$/,
+function parseMoney(raw: string): number {
+  const cleaned = raw.replace(/[^\d]/g, '')
+  if (!cleaned) return 0
+  const value = parseInt(cleaned, 10)
+  return Number.isFinite(value) ? value : 0
+}
+
+function isLikelyNonItem(line: string): boolean {
+  return /total|subtotal|sub\s*total|bayar|payment|tunai|cash|kartu|card|debit|credit|kembali|change|ppn|pajak|tax|diskon|discount|member|poin|point|invoice|struk|receipt|no\.?\s*(trx|trans|nota)|tanggal|date|jam|time|kasir|cashier|alamat|telp|phone|npwp|qty\s+harga/i.test(line)
+}
+
+// Extract individual line items from receipt text.
+// Returned price is unit price when qty exists, so UI total = qty * price.
+function extractItems(text: string): { name: string; price: number; qty?: number; description?: string }[] {
+  const items: { name: string; price: number; qty?: number; description?: string }[] = []
+  const lines = text
+    .split('\n')
+    .map(l => l.replace(/[|]/g, ' ').replace(/\s+/g, ' ').trim())
+    .filter(Boolean)
+
+  const patterns: RegExp[] = [
+    // Item 2 x 15.000 30.000
+    /^(.+?)\s+(\d{1,3})\s*[xX×]\s*(?:Rp\.?\s*)?([\d.,]+)\s+(?:Rp\.?\s*)?([\d.,]+)\s*$/,
+    // Item 2 15.000 30.000
+    /^(.+?)\s+(\d{1,3})\s+(?:Rp\.?\s*)?([\d.,]+)\s+(?:Rp\.?\s*)?([\d.,]+)\s*$/,
+    // Item x2 15.000
+    /^(.+?)\s+[xX×](\d{1,3})\s+(?:Rp\.?\s*)?([\d.,]+)\s*$/,
+    // Item 2 x 15.000
+    /^(.+?)\s+(\d{1,3})\s*[xX×]\s*(?:Rp\.?\s*)?([\d.,]+)\s*$/,
+    // Item Rp 15.000
     /^(.+?)\s+(?:Rp\.?\s*)?([\d.,]+)\s*$/,
   ]
 
   for (const line of lines) {
-    const trimmed = line.trim()
-    if (!trimmed || trimmed.length < 3) continue
+    if (line.length < 4 || isLikelyNonItem(line)) continue
 
-    // Skip header/footer/total lines
-    const skip = /total|subtotal|bayar|payment|tunai|cash|kartu|card|kembali|change|ppn|pajak|tax|diskon|discount|member|poin|point/i
-    if (skip.test(trimmed)) continue
+    let matched = false
+    for (let i = 0; i < patterns.length; i++) {
+      const m = line.match(patterns[i])
+      if (!m) continue
 
-    // Try pattern with qty
-    const qtyMatch = trimmed.match(itemPatterns[0])
-    if (qtyMatch) {
-      const name = qtyMatch[1].trim()
-      const qty = parseInt(qtyMatch[2])
-      const price = parseInt(qtyMatch[3].replace(/[.,]/g, ''))
-      if (name.length >= 2 && price > 0 && price < 10_000_000 && qty > 0 && qty < 100) {
-        items.push({ name, price, qty })
-        continue
+      let name = ''
+      let qty: number | undefined
+      let unitPrice = 0
+      let lineTotal = 0
+
+      if (i === 0 || i === 1) {
+        name = cleanItemName(m[1])
+        qty = parseInt(m[2], 10)
+        unitPrice = parseMoney(m[3])
+        lineTotal = parseMoney(m[4])
+        if (qty > 0 && lineTotal > 0 && (unitPrice === 0 || Math.abs(unitPrice * qty - lineTotal) > Math.max(100, lineTotal * 0.05))) {
+          unitPrice = Math.round(lineTotal / qty)
+        }
+      } else if (i === 2 || i === 3) {
+        name = cleanItemName(m[1])
+        qty = parseInt(m[2], 10)
+        unitPrice = parseMoney(m[3])
+      } else {
+        name = cleanItemName(m[1])
+        unitPrice = parseMoney(m[2])
+      }
+
+      if (
+        name.length >= 2 &&
+        !/^\d+$/.test(name) &&
+        unitPrice > 100 &&
+        unitPrice < 10_000_000 &&
+        (!qty || (qty > 0 && qty < 100))
+      ) {
+        items.push({
+          name,
+          price: unitPrice,
+          ...(qty ? { qty } : {}),
+          ...(qty ? { description: `Harga satuan ${unitPrice}; jumlah ${qty * unitPrice}` } : {}),
+        })
+        matched = true
+        break
       }
     }
-
-    // Try pattern without qty
-    const simpleMatch = trimmed.match(itemPatterns[1])
-    if (simpleMatch) {
-      const name = simpleMatch[1].trim()
-      const price = parseInt(simpleMatch[2].replace(/[.,]/g, ''))
-      if (name.length >= 2 && price > 100 && price < 10_000_000) {
-        items.push({ name, price })
-      }
-    }
+    if (matched) continue
   }
 
   return items
