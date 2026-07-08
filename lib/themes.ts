@@ -312,7 +312,7 @@ export const THEMES: ThemeColors[] = [
 ]
 
 const STORAGE_KEY = 'fw.colorTheme.v1'
-const DEFAULT_THEME = 'wise'
+const DEFAULT_THEME = 'warm'
 
 export function getStoredThemeId(): string {
   if (typeof window === 'undefined') return DEFAULT_THEME

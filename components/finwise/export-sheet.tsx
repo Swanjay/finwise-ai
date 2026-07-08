@@ -225,7 +225,7 @@ export function ExportSheet({ onClose }: { onClose: () => void }) {
           <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
             <span style="width:120px;font-size:12px;text-align:right;color:#666">${c.category.label}</span>
             <div style="flex:1;background:#f0f0f0;border-radius:4px;height:20px;overflow:hidden">
-              <div style="width:${pct}%;height:100%;background:linear-gradient(90deg,#2ead4b,#cdffad);border-radius:4px"></div>
+              <div style="width:${pct}%;height:100%;background:linear-gradient(90deg,#D4A843,#E8C878);border-radius:4px"></div>
             </div>
             <span style="width:80px;font-size:12px;font-weight:600">${formatIDR(c.value)}</span>
           </div>`

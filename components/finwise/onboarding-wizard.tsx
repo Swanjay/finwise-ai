@@ -43,7 +43,7 @@ function Confetti() {
   }>>([])
 
   useEffect(() => {
-    const colors = ['#2ead4b', '#F9A8D4', '#F97316', '#4CAF50', '#5B9BD5', '#EC4899', '#EAB308', '#14B8A6']
+    const colors = ['#D4A843', '#F9A8D4', '#F97316', '#4CAF50', '#5B9BD5', '#EC4899', '#EAB308', '#14B8A6']
     const newParticles = Array.from({ length: 60 }, (_, i) => ({
       id: i,
       x: Math.random() * 100,
@@ -188,7 +188,7 @@ function WalletStepContent({
       name: '',
       icon: '💳',
       balance: '',
-      color: '#2ead4b',
+      color: '#D4A843',
       type: 'bank',
     }
     const updated = [...wallets, newWallet]

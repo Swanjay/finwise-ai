@@ -40,7 +40,7 @@ const clayStyles = `
   position: absolute;
   top: 0; left: 50%; transform: translateX(-50%);
   width: 40px; height: 4px;
-  background: linear-gradient(90deg, #9fe870, #2ead4b);
+  background: linear-gradient(90deg, #E8C878, #D4A843);
   border-radius: 0 0 4px 4px;
   z-index: 5;
 }
@@ -76,7 +76,7 @@ const clayStyles = `
   content: '';
   display: block;
   width: 30%; height: 3px;
-  background: linear-gradient(90deg, #9fe870, #2ead4b);
+  background: linear-gradient(90deg, #E8C878, #D4A843);
   margin: 8px auto 0;
   border-radius: 2px;
 }
@@ -96,7 +96,7 @@ const clayStyles = `
   box-shadow: 0 3px 8px rgba(0,0,0,0.06);
   z-index: 2;
 }
-.clay-input-icon svg { width: 15px; height: 15px; fill: #2ead4b; }
+.clay-input-icon svg { width: 15px; height: 15px; fill: #D4A843; }
 .clay-input-field {
   width: 100%; height: 52px;
   background: #e8ebe6;
@@ -111,7 +111,7 @@ const clayStyles = `
 }
 .clay-input-field::placeholder { color: #868685; font-weight: 500; }
 .clay-input-field:focus {
-  border-color: #9fe870;
+  border-color: #E8C878;
   background: #e2f6d5;
   box-shadow: inset 0 3px 8px rgba(0,0,0,0.04), 0 0 0 4px rgba(44,181,160,0.1);
 }
@@ -125,14 +125,14 @@ const clayStyles = `
   box-shadow: 0 2px 6px rgba(0,0,0,0.06);
   transition: all 0.2s;
   z-index: 2;
-  color: #2ead4b;
+  color: #D4A843;
 }
 .clay-pwd-toggle:hover { transform: translateY(-50%) scale(1.1); }
 
 /* ─── Forgot ─── */
 .clay-forgot-row { text-align: right; margin-bottom: 16px; margin-top: -6px; }
 .clay-forgot-link {
-  font-size: 12px; color: #2ead4b;
+  font-size: 12px; color: #D4A843;
   font-weight: 700; text-decoration: none;
   transition: opacity 0.2s;
 }
@@ -141,7 +141,7 @@ const clayStyles = `
 /* ─── Button ─── */
 .clay-btn {
   width: 100%; height: 52px;
-  background: linear-gradient(135deg, #9fe870 0%, #2ead4b 100%);
+  background: linear-gradient(135deg, #E8C878 0%, #D4A843 100%);
   color: white;
   border: none; border-radius: 16px;
   font-size: 16px; font-weight: 800;
@@ -163,7 +163,7 @@ const clayStyles = `
 }
 .clay-divider::before, .clay-divider::after {
   content: ''; flex: 1; height: 1.5px;
-  background: linear-gradient(90deg, transparent, #9fe870, transparent);
+  background: linear-gradient(90deg, transparent, #E8C878, transparent);
 }
 .clay-divider::before { margin-right: 14px; }
 .clay-divider::after { margin-left: 14px; }
@@ -180,15 +180,15 @@ const clayStyles = `
   box-shadow: 0 4px 12px rgba(0,0,0,0.05);
   transition: all 0.25s;
 }
-.clay-social-btn:hover { transform: translateY(-2px); border-color: #9fe870; box-shadow: 0 6px 18px rgba(0,0,0,0.08); }
+.clay-social-btn:hover { transform: translateY(-2px); border-color: #E8C878; box-shadow: 0 6px 18px rgba(0,0,0,0.08); }
 .clay-social-btn svg { width: 20px; height: 20px; }
 .clay-social-google { border-left: 4px solid #4285F4; }
 .clay-social-telegram { border-left: 4px solid #229ED9; }
-.clay-social-email { border-left: 4px solid #2ead4b; }
+.clay-social-email { border-left: 4px solid #D4A843; }
 
 /* ─── Footer ─── */
 .clay-footer { text-align: center; font-size: 13px; color: #868685; font-weight: 600; }
-.clay-footer a { color: #2ead4b; font-weight: 800; text-decoration: none; padding: 4px 10px; border-radius: 8px; background: rgba(159,232,112,0.12); transition: all 0.2s; }
+.clay-footer a { color: #D4A843; font-weight: 800; text-decoration: none; padding: 4px 10px; border-radius: 8px; background: rgba(159,232,112,0.12); transition: all 0.2s; }
 .clay-footer a:hover { background: rgba(159,232,112,0.25); text-decoration: none; opacity: 1; }
 
 /* ─── OTP Input ─── */
@@ -208,7 +208,7 @@ const clayStyles = `
   box-shadow: inset 0 3px 8px rgba(0,0,0,0.06);
 }
 .clay-otp-input:focus {
-  border-color: #9fe870;
+  border-color: #E8C878;
   box-shadow: inset 0 3px 8px rgba(0,0,0,0.04), 0 0 0 4px rgba(44,181,160,0.1);
 }
 
@@ -250,7 +250,7 @@ const clayStyles = `
     padding: 60px 48px;
     width: 44%;
     max-width: 560px;
-    background: linear-gradient(135deg, #2ead4b 0%, #9fe870 100%);
+    background: linear-gradient(135deg, #D4A843 0%, #E8C878 100%);
     position: relative;
     z-index: 5;
   }
@@ -367,7 +367,7 @@ function StepDots({ current, total }: { current: number; total: number }) {
       {Array.from({ length: total }, (_, i) => (
         <div key={i}
           className={`h-1.5 rounded-full transition-all duration-300 ${
-            i + 1 < current ? "w-4 bg-[#2ead4b]" : i + 1 === current ? "w-6 bg-[#2ead4b]" : "w-1.5 bg-[#e8ebe6]"
+            i + 1 < current ? "w-4 bg-[#D4A843]" : i + 1 === current ? "w-6 bg-[#D4A843]" : "w-1.5 bg-[#e8ebe6]"
           }`}
         />
       ))}
@@ -717,7 +717,7 @@ export default function LoginPage() {
                 </button>
                 <button className="clay-social-btn clay-social-email" style={{ height: 42, fontSize: 13 }}
                   onClick={() => { setView("email-otp"); setError("") }} disabled={isLoading}>
-                  <svg viewBox="0 0 24 24" fill="none" stroke="#2ead4b" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: 18, height: 18 }}>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="#D4A843" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: 18, height: 18 }}>
                     <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
                     <polyline points="22,6 12,13 2,6" />
                   </svg>
@@ -791,9 +791,9 @@ export default function LoginPage() {
                 <input ref={emailOtpRef} type="text" placeholder="• • • • • •" maxLength={6} inputMode="numeric"
                   value={emailCode} onChange={(e) => { setEmailCode(e.target.value.replace(/\D/g, "")); setError("") }}
                   onKeyDown={(e) => e.key === "Enter" && handleRegisterVerify()}
-                  className="flex-1 rounded-xl border border-[#9fe870]/50 bg-[#e8ebe6] px-4 py-3.5 text-center text-xl tracking-[0.5em] font-mono outline-none transition-all focus:border-[#2ead4b] focus:ring-2 focus:ring-[#2ead4b]/20" />
+                  className="flex-1 rounded-xl border border-[#E8C878]/50 bg-[#e8ebe6] px-4 py-3.5 text-center text-xl tracking-[0.5em] font-mono outline-none transition-all focus:border-[#D4A843] focus:ring-2 focus:ring-[#D4A843]/20" />
                 <button onClick={handleRegisterVerify} disabled={isLoading || emailCode.length < 6}
-                  className="flex items-center justify-center rounded-xl bg-[#2ead4b] px-4 py-3.5 text-white transition-all hover:bg-[#2ead4b] disabled:opacity-50">
+                  className="flex items-center justify-center rounded-xl bg-[#D4A843] px-4 py-3.5 text-white transition-all hover:bg-[#D4A843] disabled:opacity-50">
                   {loading === "register" ? <Loader2 className="size-5 animate-spin" /> : <CheckCircle className="size-5" />}
                 </button>
               </div>
@@ -806,8 +806,8 @@ export default function LoginPage() {
 
           {view === "register" && regStep === "done" && (
             <div className="text-center space-y-3 py-6 animate-[slideUp_0.3s_ease]">
-              <CheckCircle className="size-14 mx-auto text-[#2ead4b]" />
-              <p className="text-sm font-bold text-[#2ead4b]">Akun berhasil dibuat! 🎉</p>
+              <CheckCircle className="size-14 mx-auto text-[#D4A843]" />
+              <p className="text-sm font-bold text-[#D4A843]">Akun berhasil dibuat! 🎉</p>
               <p className="text-xs text-[#868685]">Mengalihkan ke dashboard...</p>
             </div>
           )}
@@ -817,10 +817,10 @@ export default function LoginPage() {
           ═══════════════════════════════════════ */}
           {view === "forgot" && (
             <div className="text-center space-y-4 py-4">
-              <div className="rounded-xl border border-[#9fe870]/30 bg-[#e2f6d5] p-4">
+              <div className="rounded-xl border border-[#E8C878]/30 bg-[#e2f6d5] p-4">
                 <p className="text-sm text-[#868685]">Reset password segera hadir! 🛠️</p>
                 <p className="text-xs text-[#868685] mt-2">
-                  Sementara, hubungi admin via <a href="https://t.me/ainsyir" target="_blank" rel="noopener noreferrer" className="text-[#2ead4b] font-bold hover:underline">@ainsyir</a>
+                  Sementara, hubungi admin via <a href="https://t.me/ainsyir" target="_blank" rel="noopener noreferrer" className="text-[#D4A843] font-bold hover:underline">@ainsyir</a>
                 </p>
               </div>
               <button onClick={goBack}
@@ -841,7 +841,7 @@ export default function LoginPage() {
                 <input type="text" placeholder="Username (tanpa @)"
                   value={tgUsername} onChange={(e) => { setTgUsername(e.target.value.replace(/[^a-zA-Z0-9_]/g, '')); setError("") }}
                   onKeyDown={(e) => e.key === "Enter" && handleTelegramRequest()} maxLength={50}
-                  className="flex-1 rounded-xl border-2 border-[#e8ebe6] bg-[#e8ebe6] px-4 py-3 text-sm outline-none transition-all focus:border-[#9fe870] focus:ring-2 focus:ring-[#2ead4b]/20"
+                  className="flex-1 rounded-xl border-2 border-[#e8ebe6] bg-[#e8ebe6] px-4 py-3 text-sm outline-none transition-all focus:border-[#E8C878] focus:ring-2 focus:ring-[#D4A843]/20"
                   style={{ fontFamily: "inherit", color: "#0e0f0c", fontWeight: 600, boxShadow: "inset 0 3px 8px rgba(0,0,0,0.06)" }}
                 />
                 <button onClick={handleTelegramRequest} disabled={isLoading}
@@ -850,7 +850,7 @@ export default function LoginPage() {
                 </button>
               </div>
               {botUrl && (
-                <div className="rounded-xl border border-[#2ead4b]/30 bg-[#e2f6d5] p-4">
+                <div className="rounded-xl border border-[#D4A843]/30 bg-[#e2f6d5] p-4">
                   <p className="text-sm font-medium text-[#0e0f0c]">🤖 Bot belum aktif!</p>
                   <p className="text-xs text-[#868685] mt-1">Mulai chat dengan bot FinWise dulu ya.</p>
                   <a href={botUrl} target="_blank" rel="noopener noreferrer"
@@ -860,7 +860,7 @@ export default function LoginPage() {
                 </div>
               )}
               {channelUrl && (
-                <div className="rounded-xl border border-[#2ead4b]/30 bg-[#e2f6d5] p-4">
+                <div className="rounded-xl border border-[#D4A843]/30 bg-[#e2f6d5] p-4">
                   <p className="text-sm font-medium text-[#0e0f0c]">📢 Gabung channel dulu!</p>
                   <a href={channelUrl} target="_blank" rel="noopener noreferrer"
                     className="flex w-full items-center justify-center gap-2 rounded-lg bg-[#229ED9] px-4 py-2.5 text-sm font-medium text-white mt-2 transition hover:bg-[#229ED9]">
@@ -887,7 +887,7 @@ export default function LoginPage() {
                   onKeyDown={(e) => e.key === "Enter" && handleTelegramVerify()}
                   className="clay-otp-input flex-1" />
                 <button onClick={handleTelegramVerify} disabled={isLoading || tgCode.length < 6}
-                  className="flex items-center justify-center rounded-xl bg-[#2ead4b] px-4 py-3.5 text-white transition-all hover:bg-[#2ead4b] disabled:opacity-50">
+                  className="flex items-center justify-center rounded-xl bg-[#D4A843] px-4 py-3.5 text-white transition-all hover:bg-[#D4A843] disabled:opacity-50">
                   {loading === "telegram" ? <Loader2 className="size-5 animate-spin" /> : <CheckCircle className="size-5" />}
                 </button>
               </div>
@@ -900,8 +900,8 @@ export default function LoginPage() {
           {view === "telegram" && tgStep === "done" && (
             <div className="text-center space-y-3 py-6">
               <StepDots current={3} total={3} />
-              <CheckCircle className="size-12 mx-auto text-[#2ead4b]" />
-              <p className="text-sm font-medium text-[#2ead4b]">Terverifikasi! Mengalihkan...</p>
+              <CheckCircle className="size-12 mx-auto text-[#D4A843]" />
+              <p className="text-sm font-medium text-[#D4A843]">Terverifikasi! Mengalihkan...</p>
             </div>
           )}
 
@@ -916,11 +916,11 @@ export default function LoginPage() {
                 <input type="email" placeholder="email@contoh.com"
                   value={email} onChange={(e) => { setEmail(e.target.value); setError("") }}
                   onKeyDown={(e) => e.key === "Enter" && handleEmailRequest()}
-                  className="flex-1 rounded-xl border-2 border-[#e8ebe6] bg-[#e8ebe6] px-4 py-3 text-sm outline-none transition-all focus:border-[#9fe870] focus:ring-2 focus:ring-[#2ead4b]/20"
+                  className="flex-1 rounded-xl border-2 border-[#e8ebe6] bg-[#e8ebe6] px-4 py-3 text-sm outline-none transition-all focus:border-[#E8C878] focus:ring-2 focus:ring-[#D4A843]/20"
                   style={{ fontFamily: "inherit", color: "#0e0f0c", fontWeight: 600, boxShadow: "inset 0 3px 8px rgba(0,0,0,0.06)" }}
                 />
                 <button onClick={handleEmailRequest} disabled={isLoading}
-                  className="flex items-center justify-center gap-1.5 rounded-xl bg-[#2ead4b] px-3 py-3 text-sm font-semibold text-white transition-all hover:bg-[#2ead4b] disabled:opacity-50">
+                  className="flex items-center justify-center gap-1.5 rounded-xl bg-[#D4A843] px-3 py-3 text-sm font-semibold text-white transition-all hover:bg-[#D4A843] disabled:opacity-50">
                   {loading === "email" ? <Loader2 className="size-5 animate-spin" /> : <Send className="size-4 shrink-0" />}
                 </button>
               </div>
@@ -941,7 +941,7 @@ export default function LoginPage() {
                   onKeyDown={(e) => e.key === "Enter" && handleEmailVerify()}
                   className="clay-otp-input flex-1" />
                 <button onClick={handleEmailVerify} disabled={isLoading || emailCode.length < 6}
-                  className="flex items-center justify-center rounded-xl bg-[#2ead4b] px-4 py-3.5 text-white transition-all hover:bg-[#2ead4b] disabled:opacity-50">
+                  className="flex items-center justify-center rounded-xl bg-[#D4A843] px-4 py-3.5 text-white transition-all hover:bg-[#D4A843] disabled:opacity-50">
                   {loading === "email" ? <Loader2 className="size-5 animate-spin" /> : <CheckCircle className="size-5" />}
                 </button>
               </div>
@@ -954,18 +954,18 @@ export default function LoginPage() {
           {view === "email-otp" && emailStep === "done" && (
             <div className="text-center space-y-3 py-6">
               <StepDots current={2} total={2} />
-              <CheckCircle className="size-12 mx-auto text-[#2ead4b]" />
-              <p className="text-sm font-medium text-[#2ead4b]">Login berhasil! Mengalihkan...</p>
+              <CheckCircle className="size-12 mx-auto text-[#D4A843]" />
+              <p className="text-sm font-medium text-[#D4A843]">Login berhasil! Mengalihkan...</p>
             </div>
           )}
 
           {/* ─── Footer ─── */}
-          <div className="text-center mt-5 pt-4 border-t border-[#9fe870]/30">
+          <div className="text-center mt-5 pt-4 border-t border-[#E8C878]/30">
             <p className="flex items-center justify-center gap-1.5 text-xs text-[#868685]">
               🔒 Terenkripsi & aman
               <span className="mx-1">·</span>
               <a href="https://t.me/ainsyir" target="_blank" rel="noopener noreferrer"
-                className="inline-flex items-center gap-1 text-[#2ead4b] font-bold hover:underline">
+                className="inline-flex items-center gap-1 text-[#D4A843] font-bold hover:underline">
                 <HelpCircle className="size-3" /> Butuh bantuan?
               </a>
             </p>

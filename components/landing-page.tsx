@@ -36,37 +36,37 @@ const features = [
     icon: Camera,
     title: 'Scan Struk AI',
     desc: 'Foto struk belanja, AI otomatis membaca dan mencatat transaksinya.',
-    color: '#2ead4b',
+    color: '#D4A843',
   },
   {
     icon: PieChart,
     title: 'Laporan Visual',
     desc: 'Grafik dan chart interaktif untuk memahami pola pengeluaranmu.',
-    color: '#9fe870',
+    color: '#E8C878',
   },
   {
     icon: Wallet,
     title: 'Multi Dompet',
     desc: 'Kelola beberapa dompet dan rekening dalam satu tempat.',
-    color: '#2ead4b',
+    color: '#D4A843',
   },
   {
     icon: Bell,
     title: 'Pengingat Cerdas',
     desc: 'Notifikasi otomatis untuk tagihan, anggaran, dan target menabung.',
-    color: '#9fe870',
+    color: '#E8C878',
   },
   {
     icon: Shield,
     title: 'Privasi Terjaga',
     desc: 'Data terenkripsi end-to-end. Tidak dijual ke pihak manapun.',
-    color: '#2ead4b',
+    color: '#D4A843',
   },
   {
     icon: Sparkles,
     title: 'Insight AI',
     desc: 'Rekomendasi personal untuk hemat dan capai target keuangan.',
-    color: '#9fe870',
+    color: '#E8C878',
   },
 ]
 
@@ -121,7 +121,7 @@ export default function LandingPage() {
           <div className="order-2 flex-1 text-center lg:order-1 lg:text-left">
             <h1 className="text-4xl font-black tracking-tight sm:text-5xl md:text-6xl" style={{ color: '#0e0f0c' }}>
               Catat Keuangan{' '}
-              <span className="bg-clip-text text-transparent" style={{ backgroundImage: 'linear-gradient(135deg, #2ead4b, #9fe870)' }}>
+              <span className="bg-clip-text text-transparent" style={{ backgroundImage: 'linear-gradient(135deg, #D4A843, #E8C878)' }}>
                 Lebih Pintar
               </span>{' '}
               ✨
@@ -133,14 +133,14 @@ export default function LandingPage() {
               <Link
                 href="/register"
                 className="inline-flex items-center gap-2 rounded-2xl bg-primary px-8 py-4 text-lg font-bold text-white shadow-lg transition-all hover:scale-105 hover:shadow-xl"
-                style={{ backgroundColor: '#2ead4b' }}
+                style={{ backgroundColor: '#D4A843' }}
               >
                 Mulai Gratis <ArrowRight className="h-5 w-5" />
               </Link>
               <Link
                 href="/pricing"
                 className="inline-flex items-center gap-2 rounded-2xl bg-card px-8 py-4 text-lg font-bold text-primary shadow-md transition-all hover:scale-105 hover:shadow-xl"
-                style={{ border: '2px solid #2ead4b', color: '#2ead4b' }}
+                style={{ border: '2px solid #D4A843', color: '#D4A843' }}
               >
                 💰 Lihat Harga
               </Link>
@@ -153,7 +153,7 @@ export default function LandingPage() {
             </div>
             <div className="mt-6 flex flex-wrap items-center justify-center gap-2 lg:justify-start">
               {['100% Gratis', 'Tanpa Iklan', 'Data Terenkripsi'].map((item) => (
-                <span key={item} className="rounded-full border px-3 py-1 text-xs font-medium text-muted-foreground" style={{ borderColor: '#9fe870', backgroundColor: 'rgba(159,232,112,0.08)' }}>
+                <span key={item} className="rounded-full border px-3 py-1 text-xs font-medium text-muted-foreground" style={{ borderColor: '#E8C878', backgroundColor: 'rgba(159,232,112,0.08)' }}>
                   {item}
                 </span>
               ))}
@@ -176,11 +176,11 @@ export default function LandingPage() {
                 className="flex items-start gap-4 rounded-2xl border bg-card p-6 transition-all hover:shadow-lg"
                 style={{ borderColor: 'rgba(159,232,112,0.3)' }}
               >
-                <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full text-lg font-black" style={{ backgroundColor: 'rgba(159,232,112,0.2)', color: '#2ead4b' }}>
+                <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full text-lg font-black" style={{ backgroundColor: 'rgba(159,232,112,0.2)', color: '#D4A843' }}>
                   {item.step}
                 </div>
                 <div>
-                  <item.icon className="mb-2 h-5 w-5 text-primary" style={{ color: '#2ead4b' }} />
+                  <item.icon className="mb-2 h-5 w-5 text-primary" style={{ color: '#D4A843' }} />
                   <h3 className="text-base font-bold" style={{ color: '#0e0f0c' }}>{item.title}</h3>
                   <p className="mt-1 text-sm text-muted-foreground">{item.desc}</p>
                 </div>
@@ -225,7 +225,7 @@ export default function LandingPage() {
             {trustItems.map((item) => (
               <div key={item.label} className="flex flex-col items-center gap-3 rounded-2xl border p-6 text-center transition-all hover:shadow-md" style={{ borderColor: 'rgba(159,232,112,0.3)' }}>
                 <div className="flex h-12 w-12 items-center justify-center rounded-full" style={{ backgroundColor: 'rgba(159,232,112,0.15)' }}>
-                  <item.icon className="h-6 w-6" style={{ color: '#2ead4b' }} />
+                  <item.icon className="h-6 w-6" style={{ color: '#D4A843' }} />
                 </div>
                 <span className="text-sm font-medium" style={{ color: '#0e0f0c' }}>{item.label}</span>
               </div>
@@ -235,7 +235,7 @@ export default function LandingPage() {
       </section>
 
       {/* CTA */}
-      <section className="px-4 py-16 sm:py-24" style={{ background: 'linear-gradient(135deg, #2ead4b, #9fe870)' }}>
+      <section className="px-4 py-16 sm:py-24" style={{ background: 'linear-gradient(135deg, #D4A843, #E8C878)' }}>
         <div className="mx-auto max-w-2xl text-center">
           <h2 className="text-3xl font-black text-white sm:text-4xl">
             Siap Lebih Pintar Kelola Uang?
@@ -246,7 +246,7 @@ export default function LandingPage() {
           <Link
             href="/register"
             className="mt-8 inline-flex items-center gap-2 rounded-2xl bg-white px-8 py-4 text-lg font-bold shadow-lg transition-all hover:scale-105 hover:shadow-xl"
-            style={{ color: '#2ead4b' }}
+            style={{ color: '#D4A843' }}
           >
             Daftar Sekarang <ArrowRight className="h-5 w-5" />
           </Link>
@@ -263,11 +263,11 @@ export default function LandingPage() {
               <span className="text-lg font-bold" style={{ color: '#0e0f0c' }}>FinWise</span>
             </div>
             <div className="flex flex-wrap items-center gap-6 text-sm text-muted-foreground">
-              <Link href="/login" className="transition-colors hover:text-primary" style={{ '--tw-hover-color': '#2ead4b' } as React.CSSProperties}>Masuk</Link>
-              <Link href="/register" className="transition-colors hover:text-primary" style={{ '--tw-hover-color': '#2ead4b' } as React.CSSProperties}>Daftar</Link>
-              <Link href="/pricing" className="transition-colors hover:text-primary font-semibold" style={{ '--tw-hover-color': '#2ead4b' } as React.CSSProperties}>💰 Paket & Harga</Link>
-              <Link href="/privacy" className="transition-colors hover:text-primary" style={{ '--tw-hover-color': '#2ead4b' } as React.CSSProperties}>Privasi</Link>
-              <Link href="/terms" className="transition-colors hover:text-primary" style={{ '--tw-hover-color': '#2ead4b' } as React.CSSProperties}>Syarat</Link>
+              <Link href="/login" className="transition-colors hover:text-primary" style={{ '--tw-hover-color': '#D4A843' } as React.CSSProperties}>Masuk</Link>
+              <Link href="/register" className="transition-colors hover:text-primary" style={{ '--tw-hover-color': '#D4A843' } as React.CSSProperties}>Daftar</Link>
+              <Link href="/pricing" className="transition-colors hover:text-primary font-semibold" style={{ '--tw-hover-color': '#D4A843' } as React.CSSProperties}>💰 Paket & Harga</Link>
+              <Link href="/privacy" className="transition-colors hover:text-primary" style={{ '--tw-hover-color': '#D4A843' } as React.CSSProperties}>Privasi</Link>
+              <Link href="/terms" className="transition-colors hover:text-primary" style={{ '--tw-hover-color': '#D4A843' } as React.CSSProperties}>Syarat</Link>
             </div>
           </div>
           <p className="mt-6 text-center text-xs text-muted-foreground">
