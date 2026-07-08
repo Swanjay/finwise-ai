@@ -1438,12 +1438,19 @@ function AppShell() {
         {[
           { id: 'home' as Tab, icon: Home, label: 'Home' },
           { id: 'trends' as Tab, icon: BarChart3, label: 'Rencana' },
-          { id: 'transactions' as Tab, icon: ArrowDownUp, label: 'Tx' },
-          { id: 'budget' as Tab, icon: User, label: 'Profile' },
+          { id: 'transactions' as Tab, icon: ArrowDownUp, label: 'Transaksi' },
+          { id: 'settings', icon: User, label: 'Profil', action: 'sheet' as const, sheet: 'settings' },
         ].map((item) => (
           <button
             key={item.id}
-            onClick={() => { haptic.light(); setTab(item.id) }}
+            onClick={() => {
+              haptic.light()
+              if (item.action === 'sheet') {
+                setSheet(item.sheet as Sheet)
+              } else {
+                setTab(item.id)
+              }
+            }}
             className="flex flex-col items-center gap-0.5"
           >
             <item.icon className={cn('w-5 h-5', tab === item.id ? 'text-primary' : 'text-muted-foreground')} />
