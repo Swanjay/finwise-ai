@@ -33,7 +33,7 @@ export function ThemePicker() {
       <p className="text-xs text-muted-foreground mb-3">
         Pilih tema warna (berlaku untuk mode terang & gelap):
       </p>
-      <div className="grid grid-cols-6 gap-2">
+      <div className="grid grid-cols-4 sm:grid-cols-6 gap-2">
         {THEMES.map((theme) => {
           const isActive = activeId === theme.id
           return (
