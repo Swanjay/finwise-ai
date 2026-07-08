@@ -15,7 +15,7 @@ export async function middleware(req: NextRequest) {
   const publicPaths = [
     '/login', '/admin', '/api/admin/codes-simple', '/api/admin/monitoring',
     '/api/auth', '/api/auth-telegram',
-    '/auth/error', '/api/telegram-login', '/api/invite-codes/validate',
+    '/auth/error', '/api/telegram-login', '/api/email-login', '/api/invite-codes/validate',
     '/api/voucher',
     '/_next', '/logo.svg', '/favicon.ico', '/mascot-', '/finwise-cat-',
     '/logo-', '/manifest.json', '/sw.js', '/workbox-',
@@ -50,6 +50,6 @@ export async function middleware(req: NextRequest) {
 
 export const config = {
   matcher: [
-    '/((?!_next/static|_next/image|favicon.ico|logo.svg|mascot-|finwise-cat-|login|api/auth|api/telegram-login|manifest\\.json|sw\\.js|workbox-|sitemap\\.xml|robots\\.txt|about|privacy|terms|.*\\.png$|.*\\.jpg$|.*\\.svg$|.*\\.ico$|.*\\.webp$).*)',
+    '/((?!_next/static|_next/image|favicon.ico|logo.svg|mascot-|finwise-cat-|login|api/auth|api/telegram-login|api/email-login|manifest\\.json|sw\\.js|workbox-|sitemap\\.xml|robots\\.txt|about|privacy|terms|.*\\.png$|.*\\.jpg$|.*\\.svg$|.*\\.ico$|.*\\.webp$).*)',
   ],
 }
