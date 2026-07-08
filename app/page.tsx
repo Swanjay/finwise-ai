@@ -1430,7 +1430,8 @@ function AppShell() {
         {tab === 'home' && <PricingTableFooter currentPlan={plan} onUpgrade={() => setSheet('voucher')} />}
       </main>
 
-      {/* Bottom nav — Clay Style */}
+      {/* Bottom nav — hidden */}
+      {false && (
       <nav className="fixed inset-x-0 bottom-4 z-40 mx-auto max-w-[360px] px-4">
         <div className="clay-bottom-nav grid grid-cols-5 items-center px-3 py-2">
           {navItems.slice(0, 2).map((item) => (
@@ -1476,8 +1477,10 @@ function AppShell() {
           ))}
         </div>
       </nav>
+      )}
 
-      {/* FAB — Expandable */}
+      {/* FAB — hidden */}
+      {false && (
       <div className="fixed bottom-20 right-5 z-30 flex flex-col-reverse items-center gap-3 sm:hidden">
         {/* Main FAB button — toggles menu */}
         <button
@@ -1517,6 +1520,7 @@ function AppShell() {
           </>
         )}
       </div>
+      )}
 
       {/* Bottom Sheets */}
       <BottomSheet open={sheet === 'add'} onClose={() => setSheet(null)} title="Catat Transaksi"><AddTransactionForm onDone={() => setSheet(null)} /></BottomSheet>
