@@ -61,9 +61,10 @@ import { SplitBillSheetWrapper } from '@/components/sheets/split-bill-sheet'
 import { NotificationsSheet } from '@/components/sheets/notifications-sheet'
 import { VoiceSheet } from '@/components/sheets/voice-sheet'
 import { VoucherSheetWrapper } from '@/components/sheets/voucher-sheet'
+import { CardsSheet } from '@/components/sheets/cards-sheet'
 
 type Tab = 'home' | 'transactions' | 'trends' | 'budget'
-type Sheet = 'add' | 'scan' | 'advisor' | 'settings' | 'goals' | 'wallets' | 'transfer' | 'recurring' | 'export' | 'categories' | 'pin' | 'benchmark' | 'smart-budget' | 'split-bill' | 'notifications' | 'voice' | 'voucher' | null
+type Sheet = 'add' | 'scan' | 'advisor' | 'settings' | 'goals' | 'wallets' | 'transfer' | 'recurring' | 'export' | 'categories' | 'pin' | 'benchmark' | 'smart-budget' | 'split-bill' | 'notifications' | 'voice' | 'voucher' | 'cards' | null
 
 // ─── PIN Lock Screen ───
 function PinLock() {
@@ -431,6 +432,7 @@ function AppShell() {
           { icon: Camera, label: 'Scan', sheet: 'scan' as Sheet, feature: 'ai_scan' },
           { icon: Target, label: 'Target', sheet: 'goals' as Sheet, feature: 'goals' },
           { icon: Wallet, label: 'Dompet', sheet: 'wallets' as Sheet, feature: 'wallets' },
+          { icon: CreditCard, label: 'Kartu', sheet: 'cards' as Sheet, feature: null },
           { icon: ArrowLeftRight, label: 'Transfer', sheet: 'transfer' as Sheet, feature: null },
           { icon: Repeat, label: 'Berulang', sheet: 'recurring' as Sheet, feature: 'recurring' },
           { icon: Download, label: 'Export', sheet: 'export' as Sheet, feature: 'export_csv' },
@@ -585,6 +587,7 @@ function AppShell() {
       <NotificationsSheet open={sheet === 'notifications'} onClose={() => setSheet(null)} />
       <VoiceSheet open={sheet === 'voice'} onClose={() => setSheet(null)} />
       <VoucherSheetWrapper open={sheet === 'voucher'} onClose={() => setSheet(null)} />
+      <CardsSheet open={sheet === 'cards'} onClose={() => setSheet(null)} />
 
       {/* Upgrade Modal */}
       {showUpgradeModal && (

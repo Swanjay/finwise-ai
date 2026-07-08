@@ -205,6 +205,11 @@ function SettingsSheetContent({ onClose, onOpenSheet }: { onClose: () => void; o
         <span>🤖</span> Smart Budget
       </Button>
 
+      {/* My Cards */}
+      <Button variant="outline" className="gap-2" onClick={() => { haptic.light(); onClose(); onOpenSheet?.('cards') }}>
+        <span>💳</span> Kartu Saya
+      </Button>
+
       {/* Smart Notifications */}
       <div className="flex flex-col gap-2">
         <Label className="flex items-center gap-2">

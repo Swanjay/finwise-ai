@@ -92,6 +92,21 @@ export interface RecurringItem {
   color?: string    // custom color (opsional)
 }
 
+// ─── Card ───
+export interface Card {
+  id: string
+  name: string           // "BCA Visa Platinum"
+  type: 'credit' | 'debit' | 'e-wallet'
+  lastFour: string       // "4521"
+  expiry: string         // "12/28"
+  bank: string           // "BCA", "Mandiri", "GoPay"
+  color: string          // gradient colors for card visual
+  limit?: number         // credit limit (only for credit cards)
+  usedLimit?: number     // computed from transactions
+  billingDay?: number    // billing date (1-28, only for credit)
+  linkedWalletId?: string // link to existing wallet
+}
+
 // ─── Indonesian → English Category Alias ───
 // Fix: old demo data and user-created transactions may use Indonesian IDs.
 // This mapping ensures they resolve to the correct built-in colors.

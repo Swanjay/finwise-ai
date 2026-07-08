@@ -21,8 +21,10 @@ import {
   type Wallet,
   type Goal,
   type RecurringItem,
-} from '@/lib/finwise'
+   type Card,
+  } from '@/lib/finwise'
 import { logTransactionAudit, logBudgetAudit } from '@/lib/audit'
+import { applyTheme, getStoredThemeId } from '@/lib/themes'
 import { loadPlan, savePlan, type PlanTier } from '@/lib/plans'
 
 // Storage keys
@@ -45,6 +47,7 @@ const KEYS = {
   fontSize: 'fw.fontSize.v1',
   compactMode: 'fw.compact.v1',
   setupDone: 'fw.setupDone.v1',
+  cards: 'fw.cards.v1',
 }
 
 function loadJSON<T>(key: string, fallback: T): T {
@@ -150,6 +153,13 @@ interface FinwiseStore {
   addTag: (tag: string) => void
   deleteTag: (tag: string) => void
 
+  // Cards
+  cards: Card[]
+  addCard: (card: Card) => void
+  updateCard: (id: string, data: Partial<Card>) => void
+  deleteCard: (id: string) => void
+  getCardLimitUsage: (cardId: string) => number
+
   // Reset
   resetAll: () => void
   loaded: boolean
@@ -172,6 +182,7 @@ export function FinwiseProvider({ children }: { children: ReactNode }) {
   const [wallets, setWallets] = useState<Wallet[]>(DEFAULT_WALLETS)
   const [goals, setGoals] = useState<Goal[]>([])
   const [recurring, setRecurring] = useState<RecurringItem[]>([])
+  const [cards, setCards] = useState<Card[]>([])
   const [pin, setPinState] = useState<string | null>(null)
   const [isLocked, setIsLocked] = useState(true)
   const [theme, setTheme] = useState<'dark' | 'light'>('light')
@@ -205,6 +216,7 @@ export function FinwiseProvider({ children }: { children: ReactNode }) {
     setWallets(loadJSON(KEYS.wallets, DEFAULT_WALLETS))
     setGoals(loadJSON(KEYS.goals, []))
     setRecurring(loadJSON(KEYS.recurring, []))
+    setCards(loadJSON(KEYS.cards, []))
     setPinState(loadJSON(KEYS.pin, null))
     setTheme(loadJSON(KEYS.theme, 'light'))
     setAccentColorState(loadJSON(KEYS.accent, 'wise'))
@@ -374,6 +386,7 @@ export function FinwiseProvider({ children }: { children: ReactNode }) {
   useEffect(() => { if (loaded) saveJSON(KEYS.wallets, wallets) }, [wallets, loaded])
   useEffect(() => { if (loaded) saveJSON(KEYS.goals, goals) }, [goals, loaded])
   useEffect(() => { if (loaded) saveJSON(KEYS.recurring, recurring) }, [recurring, loaded])
+  useEffect(() => { if (loaded) saveJSON(KEYS.cards, cards) }, [cards, loaded])
   useEffect(() => { if (loaded) saveJSON(KEYS.pin, pin) }, [pin, loaded])
   useEffect(() => { if (loaded) saveJSON(KEYS.theme, theme) }, [theme, loaded])
   useEffect(() => { if (loaded) saveJSON(KEYS.accent, accentColor) }, [accentColor, loaded])
@@ -382,7 +395,7 @@ export function FinwiseProvider({ children }: { children: ReactNode }) {
   useEffect(() => { if (loaded) saveJSON(KEYS.tags, tags) }, [tags, loaded])
   useEffect(() => { if (loaded) saveJSON(KEYS.fontSize, fontSize) }, [fontSize, loaded])
   useEffect(() => { if (loaded) saveJSON(KEYS.compactMode, compactMode) }, [compactMode, loaded])
-  useEffect(() => { if (loaded) { document.documentElement.classList.toggle('dark', theme === 'dark'); document.documentElement.classList.toggle('light', theme === 'light') } }, [theme, loaded])
+  useEffect(() => { if (loaded) { document.documentElement.classList.toggle('dark', theme === 'dark'); document.documentElement.classList.toggle('light', theme === 'light'); applyTheme(getStoredThemeId()) } }, [theme, loaded])
 
   // ─── DEBOUNCE SYNC TO SUPABASE (uses refs for latest data) ───
   const scheduleSync = useCallback(() => {
@@ -554,6 +567,26 @@ export function FinwiseProvider({ children }: { children: ReactNode }) {
     setRecurring((prev) => prev.map((r) => r.id === id ? { ...r, ...data } : r))
   }, [])
 
+  // Cards
+  const addCard = useCallback((card: Card) => setCards((prev) => [...prev, card]), [])
+  const updateCard = useCallback((id: string, data: Partial<Card>) => {
+    setCards((prev) => prev.map((c) => c.id === id ? { ...c, ...data } : c))
+  }, [])
+  const deleteCard = useCallback((id: string) => setCards((prev) => prev.filter((c) => c.id !== id)), [])
+  const getCardLimitUsage = useCallback((cardId: string): number => {
+    const card = cards.find(c => c.id === cardId)
+    if (!card || !card.linkedWalletId) return 0
+    
+    const spent = transactions.reduce((sum, tx) => {
+      if (tx.walletId === card.linkedWalletId) {
+        if (tx.type === 'expense') return sum + tx.amount
+        if (tx.type === 'income') return sum - tx.amount
+      }
+      return sum
+    }, 0)
+    return Math.max(0, spent)
+  }, [cards, transactions])
+
   // PIN
   const setPin = useCallback(async (newPin: string | null) => {
     if (newPin === null) { setPinState(null); setIsLocked(false); return }
@@ -582,7 +615,7 @@ export function FinwiseProvider({ children }: { children: ReactNode }) {
   const resetAll = useCallback(() => {
     Object.values(KEYS).forEach(key => { try { localStorage.removeItem(key) } catch { /* ignore */ } })
     setTransactions([]); setCustomCategories({}); setBudgets({}); setMonthlyIncomeState(0)
-    setWallets(DEFAULT_WALLETS); setGoals([]); setRecurring([]); setPinState(null)
+    setWallets(DEFAULT_WALLETS); setGoals([]); setRecurring([]); setCards([]); setPinState(null)
     setIsLocked(false); setTheme('light'); setAccentColorState('wise'); setFontSizeState('base')
     setCompactModeState(false); setSetupDone(false); setTipsDismissed(false); setTags([])
   }, [])
@@ -597,6 +630,7 @@ export function FinwiseProvider({ children }: { children: ReactNode }) {
         wallets, addWallet, updateWallet, deleteWallet, getWalletBalance, getTotalBalance,
         goals, addGoal, updateGoal, deleteGoal, addToGoal,
         recurring, addRecurring, toggleRecurring, deleteRecurring, updateRecurring,
+        cards, addCard, updateCard, deleteCard, getCardLimitUsage,
         pin, setPin, isLocked, unlock,
         theme, toggleTheme, accentColor, setAccentColor,
         fontSize, setFontSize, compactMode, toggleCompactMode,
