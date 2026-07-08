@@ -17,6 +17,7 @@ import {
 import { useSession, signOut } from 'next-auth/react'
 import { FinwiseProvider, useFinwise } from '@/components/finwise-store'
 import { DashboardView } from '@/components/finwise/dashboard-view'
+import { DashboardV2 } from '@/components/finwise-v2/dashboard-v2'
 import { TransactionsView } from '@/components/finwise/transactions-view'
 import { TrendsView } from '@/components/finwise/trends-view'
 import { BottomSheet } from '@/components/finwise/bottom-sheet'
@@ -1421,7 +1422,7 @@ function AppShell() {
       {/* Content */}
       <main className="flex-1 px-4 pb-32">
         {!tipsDismissed && tab === 'home' && <OnboardingTips onDismiss={dismissTips} />}
-        {tab === 'home' && <DashboardView transactions={monthTx} month={getMonthLabel(monthKey)} onOpenGoals={() => setSheet('goals')} onOpenWallets={() => setSheet('wallets')} onOpenAdd={() => setSheet('add')} onOpenReports={() => router.push('/reports')} />}
+        {tab === 'home' && <DashboardV2 />}
         {tab === 'transactions' && <TransactionsView />}
         {tab === 'trends' && <TrendsView />}
         {tab === 'budget' && <BudgetTab transactions={monthTx} />}
