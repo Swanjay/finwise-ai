@@ -448,22 +448,37 @@ export default function LoginPage() {
     } catch { setError("Koneksi gagal. Periksa internet kamu."); setLoading(null) }
   }
 
-  // Registration: validate form → send OTP → verify → create account
+  // Registration: validate form → create account → auto-login
   async function handleRegisterRequest() {
     if (!email.trim()) return setError("Masukkan email kamu")
     if (!regPassword.trim()) return setError("Masukkan password")
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
     if (!emailRegex.test(email.trim())) return setError("Format email tidak valid")
-    if (regPassword.length < 6) return setError("Password minimal 6 karakter")
+    if (regPassword.length < 8) return setError("Password minimal 8 karakter")
     if (regPassword !== regConfirm) return setError("Password tidak cocok")
 
-    setLoading("email"); setError("")
+    setLoading("register"); setError("")
     try {
-      const res = await fetch("/api/email-login", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "request", email: email.trim() }) })
-      const data = await res.json()
-      if (res.status === 429) { setError(data.error || "Terlalu banyak percobaan"); setLoading(null); return }
-      if (data.ok) setRegStep("otp")
-      else setError(data.error || "Gagal mengirim kode")
+      const regRes = await fetch("/api/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: email.trim().toLowerCase(), password: regPassword, name: email.trim().split("@")[0] }),
+      })
+      const regData = await regRes.json()
+
+      if (regRes.status === 409) {
+        const loginResult = await signIn("email-password", { email: email.trim().toLowerCase(), password: regPassword, redirect: false })
+        if (loginResult?.ok) { router.push("/"); router.refresh() }
+        else setError("Email sudah terdaftar. Coba masuk dengan password.")
+        setLoading(null)
+        return
+      }
+
+      if (!regRes.ok) { setError(regData.error || "Gagal mendaftarkan akun. Coba lagi."); setLoading(null); return }
+
+      const loginResult = await signIn("email-password", { email: email.trim().toLowerCase(), password: regPassword, redirect: false })
+      if (loginResult?.ok) { router.push("/"); router.refresh() }
+      else { setView("login"); setAuthEmail(email.trim().toLowerCase()); setError("Akun berhasil dibuat. Silakan masuk.") }
     } catch { setError("Koneksi gagal.") }
     setLoading(null)
   }
