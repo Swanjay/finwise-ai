@@ -4,7 +4,7 @@ import { useState, useRef, useCallback } from 'react'
 import {
   Download, FileText, FileSpreadsheet, Receipt,
   Upload, Camera, Share2, AlertCircle, CheckCircle2,
-  X, Eye, ChevronDown,
+  X, Eye, ChevronDown, MessageCircle, Calendar,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -25,6 +25,8 @@ import {
   type Transaction,
   type TxType,
 } from '@/lib/finwise'
+import { jsPDF } from 'jspdf'
+import autoTable from 'jspdf-autotable'
 
 // ─── Types ───
 interface ImportRow {
@@ -40,6 +42,8 @@ interface ImportRow {
 }
 
 type BankFormat = 'generic' | 'bca' | 'mandiri'
+
+type DateRangeOption = 'all' | 'thisMonth' | 'lastMonth' | 'custom'
 
 // ─── Helpers ───
 function downloadFile(filename: string, content: string, mimeType: string) {
@@ -143,6 +147,22 @@ function parseDate(str: string): string {
   return str
 }
 
+/** Format a date string (ISO) to Indonesian locale: "15 Januari 2024" */
+function formatDateID(dateStr: string): string {
+  const d = new Date(dateStr + 'T00:00:00')
+  return d.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })
+}
+
+/** Get the label for a date range option */
+function getDateRangeLabel(option: DateRangeOption): string {
+  switch (option) {
+    case 'all': return 'Semua Transaksi'
+    case 'thisMonth': return 'Bulan Ini'
+    case 'lastMonth': return 'Bulan Lalu'
+    case 'custom': return 'Custom Range'
+  }
+}
+
 // ─── Main Component ───
 export function ExportSheet({ onClose }: { onClose: () => void }) {
   const { transactions, allCategories, budgets, addTransaction, wallets } = useFinwise()
@@ -159,6 +179,11 @@ export function ExportSheet({ onClose }: { onClose: () => void }) {
   const reportRef = useRef<HTMLDivElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
+  // ─── Date Range State ───
+  const [dateRange, setDateRange] = useState<DateRangeOption>('thisMonth')
+  const [customStartDate, setCustomStartDate] = useState('')
+  const [customEndDate, setCustomEndDate] = useState('')
+
   const currentMonth = getMonthKey(new Date())
   const monthTx = filterByMonth(transactions, currentMonth)
 
@@ -166,20 +191,61 @@ export function ExportSheet({ onClose }: { onClose: () => void }) {
   const allMonths = Array.from(new Set(transactions.map(t => t.date.slice(0, 7)))).sort().reverse()
   if (!allMonths.includes(currentMonth)) allMonths.unshift(currentMonth)
 
+  // ─── Date Range Helper ───
+  function getFilteredTransactions(): Transaction[] {
+    switch (dateRange) {
+      case 'all':
+        return transactions
+      case 'thisMonth':
+        return filterByMonth(transactions, currentMonth)
+      case 'lastMonth': {
+        const d = new Date()
+        d.setMonth(d.getMonth() - 1)
+        const key = getMonthKey(d)
+        return filterByMonth(transactions, key)
+      }
+      case 'custom': {
+        if (!customStartDate && !customEndDate) return transactions
+        return transactions.filter(t => {
+          if (customStartDate && t.date < customStartDate) return false
+          if (customEndDate && t.date > customEndDate) return false
+          return true
+        })
+      }
+    }
+  }
+
+  function getDateRangeLabelShort(): string {
+    switch (dateRange) {
+      case 'all': return 'Semua_Waktu'
+      case 'thisMonth': return currentMonth
+      case 'lastMonth': {
+        const d = new Date()
+        d.setMonth(d.getMonth() - 1)
+        return getMonthKey(d)
+      }
+      case 'custom': {
+        const start = customStartDate ? customStartDate.slice(0, 7) : 'awal'
+        const end = customEndDate ? customEndDate.slice(0, 7) : 'akhir'
+        return `${start}_${end}`
+      }
+    }
+  }
+
   // ─── Export CSV ───
   function exportCSV() {
     setExporting('csv')
     try {
-      const headers = ['Tanggal', 'Tipe', 'Kategori', 'Jumlah', 'Deskripsi', 'Dompet', 'Tags']
-      const txList = csvScope === 'month' ? monthTx : transactions
+      const headers = ['Tanggal', 'Tipe', 'Kategori', 'Deskripsi', 'Jumlah (Rp)', 'Dompet', 'Tags']
+      const txList = getFilteredTransactions()
       const rows = txList.map((t) => {
         const wallet = wallets.find(w => w.id === t.walletId)
         return [
           t.date,
           t.type === 'income' ? 'Pemasukan' : 'Pengeluaran',
           resolveCategory(t.category, allCategories)?.label ?? t.category,
-          String(t.amount),
           t.description,
+          formatIDR(t.amount),
           wallet?.name || t.walletId || 'Cash',
           (t.tags || []).join('; '),
         ]
@@ -187,18 +253,257 @@ export function ExportSheet({ onClose }: { onClose: () => void }) {
 
       const csv = [headers.map(escapeCSV).join(','), ...rows.map((r) => r.map(escapeCSV).join(','))].join('\n')
       const bom = '\uFEFF'
-      const scopeLabel = csvScope === 'month' ? currentMonth : 'Semua'
+      const scopeLabel = getDateRangeLabelShort()
       downloadFile(`FinWise_${scopeLabel}.csv`, bom + csv, 'text/csv;charset=utf-8')
     } finally {
       setExporting(null)
     }
   }
 
-  // ─── Export Monthly Report PDF (HTML printable) ───
+  // ─── Export PDF with jsPDF ───
   function exportPDF() {
     setExporting('pdf')
     try {
-      const targetTx = filterByMonth(transactions, selectedMonth)
+      const targetTx = getFilteredTransactions()
+      const { income, expense, surplus } = summarize(targetTx)
+      const byCat = spendingByCategory(targetTx, allCategories)
+      const savingRate = income > 0 ? Math.round((surplus / income) * 100) : 0
+
+      const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' })
+      const pageW = 210 // A4 width in mm
+      const margin = 14
+      const contentW = pageW - margin * 2
+      let y = margin
+
+      // -- Colors --
+      const primaryColor: [number, number, number] = [30, 64, 175] // deep blue
+      const greenColor: [number, number, number] = [34, 197, 94]
+      const redColor: [number, number, number] = [239, 68, 68]
+      const grayColor: [number, number, number] = [100, 100, 100]
+      const lightBg: [number, number, number] = [248, 247, 255]
+
+      // --- Header ---
+      doc.setFillColor(...primaryColor)
+      doc.rect(0, 0, pageW, 28, 'F')
+      doc.setTextColor(255, 255, 255)
+      doc.setFontSize(18)
+      doc.text('🐱 FinWise — Laporan Keuangan', pageW / 2, 16, { align: 'center' })
+      doc.setFontSize(10)
+      doc.text(getDateRangeLabel(dateRange), pageW / 2, 23, { align: 'center' })
+      y = 36
+
+      // --- Summary Section ---
+      doc.setFillColor(...lightBg)
+      doc.roundedRect(margin, y, contentW, 28, 3, 3, 'F')
+      doc.setDrawColor(220, 220, 220)
+      doc.roundedRect(margin, y, contentW, 28, 3, 3, 'S')
+
+      const colW = contentW / 4
+      const summaryY = y + 4
+
+      // Helper for summary cells
+      function drawSummaryCell(x: number, label: string, value: string, valueColor?: [number, number, number]) {
+        doc.setTextColor(...grayColor)
+        doc.setFontSize(8)
+        doc.text(label, x + colW / 2, summaryY + 3, { align: 'center' })
+        if (valueColor) doc.setTextColor(...valueColor)
+        else doc.setTextColor(0, 0, 0)
+        doc.setFontSize(14)
+        doc.setFont('helvetica', 'bold')
+        doc.text(value, x + colW / 2, summaryY + 16, { align: 'center' })
+        doc.setFont('helvetica', 'normal')
+      }
+
+      drawSummaryCell(margin, 'Pemasukan', formatIDR(income), greenColor)
+      drawSummaryCell(margin + colW, 'Pengeluaran', formatIDR(expense), redColor)
+      drawSummaryCell(margin + colW * 2, 'Saldo Bersih', formatIDR(surplus), surplus >= 0 ? greenColor : redColor)
+      drawSummaryCell(margin + colW * 3, 'Saving Rate', `${savingRate}%`)
+
+      y += 36
+
+      // --- Transaction Table ---
+      if (targetTx.length > 0) {
+        doc.setTextColor(0, 0, 0)
+        doc.setFontSize(12)
+        doc.setFont('helvetica', 'bold')
+        doc.text(`📋 Transaksi (${targetTx.length})`, margin, y)
+        y += 6
+
+        const txRows = targetTx.slice(0, 500).map(t => {
+          const cat = resolveCategory(t.category, allCategories)?.label ?? t.category
+          const wal = wallets.find(w => w.id === t.walletId)
+          return [
+            t.date.slice(0, 10),
+            cat,
+            t.description.slice(0, 40),
+            t.type === 'income' ? 'Pemasukan' : 'Pengeluaran',
+            formatIDR(t.amount),
+            wal?.name || '-',
+          ]
+        })
+
+        autoTable(doc, {
+          startY: y,
+          head: [['Tanggal', 'Kategori', 'Deskripsi', 'Tipe', 'Jumlah', 'Dompet']],
+          body: txRows,
+          margin: { left: margin, right: margin },
+          styles: { fontSize: 7, cellPadding: 1.5 },
+          headStyles: {
+            fillColor: primaryColor,
+            textColor: 255,
+            fontSize: 7,
+            fontStyle: 'bold',
+          },
+          alternateRowStyles: {
+            fillColor: [248, 248, 252],
+          },
+          columnStyles: {
+            0: { cellWidth: 22 },
+            1: { cellWidth: 24 },
+            2: { cellWidth: 48 },
+            3: { cellWidth: 22 },
+            4: { cellWidth: 28, halign: 'right' },
+            5: { cellWidth: 16 },
+          },
+          didParseCell: (data) => {
+            if (data.section === 'body' && data.column.index === 4) {
+              // Color amount by type
+              const val = data.cell.raw as string
+              if (data.row.raw && (data.row.raw as string[])[3] === 'Pemasukan') {
+                data.cell.styles.textColor = greenColor
+              } else {
+                data.cell.styles.textColor = [0, 0, 0]
+              }
+            }
+          },
+        })
+
+        // @ts-expect-error: autoTable adds lastAutoTable to jsPDF instance
+        y = doc.lastAutoTable.finalY + 6
+      }
+
+      // --- Category Breakdown ---
+      const topCats = byCat.slice(0, 5)
+      if (topCats.length > 0) {
+        // Check if we need a new page
+        if (y > 240) {
+          doc.addPage()
+          y = margin
+        }
+
+        doc.setTextColor(0, 0, 0)
+        doc.setFontSize(12)
+        doc.setFont('helvetica', 'bold')
+        doc.text('📊 Top 5 Kategori Pengeluaran', margin, y)
+        y += 8
+
+        const maxVal = Math.max(...topCats.map(c => c.value))
+        const barMaxWidth = contentW - 80
+
+        for (const c of topCats) {
+          const pct = Math.round((c.value / maxVal) * 100)
+          const barW = Math.max(4, Math.round((barMaxWidth * pct) / 100))
+
+          // Label
+          doc.setFontSize(8)
+          doc.setFont('helvetica', 'normal')
+          doc.setTextColor(...grayColor)
+          doc.text(c.category.label, margin, y + 2)
+
+          // Bar background
+          doc.setFillColor(240, 240, 240)
+          doc.roundedRect(margin + 60, y - 1, barMaxWidth, 5, 2, 2, 'F')
+
+          // Bar fill
+          doc.setFillColor(...primaryColor)
+          doc.roundedRect(margin + 60, y - 1, barW, 5, 2, 2, 'F')
+
+          // Value
+          doc.setFont('helvetica', 'bold')
+          doc.setTextColor(0, 0, 0)
+          doc.text(formatIDR(c.value), margin + 65 + barMaxWidth, y + 2)
+
+          y += 8
+        }
+      }
+
+      // ─── Export info + Category Summary Table ───
+      y += 4
+      if (byCat.length > 0 && y < 260) {
+        doc.setTextColor(0, 0, 0)
+        doc.setFontSize(10)
+        doc.setFont('helvetica', 'bold')
+        doc.text('Rincian per Kategori', margin, y)
+        y += 5
+
+        const catRows = byCat.map(c => {
+          const budget = budgets[c.category.id]
+          const pct = budget ? Math.round((c.value / budget) * 100) : null
+          return [
+            c.category.label,
+            formatIDR(c.value),
+            budget ? formatIDR(budget) : '-',
+            pct !== null ? `${pct}%` : '-',
+          ]
+        })
+
+        autoTable(doc, {
+          startY: y,
+          head: [['Kategori', 'Terpakai', 'Budget', '%']],
+          body: catRows,
+          margin: { left: margin, right: margin },
+          styles: { fontSize: 7, cellPadding: 1.5 },
+          headStyles: {
+            fillColor: [100, 100, 100],
+            textColor: 255,
+            fontSize: 7,
+            fontStyle: 'bold',
+          },
+          columnStyles: {
+            0: { cellWidth: 60 },
+            1: { cellWidth: 35, halign: 'right' },
+            2: { cellWidth: 35, halign: 'right' },
+            3: { cellWidth: 20, halign: 'right' },
+          },
+        })
+
+        // @ts-expect-error: autoTable adds lastAutoTable to jsPDF instance
+        y = doc.lastAutoTable.finalY + 6
+      }
+
+      // --- Footer ---
+      if (y > 270) {
+        doc.addPage()
+        y = margin
+      }
+
+      doc.setDrawColor(200, 200, 200)
+      doc.line(margin, y, pageW - margin, y)
+      y += 4
+      doc.setFontSize(7)
+      doc.setTextColor(...grayColor)
+      const now = new Date()
+      doc.text(
+        `Diekspor dari FinWise pada ${now.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })} — finny.biz.id`,
+        margin,
+        y,
+      )
+      doc.text(dateRange !== 'all' ? `Periode: ${getDateRangeLabel(dateRange)}` : 'Semua transaksi', margin, y + 3.5)
+
+      // Save
+      doc.save(`FinWise_Laporan_${getDateRangeLabelShort()}.pdf`)
+    } catch (err) {
+      console.error('PDF export error:', err)
+    } finally {
+      setExporting(null)
+    }
+  }
+
+  // ─── Export Monthly Report PDF (HTML printable, legacy) ───
+  function exportHTMLReport() {
+    setExporting('html')
+    try {
+      const targetTx = getFilteredTransactions()
       const { income, expense, surplus } = summarize(targetTx)
       const byCat = spendingByCategory(targetTx, allCategories)
       const savingRate = income > 0 ? Math.round((surplus / income) * 100) : 0
@@ -248,11 +553,12 @@ export function ExportSheet({ onClose }: { onClose: () => void }) {
         })
         .join('')
 
+      const periodLabel = getDateRangeLabel(dateRange)
       const html = `<!DOCTYPE html>
 <html lang="id">
 <head>
   <meta charset="UTF-8">
-  <title>FinWise Laporan ${getMonthLabel(selectedMonth)}</title>
+  <title>FinWise Laporan ${periodLabel}</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { font-family: 'Segoe UI', system-ui, sans-serif; color: #1a1a1a; max-width: 800px; margin: 0 auto; padding: 32px 24px; }
@@ -272,7 +578,7 @@ export function ExportSheet({ onClose }: { onClose: () => void }) {
 <body>
   <div class="header">
     <h1>🐱 FinWise — Laporan Keuangan</h1>
-    <p>${getMonthLabel(selectedMonth)}</p>
+    <p>${periodLabel}</p>
   </div>
 
   <div class="summary-grid">
@@ -321,7 +627,7 @@ export function ExportSheet({ onClose }: { onClose: () => void }) {
 </body>
 </html>`
 
-      downloadFile(`FinWise_Laporan_${selectedMonth}.html`, html, 'text/html;charset=utf-8')
+      downloadFile(`FinWise_Laporan_${getDateRangeLabelShort()}.html`, html, 'text/html;charset=utf-8')
     } finally {
       setExporting(null)
     }
@@ -411,7 +717,7 @@ export function ExportSheet({ onClose }: { onClose: () => void }) {
       const html2canvas = (await import('html2canvas')).default
 
       // Build a shareable summary card
-      const targetTx = filterByMonth(transactions, selectedMonth)
+      const targetTx = getFilteredTransactions()
       const { income, expense, surplus } = summarize(targetTx)
       const byCat = spendingByCategory(targetTx, allCategories)
       const savingRate = income > 0 ? Math.round((surplus / income) * 100) : 0
@@ -443,7 +749,7 @@ export function ExportSheet({ onClose }: { onClose: () => void }) {
         <div style="text-align:center;margin-bottom:20px">
           <div style="font-size:28px;margin-bottom:4px">🐱</div>
           <div style="font-size:18px;font-weight:700">FinWise</div>
-          <div style="font-size:13px;opacity:0.8">${getMonthLabel(selectedMonth)}</div>
+          <div style="font-size:13px;opacity:0.8">${getDateRangeLabel(dateRange)}</div>
         </div>
 
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px">
@@ -486,7 +792,7 @@ export function ExportSheet({ onClose }: { onClose: () => void }) {
 
       canvas.toBlob((blob) => {
         if (blob) {
-          downloadBlob(`FinWise_Share_${selectedMonth}.png`, blob)
+          downloadBlob(`FinWise_Share_${getDateRangeLabelShort()}.png`, blob)
         }
         setExporting(null)
       }, 'image/png')
@@ -494,6 +800,39 @@ export function ExportSheet({ onClose }: { onClose: () => void }) {
       console.error('Share image error:', err)
       setExporting(null)
     }
+  }
+
+  // ─── Share to WhatsApp ───
+  function shareToWhatsApp() {
+    const targetTx = getFilteredTransactions()
+    const { income, expense, surplus } = summarize(targetTx)
+    const byCat = spendingByCategory(targetTx, allCategories)
+    const savingRate = income > 0 ? Math.round((surplus / income) * 100) : 0
+    const topCats = byCat.slice(0, 5)
+
+    const dateLabel = getDateRangeLabel(dateRange)
+
+    let message = `🐱 *FinWise — Ringkasan Keuangan*\n📅 ${dateLabel}\n\n`
+    message += `💰 *Pemasukan:* ${formatIDR(income)}\n`
+    message += `💸 *Pengeluaran:* ${formatIDR(expense)}\n`
+    message += `📊 *Saldo Bersih:* ${formatIDR(surplus)}\n`
+    message += `🎯 *Saving Rate:* ${savingRate}%\n`
+    message += `📝 *Total Transaksi:* ${targetTx.length}\n\n`
+
+    if (topCats.length > 0) {
+      message += `📈 *Top Pengeluaran:*\n`
+      for (const c of topCats) {
+        const pct = expense > 0 ? Math.round((c.value / expense) * 100) : 0
+        message += `• ${c.category.label}: ${formatIDR(c.value)} (${pct}%)\n`
+      }
+      message += '\n'
+    }
+
+    message += `—\nDiekspor dari FinWise (finny.biz.id)`
+
+    const encoded = encodeURIComponent(message)
+    const waUrl = `https://wa.me/?text=${encoded}`
+    window.open(waUrl, '_blank', 'noopener,noreferrer')
   }
 
   // ─── Import CSV ───
@@ -723,6 +1062,56 @@ export function ExportSheet({ onClose }: { onClose: () => void }) {
             Ekspor data keuanganmu untuk backup, analisis, atau pelaporan pajak.
           </p>
 
+          {/* ─── Date Range Filter ─── */}
+          <div className="clay-card p-4">
+            <div className="flex items-center gap-2 mb-3">
+              <Calendar className="size-4 text-muted-foreground" />
+              <p className="text-sm font-semibold">Filter Periode</p>
+            </div>
+            <div className="flex flex-wrap gap-2 mb-3">
+              {(['all', 'thisMonth', 'lastMonth', 'custom'] as DateRangeOption[]).map((opt) => (
+                <button
+                  key={opt}
+                  onClick={() => setDateRange(opt)}
+                  className={`rounded-lg px-3 py-1.5 text-xs font-medium transition ${
+                    dateRange === opt
+                      ? 'bg-primary text-primary-foreground shadow-sm'
+                      : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                  }`}
+                >
+                  {getDateRangeLabel(opt)}
+                </button>
+              ))}
+            </div>
+
+            {dateRange === 'custom' && (
+              <div className="flex items-center gap-2">
+                <div className="flex-1">
+                  <Label className="text-xs text-muted-foreground mb-1 block">Dari</Label>
+                  <input
+                    type="date"
+                    value={customStartDate}
+                    onChange={(e) => setCustomStartDate(e.target.value)}
+                    className="w-full rounded-lg border bg-background px-2 py-1.5 text-xs"
+                  />
+                </div>
+                <div className="flex-1">
+                  <Label className="text-xs text-muted-foreground mb-1 block">Sampai</Label>
+                  <input
+                    type="date"
+                    value={customEndDate}
+                    onChange={(e) => setCustomEndDate(e.target.value)}
+                    className="w-full rounded-lg border bg-background px-2 py-1.5 text-xs"
+                  />
+                </div>
+              </div>
+            )}
+
+            <p className="text-xs text-muted-foreground mt-2">
+              {getFilteredTransactions().length} transaksi tersedia
+            </p>
+          </div>
+
           {/* CSV Export */}
           <div className="clay-card p-4">
             <div className="flex items-center gap-3 mb-3">
@@ -731,19 +1120,8 @@ export function ExportSheet({ onClose }: { onClose: () => void }) {
               </div>
               <div className="flex-1">
                 <p className="text-sm font-semibold">Ekspor CSV / Excel</p>
-                <p className="text-xs text-muted-foreground">Semua transaksi dengan kolom lengkap</p>
+                <p className="text-xs text-muted-foreground">Dengan format Rp, BOM untuk Excel</p>
               </div>
-            </div>
-            <div className="flex items-center gap-2 mb-3">
-              <label className="text-xs text-muted-foreground">Cakupan:</label>
-              <select
-                value={csvScope}
-                onChange={(e) => setCsvScope(e.target.value as 'all' | 'month')}
-                className="rounded-lg border bg-background px-2 py-1 text-xs"
-              >
-                <option value="all">Semua Transaksi</option>
-                <option value="month">Bulan Ini ({getMonthLabel(currentMonth)})</option>
-              </select>
             </div>
             <button
               onClick={exportCSV}
@@ -754,36 +1132,33 @@ export function ExportSheet({ onClose }: { onClose: () => void }) {
             </button>
           </div>
 
-          {/* Monthly Report PDF */}
+          {/* PDF Export (jsPDF) */}
           <div className="clay-card p-4">
             <div className="flex items-center gap-3 mb-3">
               <div className="flex size-10 items-center justify-center rounded-xl bg-blue-100">
                 <FileText className="size-5 text-blue-600" />
               </div>
               <div className="flex-1">
-                <p className="text-sm font-semibold">Laporan Bulanan</p>
-                <p className="text-xs text-muted-foreground">Ringkasan lengkap dengan grafik, bisa dicetak PDF</p>
+                <p className="text-sm font-semibold">Laporan PDF</p>
+                <p className="text-xs text-muted-foreground">Ringkasan + tabel transaksi + grafik kategori</p>
               </div>
             </div>
-            <div className="flex items-center gap-2 mb-3">
-              <label className="text-xs text-muted-foreground">Bulan:</label>
-              <select
-                value={selectedMonth}
-                onChange={(e) => setSelectedMonth(e.target.value)}
-                className="rounded-lg border bg-background px-2 py-1 text-xs"
+            <div className="flex gap-2">
+              <button
+                onClick={exportPDF}
+                disabled={exporting !== null}
+                className="flex-1 rounded-xl bg-blue-500/10 py-2.5 text-sm font-medium text-blue-700 transition hover:bg-blue-500/20 active:scale-[0.98] disabled:opacity-50"
               >
-                {allMonths.map(m => (
-                  <option key={m} value={m}>{getMonthLabel(m)}</option>
-                ))}
-              </select>
+                {exporting === 'pdf' ? '⏳ Membuat PDF...' : '📄 Unduh PDF'}
+              </button>
+              <button
+                onClick={exportHTMLReport}
+                disabled={exporting !== null}
+                className="flex-1 rounded-xl bg-purple-500/10 py-2.5 text-sm font-medium text-purple-700 transition hover:bg-purple-500/20 active:scale-[0.98] disabled:opacity-50"
+              >
+                {exporting === 'html' ? '⏳...' : '🌐 Unduh HTML'}
+              </button>
             </div>
-            <button
-              onClick={exportPDF}
-              disabled={exporting !== null}
-              className="w-full rounded-xl bg-blue-500/10 py-2.5 text-sm font-medium text-blue-700 transition hover:bg-blue-500/20 active:scale-[0.98] disabled:opacity-50"
-            >
-              {exporting === 'pdf' ? '⏳ Membuat laporan...' : '📄 Unduh Laporan'}
-            </button>
           </div>
 
           {/* Tax Summary */}
@@ -804,8 +1179,7 @@ export function ExportSheet({ onClose }: { onClose: () => void }) {
 
           <div className="rounded-xl bg-muted/50 p-3">
             <p className="text-xs text-muted-foreground">
-              💡 <strong>Tips:</strong> File HTML bisa dibuka di browser lalu dicetak sebagai PDF (Ctrl+P / Cmd+P).
-              CSV bisa dibuka di Excel atau Google Sheets. Data tersimpan hanya di browser kamu.
+              💡 <strong>Tips:</strong> File PDF bisa langsung dicetak atau dibagikan. CSV bisa dibuka di Excel atau Google Sheets. Data tersimpan hanya di browser kamu.
             </p>
           </div>
         </div>
@@ -948,27 +1322,61 @@ export function ExportSheet({ onClose }: { onClose: () => void }) {
       {tab === 'share' && (
         <div className="flex flex-col gap-3">
           <p className="text-sm text-muted-foreground">
-            Buat gambar ringkasan keuangan untuk dibagikan ke media sosial atau chat.
+            Buat gambar ringkasan keuangan atau bagikan via WhatsApp.
           </p>
 
-          {/* Month selector for share */}
-          <div className="flex items-center gap-2">
-            <label className="text-xs text-muted-foreground">Bulan:</label>
-            <select
-              value={selectedMonth}
-              onChange={(e) => setSelectedMonth(e.target.value)}
-              className="rounded-lg border bg-background px-2 py-1 text-xs"
-            >
-              {allMonths.map(m => (
-                <option key={m} value={m}>{getMonthLabel(m)}</option>
+          {/* Date Range Filter for Share */}
+          <div className="clay-card p-4">
+            <div className="flex items-center gap-2 mb-3">
+              <Calendar className="size-4 text-muted-foreground" />
+              <p className="text-sm font-semibold">Filter Periode</p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {(['all', 'thisMonth', 'lastMonth', 'custom'] as DateRangeOption[]).map((opt) => (
+                <button
+                  key={opt}
+                  onClick={() => setDateRange(opt)}
+                  className={`rounded-lg px-3 py-1.5 text-xs font-medium transition ${
+                    dateRange === opt
+                      ? 'bg-primary text-primary-foreground shadow-sm'
+                      : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                  }`}
+                >
+                  {getDateRangeLabel(opt)}
+                </button>
               ))}
-            </select>
+            </div>
+            {dateRange === 'custom' && (
+              <div className="flex items-center gap-2 mt-3">
+                <div className="flex-1">
+                  <Label className="text-xs text-muted-foreground mb-1 block">Dari</Label>
+                  <input
+                    type="date"
+                    value={customStartDate}
+                    onChange={(e) => setCustomStartDate(e.target.value)}
+                    className="w-full rounded-lg border bg-background px-2 py-1.5 text-xs"
+                  />
+                </div>
+                <div className="flex-1">
+                  <Label className="text-xs text-muted-foreground mb-1 block">Sampai</Label>
+                  <input
+                    type="date"
+                    value={customEndDate}
+                    onChange={(e) => setCustomEndDate(e.target.value)}
+                    className="w-full rounded-lg border bg-background px-2 py-1.5 text-xs"
+                  />
+                </div>
+              </div>
+            )}
+            <p className="text-xs text-muted-foreground mt-2">
+              {getFilteredTransactions().length} transaksi tersedia
+            </p>
           </div>
 
           {/* Preview card */}
           <div className="clay-card overflow-hidden">
             {(() => {
-              const targetTx = filterByMonth(transactions, selectedMonth)
+              const targetTx = getFilteredTransactions()
               const { income, expense, surplus } = summarize(targetTx)
               const byCat = spendingByCategory(targetTx, allCategories)
               const savingRate = income > 0 ? Math.round((surplus / income) * 100) : 0
@@ -979,7 +1387,7 @@ export function ExportSheet({ onClose }: { onClose: () => void }) {
                   <div className="text-center mb-4">
                     <div className="text-2xl mb-1">🐱</div>
                     <div className="text-lg font-bold">FinWise</div>
-                    <div className="text-xs opacity-80">{getMonthLabel(selectedMonth)}</div>
+                    <div className="text-xs opacity-80">{getDateRangeLabel(dateRange)}</div>
                   </div>
 
                   <div className="grid grid-cols-2 gap-3 mb-4">
@@ -1027,23 +1435,35 @@ export function ExportSheet({ onClose }: { onClose: () => void }) {
             })()}
           </div>
 
-          <Button
-            onClick={shareAsImage}
-            disabled={exporting !== null}
-            className="gap-2"
-          >
-            {exporting === 'share' ? (
-              <>⏳ Membuat gambar...</>
-            ) : (
-              <>
-                <Camera className="size-4" />
-                Simpan sebagai Gambar
-              </>
-            )}
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              onClick={shareAsImage}
+              disabled={exporting !== null}
+              className="flex-1 gap-2"
+            >
+              {exporting === 'share' ? (
+                <>⏳ Membuat gambar...</>
+              ) : (
+                <>
+                  <Camera className="size-4" />
+                  Simpan sebagai Gambar
+                </>
+              )}
+            </Button>
+
+            <Button
+              onClick={shareToWhatsApp}
+              disabled={exporting !== null}
+              variant="secondary"
+              className="flex-1 gap-2"
+            >
+              <MessageCircle className="size-4" />
+              Share ke WhatsApp
+            </Button>
+          </div>
 
           <p className="text-xs text-muted-foreground text-center">
-            Gambar PNG akan diunduh. Bisa langsung dishare ke WhatsApp, Instagram, dll.
+            Gambar PNG akan diunduh. WhatsApp akan terbuka dengan ringkasan teks otomatis.
           </p>
         </div>
       )}

@@ -28,6 +28,16 @@ export const CustomKeypad = memo(function CustomKeypad({ value, onChange, onConf
   const [calcOp, setCalcOp] = useState<string | null>(null)
   const [activeOp, setActiveOp] = useState<string>('')
   const [flash, setFlash] = useState<'income' | 'expense' | null>(null)
+  const [isDesktop, setIsDesktop] = useState(false)
+
+  // Detect desktop (hover: hover) for keyboard hint
+  useEffect(() => {
+    const mq = window.matchMedia('(hover: hover)')
+    setIsDesktop(mq.matches)
+    const handler = (e: MediaQueryListEvent) => setIsDesktop(e.matches)
+    mq.addEventListener('change', handler)
+    return () => mq.removeEventListener('change', handler)
+  }, [])
 
   // Sync external value
   useEffect(() => {
@@ -124,6 +134,32 @@ export const CustomKeypad = memo(function CustomKeypad({ value, onChange, onConf
     if (navigator.vibrate) navigator.vibrate(10)
   }, [press])
 
+  // Physical keyboard support
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      // Ignore if user is typing in an input/textarea
+      const tag = (e.target as HTMLElement)?.tagName
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return
+
+      if (e.key >= '0' && e.key <= '9') {
+        e.preventDefault()
+        press(e.key)
+      } else if (e.key === 'Backspace') {
+        e.preventDefault()
+        press('del')
+      } else if (e.key === 'Enter') {
+        e.preventDefault()
+        if (calcOp) evaluate()
+        onConfirm()
+      } else if (e.key === '.') {
+        e.preventDefault()
+        press('.')
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [press, evaluate, onConfirm, calcOp])
+
   const flashColor = flash === 'income' ? 'text-emerald-400' : flash === 'expense' ? 'text-red-400' : ''
 
   return (
@@ -131,6 +167,11 @@ export const CustomKeypad = memo(function CustomKeypad({ value, onChange, onConf
       {/* Amount Display */}
       <div className="text-center py-3">
         <div className="text-xs uppercase tracking-widest text-muted-foreground mb-2">Jumlah</div>
+        {isDesktop && (
+          <div className="text-[10px] text-muted-foreground/60 mb-2 -mt-1 animate-fade-in">
+            Ketik langsung di keyboard
+          </div>
+        )}
         <div className="flex items-baseline justify-center gap-1">
           <span className="text-lg font-semibold text-muted-foreground">Rp</span>
           <span className={`text-5xl font-extrabold tabular-nums transition-colors duration-300 ${flashColor || 'text-foreground'}`}>
