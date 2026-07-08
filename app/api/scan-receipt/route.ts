@@ -51,14 +51,25 @@ function cleanItemName(raw: string): string {
 }
 
 function parseMoney(raw: string): number {
-  const cleaned = raw.replace(/[^\d]/g, '')
+  let s = raw.trim()
+  // Drop decimal cents in Indonesian formats: Rp 50.000,00 / 50,000.00
+  s = s.replace(/([.,])00\b/g, '')
+  const cleaned = s.replace(/[^\d]/g, '')
   if (!cleaned) return 0
   const value = parseInt(cleaned, 10)
-  return Number.isFinite(value) ? value : 0
+  if (!Number.isFinite(value)) return 0
+  // Reject date/year-like values that OCR often exposes as money candidates
+  const currentYear = new Date().getFullYear()
+  if (value >= 1990 && value <= currentYear + 2) return 0
+  return value
+}
+
+function isDateOrMetaLine(line: string): boolean {
+  return /\b\d{1,2}[\/-]\d{1,2}[\/-]\d{2,4}\b|\b\d{1,2}\s+(jan|feb|mar|apr|mei|may|jun|jul|agu|aug|sep|okt|oct|nov|des|dec)\w*\s+\d{2,4}\b|\b\d{1,2}:\d{2}(:\d{2})?\b/i.test(line)
 }
 
 function isLikelyNonItem(line: string): boolean {
-  return /^vc\b|voucher|promo|total|subtotal|sub\s*total|harga\s*jual|anda\s*hemat|bayar|payment|tunai|cash|kartu|card|debit|credit|kembali|change|ppn|pajak|tax|diskon|discount|member|poin|point|invoice|struk|receipt|no\.?\s*(trx|trans|nota)|tanggal|date|jam|time|kasir|cashier|alamat|telp|phone|npwp|qty\s+harga/i.test(line)
+  return isDateOrMetaLine(line) || /^[-*]\s*(catatan|notes?|packaging|level|pilih|extra|varian)\b/i.test(line) || /^vc\b|voucher|promo|total|subtotal|sub\s*total|harga\s*jual|harga\s*pesanan|anda\s*hemat|bayar|payment|metode|telah\s*dibayar|tunai|cash|kartu|card|debit|credit|kembali|change|ppn|pajak|tax|diskon|discount|member|poin|point|invoice|struk|receipt|nomor\s*pesanan|no\.?\s*(trx|trans|nota|pesanan)|tanggal|date|waktu|jam|time|kasir|cashier|pelanggan|customer|alamat|telp|phone|npwp|qty\s+harga/i.test(line)
 }
 
 // Extract individual line items from receipt text.
@@ -154,14 +165,14 @@ function extractItems(text: string): { name: string; price: number; qty?: number
 
 // Extract amount from OCR text
 function normalizeAmount(raw: string): number {
-  const num = parseInt(raw.replace(/[^\d]/g, ''))
+  const num = parseMoney(raw)
   return Number.isFinite(num) && num > 0 && num < 100_000_000 ? num : 0
 }
 
 function extractAmount(text: string): number {
   const lines = text.split('\n').map(l => l.trim()).filter(Boolean)
   const totalLinePatterns = [
-    /(?:grand\s*total|total\s*belanja|total\s*pembayaran|total\s*due|total\s*amount|jumlah\s*bayar|total)\D{0,20}(\d{1,3}(?:[.,]\d{3})+|\d{4,})/i,
+    /(?:grand\s*total|total\s*belanja|total\s*pembayaran|total\s*due|total\s*amount|jumlah\s*bayar|harga\s*pesanan|jumlah\s*rp\.?|total)\D{0,30}(\d{1,3}(?:[.,]\d{3})+|\d{4,})/i,
     /(?:bayar|payment|amount)\D{0,20}(\d{1,3}(?:[.,]\d{3})+|\d{4,})/i,
   ]
 
