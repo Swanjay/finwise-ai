@@ -3,6 +3,7 @@
 import { useState, useRef, useCallback, useEffect } from "react"
 import { Mic, Loader2, Check, X, Square, Keyboard } from "lucide-react"
 import { formatIDR } from "@/lib/finwise"
+import { isNativePlatform } from "@/lib/platform"
 
 interface VoiceInputProps {
   onResult: (parsed: {
@@ -28,6 +29,7 @@ export default function VoiceInput({ onResult }: VoiceInputProps) {
   const [recordingTime, setRecordingTime] = useState(0)
   const [manualText, setManualText] = useState("")
   const [inputMode, setInputMode] = useState<"voice" | "text">("text")
+  const [isNative, setIsNative] = useState(false)
   const mediaRecorderRef = useRef<MediaRecorder | null>(null)
   const chunksRef = useRef<Blob[]>([])
   const timerRef = useRef<NodeJS.Timeout | null>(null)
@@ -36,14 +38,14 @@ export default function VoiceInput({ onResult }: VoiceInputProps) {
   const [webSpeechSupported, setWebSpeechSupported] = useState(false)
   const [interimText, setInterimText] = useState("")
 
-  // Check Web Speech API support
+  // Check voice support. Native WebView often denies Web Speech mic silently,
+  // so default APK users to text mode and use MediaRecorder only when they tap Suara.
   useEffect(() => {
+    const native = isNativePlatform()
+    setIsNative(native)
     const SR = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
-    setWebSpeechSupported(!!SR)
-    // Default to voice on mobile if supported, text on desktop
-    if (SR && /Mobi|Android|iPhone/i.test(navigator.userAgent)) {
-      setInputMode("voice")
-    }
+    setWebSpeechSupported(!!SR && !native)
+    setInputMode("text")
   }, [])
 
   // ─── WEB SPEECH API (realtime, free, no server) ───
@@ -90,7 +92,7 @@ export default function VoiceInput({ onResult }: VoiceInputProps) {
       if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null }
       setStatus("error")
       if (event.error === "not-allowed") {
-        setError("Izin microphone ditolak. Klik 🔒 di address bar → Microphone → Allow.")
+        setError(isNative ? "Izin microphone ditolak. Buka Setelan Android → Aplikasi → FinWise → Izin → Microphone → Izinkan." : "Izin microphone ditolak. Klik 🔒 di address bar → Microphone → Allow.")
       } else if (event.error === "no-speech") {
         setError("Tidak ada suara terdeteksi. Coba bicara lebih dekat ke mic.")
       } else {
@@ -113,7 +115,7 @@ export default function VoiceInput({ onResult }: VoiceInputProps) {
 
     recognition.start()
     setStatus("recording")
-  }, [transcript, status])
+  }, [transcript, status, isNative])
 
   const stopWebSpeech = useCallback(() => {
     if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null }
@@ -176,7 +178,7 @@ export default function VoiceInput({ onResult }: VoiceInputProps) {
 
     } catch (err: any) {
       if (err.name === "NotAllowedError") {
-        setError("Izin microphone ditolak. Klik 🔒 di address bar → Microphone → Allow, lalu refresh halaman.")
+        setError(isNative ? "Izin microphone ditolak. Buka Setelan Android → Aplikasi → FinWise → Izin → Microphone → Izinkan, lalu buka ulang app." : "Izin microphone ditolak. Klik 🔒 di address bar → Microphone → Allow, lalu refresh halaman.")
       } else if (err.name === "NotFoundError") {
         setError("Microphone tidak ditemukan di device ini.")
       } else if (err.name === "NotReadableError") {
@@ -186,7 +188,7 @@ export default function VoiceInput({ onResult }: VoiceInputProps) {
       }
       setStatus("error")
     }
-  }, [])
+  }, [isNative])
 
   const stopRecording = useCallback(() => {
     if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null }
@@ -259,8 +261,8 @@ export default function VoiceInput({ onResult }: VoiceInputProps) {
     if (recognitionRef.current) { try { recognitionRef.current.stop() } catch {} }
   }
 
-  const startVoice = webSpeechSupported ? startWebSpeech : startRecording
-  const stopVoice = webSpeechSupported ? stopWebSpeech : stopRecording
+  const startVoice = webSpeechSupported && !isNative ? startWebSpeech : startRecording
+  const stopVoice = webSpeechSupported && !isNative ? stopWebSpeech : stopRecording
 
   return (
     <div className="space-y-4">
@@ -389,9 +391,19 @@ export default function VoiceInput({ onResult }: VoiceInputProps) {
           <p className="text-sm text-red-400">{error}</p>
           {error.includes("ditolak") && (
             <ol className="text-xs text-muted-foreground list-decimal list-inside space-y-1">
-              <li>Klik <strong>🔒</strong> di address bar</li>
-              <li>Cari <strong>Microphone</strong> → <strong>Allow</strong></li>
-              <li>Refresh halaman</li>
+              {isNative ? (
+                <>
+                  <li>Buka <strong>Setelan Android</strong></li>
+                  <li>Pilih <strong>Aplikasi → FinWise → Izin</strong></li>
+                  <li>Aktifkan <strong>Microphone</strong>, lalu buka ulang app</li>
+                </>
+              ) : (
+                <>
+                  <li>Klik <strong>🔒</strong> di address bar</li>
+                  <li>Cari <strong>Microphone</strong> → <strong>Allow</strong></li>
+                  <li>Refresh halaman</li>
+                </>
+              )}
             </ol>
           )}
           <button onClick={reset} className="w-full px-4 py-2 rounded-lg bg-red-500/20 text-red-400 text-xs font-semibold hover:bg-red-500/30 transition">
