@@ -11,9 +11,11 @@ interface Datum {
 export function SpendingDonut({
   data,
   total: totalProp,
+  hideBalance,
 }: {
   data: Datum[]
   total?: number
+  hideBalance?: boolean
 }) {
   const total = totalProp ?? data.reduce((s, d) => s + d.value, 0)
   if (data.length === 0) {
@@ -46,7 +48,7 @@ export function SpendingDonut({
       <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
         <span className="text-xs text-muted-foreground">Total keluar</span>
         <span className="font-heading text-lg font-semibold tabular-nums">
-          {formatIDR(total)}
+          {hideBalance ? '••••' : formatIDR(total)}
         </span>
       </div>
     </div>

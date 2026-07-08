@@ -198,6 +198,54 @@ export function AddTransactionForm({ onDone }: { onDone: () => void }) {
         </div>
       </div>
 
+      {/* ═══ Wallet Selector (Top-Level) ═══ */}
+      <div className="px-4 mb-3">
+        <Label className="text-xs font-semibold text-muted-foreground tracking-wider uppercase mb-1.5 block">
+          {type === 'expense' ? '📦 Ambil dari Dompet' : '📦 Masuk ke Dompet'}
+        </Label>
+        <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+          {wallets.map((w) => {
+            const active = walletId === w.id
+            const walletBalance = getWalletBalance(w.id)
+            return (
+              <button
+                key={w.id}
+                type="button"
+                onClick={() => {
+                  setWalletId(w.id)
+                  if (type === 'expense') {
+                    const hint = walletAutoCategory(w.id, description)
+                    if (hint) setCategory(hint)
+                  }
+                }}
+                className={cn(
+                  'flex flex-col items-center gap-1 rounded-xl border p-2 text-[11px] transition-all duration-150 active:scale-95',
+                  active
+                    ? 'border-primary bg-primary/15 text-foreground'
+                    : 'border-border text-muted-foreground hover:bg-muted/50'
+                )}
+              >
+                <span className="text-base">
+                  {w.logo || detectLogo(w.name)
+                    ? <img src={w.logo || detectLogo(w.name)} alt="" className="w-5 h-5 object-contain" />
+                    : w.icon
+                  }
+                </span>
+                <span className="truncate font-medium">{w.name}</span>
+                <span className={cn(
+                  'text-[10px] font-bold tabular-nums',
+                  walletBalance > 0 ? 'text-emerald-600 dark:text-emerald-400'
+                    : walletBalance < 0 ? 'text-destructive'
+                    : 'text-muted-foreground'
+                )}>
+                  {hideBalance ? '••••' : formatIDRShort(walletBalance)}
+                </span>
+              </button>
+            )
+          })}
+        </div>
+      </div>
+
       {/* ═══ More Options (Collapsible) ═══ */}
       <div className="px-4">
         <button
@@ -214,52 +262,6 @@ export function AddTransactionForm({ onDone }: { onDone: () => void }) {
 
         {showMoreOptions && (
           <div className="space-y-3 pb-2 animate-in slide-in-from-top-2 duration-200">
-            {/* Wallet selector */}
-            <div className="flex flex-col gap-1.5">
-              <Label className="text-xs">{type === 'expense' ? '📦 Ambil dari Dompet' : '📦 Masuk ke Dompet'}</Label>
-              <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
-                {wallets.map((w) => {
-                  const active = walletId === w.id
-                  const walletBalance = getWalletBalance(w.id)
-                  return (
-                    <button
-                      key={w.id}
-                      type="button"
-                      onClick={() => {
-                        setWalletId(w.id)
-                        if (type === 'expense') {
-                          const hint = walletAutoCategory(w.id, description)
-                          if (hint) setCategory(hint)
-                        }
-                      }}
-                      className={cn(
-                        'flex flex-col items-center gap-1 rounded-xl border p-2 text-[11px] transition-all duration-150 active:scale-95',
-                        active
-                          ? 'border-primary bg-primary/15 text-foreground'
-                          : 'border-border text-muted-foreground hover:bg-muted/50'
-                      )}
-                    >
-                      <span className="text-base">
-                        {w.logo || detectLogo(w.name)
-                          ? <img src={w.logo || detectLogo(w.name)} alt="" className="w-5 h-5 object-contain" />
-                          : w.icon
-                        }
-                      </span>
-                      <span className="truncate font-medium">{w.name}</span>
-                      <span className={cn(
-                        'text-[10px] font-bold tabular-nums',
-                        walletBalance > 0 ? 'text-emerald-600 dark:text-emerald-400'
-                          : walletBalance < 0 ? 'text-destructive'
-                          : 'text-muted-foreground'
-                      )}>
-                        {hideBalance ? '••••' : formatIDRShort(walletBalance)}
-                      </span>
-                    </button>
-                  )
-                })}
-              </div>
-            </div>
-
             {/* Date */}
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="date" className="text-xs">📅 Tanggal</Label>

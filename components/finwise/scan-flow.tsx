@@ -14,9 +14,11 @@ import {
   EXPENSE_CATEGORIES,
   formatIDR,
   formatIDRInput,
+  formatIDRShort,
   type CategoryId,
   type ReceiptLineItem,
 } from '@/lib/finwise'
+import { detectLogo } from '@/lib/brand-logos'
 import { loadPlan } from '@/lib/plans'
 import { useFinwise } from '@/components/finwise-store'
 import { cn } from '@/lib/utils'
@@ -358,7 +360,7 @@ function PhotoModal({ photo, onClose }: { photo: string; onClose: () => void }) 
 }
 
 export function ScanFlow({ onDone }: { onDone: () => void }) {
-  const { addTransaction } = useFinwise()
+  const { addTransaction, wallets, getWalletBalance, hideBalance } = useFinwise()
   const [step, setStep] = useState<Step>('idle')
   const [result, setResult] = useState<ScanResult | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -367,6 +369,7 @@ export function ScanFlow({ onDone }: { onDone: () => void }) {
   const [receiptThumb, setReceiptThumb] = useState<string | null>(null)
   const [showPhoto, setShowPhoto] = useState(false)
   const [isRetrying, setIsRetrying] = useState(false)
+  const [walletId, setWalletId] = useState(wallets[0]?.id || 'cash')
   const fileRef = useRef<HTMLInputElement>(null)
 
   const MAX_RETRIES = 2
@@ -505,6 +508,7 @@ export function ScanFlow({ onDone }: { onDone: () => void }) {
       amount: result.amount,
       description: result.store,
       date: result.date,
+      walletId,
       receiptPhoto: capturedPhoto || undefined,
       receiptUrl: receiptThumb || undefined,
       items: result.items.length > 0 ? result.items : undefined,
@@ -778,6 +782,46 @@ export function ScanFlow({ onDone }: { onDone: () => void }) {
                   >
                     <Icon className="size-4" />
                     <span className="truncate">{c.label.split(' ')[0]}</span>
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+
+          {/* Wallet selector */}
+          <div>
+            <Label className="text-xs mb-2 block">📦 Ambil dari Dompet</Label>
+            <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+              {wallets.map((w) => {
+                const active = walletId === w.id
+                const walletBalance = getWalletBalance(w.id)
+                return (
+                  <button
+                    key={w.id}
+                    type="button"
+                    onClick={() => setWalletId(w.id)}
+                    className={cn(
+                      'flex flex-col items-center gap-1 rounded-xl border p-2 text-[11px] transition-all duration-150 active:scale-95',
+                      active
+                        ? 'border-primary bg-primary/15 text-foreground'
+                        : 'border-border text-muted-foreground hover:bg-muted/50'
+                    )}
+                  >
+                    <span className="text-base">
+                      {w.logo || detectLogo(w.name)
+                        ? <img src={w.logo || detectLogo(w.name)} alt="" className="w-5 h-5 object-contain" />
+                        : w.icon
+                      }
+                    </span>
+                    <span className="truncate font-medium">{w.name}</span>
+                    <span className={cn(
+                      'text-[10px] font-bold tabular-nums',
+                      walletBalance > 0 ? 'text-emerald-600 dark:text-emerald-400'
+                        : walletBalance < 0 ? 'text-destructive'
+                        : 'text-muted-foreground'
+                    )}>
+                      {hideBalance ? '••••' : formatIDRShort(walletBalance)}
+                    </span>
                   </button>
                 )
               })}

@@ -46,7 +46,7 @@ function getMonthEnd(offset = 0): string {
 }
 
 export function TransactionsView() {
-  const { transactions, deleteTransaction, tags: savedTags } = useFinwise()
+  const { transactions, deleteTransaction, tags: savedTags, hideBalance } = useFinwise()
   const [filter, setFilter] = useState<Filter>('all')
   const [query, setQuery] = useState('')
   const [selectedTag, setSelectedTag] = useState<string | null>(null)
@@ -485,6 +485,7 @@ export function TransactionsView() {
                     tx={tx}
                     onDelete={deleteTransaction}
                     onEdit={setEditingTx}
+                    hideBalance={hideBalance}
                   />
                 </StaggerItem>
               ))}

@@ -12,7 +12,7 @@ function formatDay(d: number) {
   return `${d}`
 }
 
-export function CashflowChart({ transactions, month }: { transactions: Transaction[]; month: string }) {
+export function CashflowChart({ transactions, month, hideBalance }: { transactions: Transaction[]; month: string; hideBalance?: boolean }) {
   const data = useMemo(() => {
     const [yStr, mStr] = month.split('-')
     const year = Number(yStr)
@@ -84,6 +84,7 @@ export function CashflowChart({ transactions, month }: { transactions: Transacti
             tickLine={false}
             axisLine={false}
             tickFormatter={(v: number) => {
+              if (hideBalance) return '••'
               if (v >= 1_000_000) return `${(v / 1_000_000).toFixed(0)}jt`
               if (v >= 1_000) return `${(v / 1_000).toFixed(0)}rb`
               return `${v}`
@@ -97,7 +98,7 @@ export function CashflowChart({ transactions, month }: { transactions: Transacti
               fontSize: 12,
             }}
             formatter={(value, name) => [
-              formatIDR(Number(value)),
+              hideBalance ? '••••' : formatIDR(Number(value)),
               name === 'income' ? 'Pemasukan' : 'Pengeluaran',
             ]}
             labelFormatter={(label) => `Hari ke-${label}`}

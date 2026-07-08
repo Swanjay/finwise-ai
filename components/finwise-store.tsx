@@ -459,8 +459,24 @@ export function FinwiseProvider({ children }: { children: ReactNode }) {
   const deleteTransaction = useCallback((id: string) => {
     setTransactions((prev) => {
       const tx = prev.find(t => t.id === id)
-      if (tx) logTransactionAudit('guest', 'delete', id, tx as unknown as Record<string, unknown>, undefined)
-      return prev.filter((t) => t.id !== id)
+      if (!tx) return prev
+      
+      const targetTransferId = tx.transferId
+      let toDeleteIds = [id]
+      
+      if (targetTransferId) {
+        const matchingTx = prev.filter(t => t.transferId === targetTransferId)
+        toDeleteIds = matchingTx.map(t => t.id)
+      }
+      
+      toDeleteIds.forEach(delId => {
+        const item = prev.find(t => t.id === delId)
+        if (item) {
+          logTransactionAudit('guest', 'delete', delId, item as unknown as Record<string, unknown>, undefined)
+        }
+      })
+      
+      return prev.filter((t) => !toDeleteIds.includes(t.id))
     })
   }, [])
 

@@ -486,7 +486,7 @@ export function DashboardView({ transactions, month, onOpenGoals, onOpenWallets,
             <BarChart3 className="size-4 text-primary" />
             Cashflow Bulanan
           </h3>
-          <CashflowChart transactions={transactions} month={month} />
+          <CashflowChart transactions={transactions} month={month} hideBalance={hideBalance} />
         </PressableCard>
 
         {/* ─── Spending Donut ─── */}
@@ -502,13 +502,13 @@ export function DashboardView({ transactions, month, onOpenGoals, onOpenWallets,
               <span className="size-2 rounded-full bg-primary inline-block" />
               Pengeluaran per Kategori
             </h3>
-            <SpendingDonut data={byCat} />
+            <SpendingDonut data={byCat} hideBalance={hideBalance} />
             <ul className="mt-4 grid grid-cols-2 gap-2">
               {byCat.slice(0, 6).map(({ category, value }) => (
                 <li key={category.id} className="flex items-center gap-2 text-xs">
                   <span className="size-2.5 rounded-full shrink-0" style={{ backgroundColor: category.color }} />
                   <span className="truncate text-muted-foreground">{category.label}</span>
-                  <span className="ml-auto tabular-nums font-medium text-foreground">{formatIDR(value)}</span>
+                  <span className="ml-auto tabular-nums font-medium text-foreground">{hideBalance ? '••••' : formatIDR(value)}</span>
                 </li>
               ))}
             </ul>
@@ -534,7 +534,7 @@ export function DashboardView({ transactions, month, onOpenGoals, onOpenWallets,
             <StaggerList className="-mx-2 flex flex-col" delay={0.7}>
               {recent.map((tx) => (
                 <StaggerItem key={tx.id}>
-                  <TransactionRow tx={tx} />
+                  <TransactionRow tx={tx} hideBalance={hideBalance} />
                 </StaggerItem>
               ))}
             </StaggerList>

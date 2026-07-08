@@ -43,6 +43,7 @@ export interface Transaction {
   description: string
   date: string // ISO
   walletId?: string
+  transferId?: string // to link two sides of a transfer
   tags?: string[]
   location?: { name: string; lat?: number; lng?: number; address?: string }
   receiptPhoto?: string // base64 data URL of the receipt photo

@@ -15,10 +15,12 @@ export function TransactionRow({
   tx,
   onDelete,
   onEdit,
+  hideBalance,
 }: {
   tx: Transaction
   onDelete?: (id: string) => void
   onEdit?: (tx: Transaction) => void
+  hideBalance?: boolean
 }) {
   const { allCategories } = useFinwise()
   const cat = resolveCategory(tx.category, allCategories) ?? { label: tx.category, color: '#64748B', icon: null }
@@ -300,7 +302,7 @@ export function TransactionRow({
               )}
             >
               {income ? '+' : '-'}
-              {formatIDR(tx.amount)}
+              {hideBalance ? '••••' : formatIDR(tx.amount)}
             </span>
 
             {/* Quick action buttons — always visible for easy access */}
@@ -354,7 +356,7 @@ export function TransactionRow({
               )}
             >
               {income ? '+' : '-'}
-              {formatIDR(tx.amount)}
+              {hideBalance ? '••••' : formatIDR(tx.amount)}
             </span>
           </div>
         </motion.div>
