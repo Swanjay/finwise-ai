@@ -58,7 +58,7 @@ function parseMoney(raw: string): number {
 }
 
 function isLikelyNonItem(line: string): boolean {
-  return /total|subtotal|sub\s*total|bayar|payment|tunai|cash|kartu|card|debit|credit|kembali|change|ppn|pajak|tax|diskon|discount|member|poin|point|invoice|struk|receipt|no\.?\s*(trx|trans|nota)|tanggal|date|jam|time|kasir|cashier|alamat|telp|phone|npwp|qty\s+harga/i.test(line)
+  return /^vc\b|voucher|promo|total|subtotal|sub\s*total|harga\s*jual|anda\s*hemat|bayar|payment|tunai|cash|kartu|card|debit|credit|kembali|change|ppn|pajak|tax|diskon|discount|member|poin|point|invoice|struk|receipt|no\.?\s*(trx|trans|nota)|tanggal|date|jam|time|kasir|cashier|alamat|telp|phone|npwp|qty\s+harga/i.test(line)
 }
 
 // Extract individual line items from receipt text.
