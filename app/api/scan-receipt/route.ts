@@ -101,6 +101,24 @@ function extractItems(text: string): { name: string; price: number; qty?: number
   for (const line of lines) {
     if (line.length < 4 || isLikelyNonItem(line)) continue
 
+    // Indomaret/Alfamart often OCRs as: NAME productCode qty unitPrice lineTotal
+    // Example: MAMA/L JERUK NPS 680 1 10600 10,600
+    // Product code must be ignored; price must be unitPrice/lineTotal, not code/unit size.
+    const retailMatch = line.match(/^(.+?)\s+(\d{2,6})\s+(\d{1,3})\s+(?:Rp\.?\s*)?([\d.,]+)\s+(?:Rp\.?\s*)?([\d.,]+)\s*$/)
+    if (retailMatch) {
+      const name = cleanItemName(retailMatch[1])
+      const qty = parseInt(retailMatch[3], 10)
+      let unitPrice = parseMoney(retailMatch[4])
+      const lineTotal = parseMoney(retailMatch[5])
+      if (qty > 0 && lineTotal > 0 && Math.abs(unitPrice * qty - lineTotal) > Math.max(100, lineTotal * 0.05)) {
+        unitPrice = Math.round(lineTotal / qty)
+      }
+      if (name.length >= 2 && qty > 0 && qty < 100 && unitPrice > 100) {
+        items.push({ name, price: unitPrice, qty, description: `Kode ${retailMatch[2]}; Harga satuan ${unitPrice}; jumlah ${qty * unitPrice}` })
+        continue
+      }
+    }
+
     let matched = false
     for (let i = 0; i < patterns.length; i++) {
       const m = line.match(patterns[i])
