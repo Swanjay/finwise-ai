@@ -107,17 +107,23 @@ export function generateBudgetAlerts(
 }
 
 // ─── 2. Bill Reminders (3 days, 1 day, today) ───
-function getNextDueDate(frequency: string): Date {
+function getNextDueDate(item: RecurringItem): Date {
   const now = new Date()
   const next = new Date(now)
-  if (frequency === 'harian') {
+  next.setHours(0, 0, 0, 0)
+  
+  if (item.frequency === 'harian') {
     next.setDate(next.getDate() + 1)
-  } else if (frequency === 'mingguan') {
+  } else if (item.frequency === 'mingguan') {
     next.setDate(next.getDate() + 7)
   } else {
-    // bulanan
-    next.setMonth(next.getMonth() + 1)
-    next.setDate(1)
+    // bulanan — use the actual dueDate (1-31)
+    const day = Math.min(item.dueDate || 1, 28) // clamp to 28 to avoid month overflow
+    if (next.getDate() >= day) {
+      // already passed this month, move to next month
+      next.setMonth(next.getMonth() + 1)
+    }
+    next.setDate(day)
   }
   return next
 }
@@ -140,7 +146,7 @@ export function generateBillReminders(
 
   for (const r of recurring) {
     if (!r.active) continue
-    const nextDue = getNextDueDate(r.frequency)
+    const nextDue = getNextDueDate(r)
     const days = daysUntil(nextDue)
     const cat = resolveCategory(r.category, allCategories)
     const label = cat?.label ?? r.category

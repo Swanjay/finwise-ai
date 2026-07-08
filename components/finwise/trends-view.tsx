@@ -51,6 +51,7 @@ import {
   type Category,
 } from '@/lib/finwise'
 import { useFinwise } from '@/components/finwise-store'
+import { SpendingHeatmapFull } from '@/components/finwise/spending-heatmap'
 
 // ─── Types ───
 type TabId = 'overview' | 'categories' | 'patterns' | 'networth'
@@ -893,6 +894,24 @@ export function TrendsView() {
           )
         })}
       </div>
+
+      {/* ─── Spending Heatmap Card ─── */}
+      <Card className="bg-gradient-to-br from-card to-primary/5">
+        <CardHeader className="pb-2">
+          <CardTitle className="flex items-center gap-2 text-sm">
+            📊 Pola Pengeluaran
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {hasData ? (
+            <SpendingHeatmapFull transactions={transactions} months={6} />
+          ) : (
+            <p className="py-6 text-center text-sm text-muted-foreground">
+              Mulai catat transaksi untuk melihat pola pengeluaran
+            </p>
+          )}
+        </CardContent>
+      </Card>
 
       {/* ─── Tab Content ─── */}
 

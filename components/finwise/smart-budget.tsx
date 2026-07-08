@@ -1,7 +1,8 @@
 'use client'
 
 import { useState, useMemo } from 'react'
-import { Sparkles, RotateCcw, Copy, ChevronRight, TrendingUp, TrendingDown, AlertTriangle } from 'lucide-react'
+import { Sparkles, RotateCcw, Copy, ChevronRight, TrendingUp, TrendingDown, AlertTriangle, Target, ShieldAlert } from 'lucide-react'
+import { motion } from 'framer-motion'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -50,9 +51,45 @@ const BUDGET_TEMPLATES: { id: string; name: string; emoji: string; desc: string;
   },
 ]
 
+// 50/30/20 Budget Rule zones
+const FIFTY_THIRTY_ZONES: {
+  id: string
+  label: string
+  emoji: string
+  color: string
+  defaultPct: number
+  categories: string[]
+}[] = [
+  {
+    id: 'needs',
+    label: 'Kebutuhan',
+    emoji: '🏠',
+    color: '#10B981',
+    defaultPct: 50,
+    categories: ['food', 'bills', 'transport', 'internet', 'health'],
+  },
+  {
+    id: 'wants',
+    label: 'Keinginan',
+    emoji: '🎮',
+    color: '#EC4899',
+    defaultPct: 30,
+    categories: ['shopping', 'entertainment'],
+  },
+  {
+    id: 'savings',
+    label: 'Tabungan',
+    emoji: '💰',
+    color: '#6366F1',
+    defaultPct: 20,
+    categories: ['education'],
+  },
+]
+
 export function SmartBudgetSheet({ onClose }: { onClose: () => void }) {
   const { transactions, budgets, setBudget, monthlyIncome } = useFinwise()
-  const [activeTab, setActiveTab] = useState<'templates' | 'auto' | 'rollover'>('templates')
+  const [activeTab, setActiveTab] = useState<'templates' | 'auto' | 'rollover' | '5030'>('templates')
+  const [zonePcts, setZonePcts] = useState({ needs: 50, wants: 30, savings: 20 })
   
   const currentMonth = getMonthKey(new Date())
   const prevMonth = (() => {
@@ -121,6 +158,42 @@ export function SmartBudgetSheet({ onClose }: { onClose: () => void }) {
       .sort((a, b) => (b!.rolloverAmount) - (a!.rolloverAmount))
   }, [budgets, prevMonthTx, currentMonthTx])
 
+  // 50/30/20 zone data
+  const zoneData = useMemo(() => {
+    if (!monthlyIncome || monthlyIncome <= 0) return null
+    const totalPct = zonePcts.needs + zonePcts.wants + zonePcts.savings
+
+    return FIFTY_THIRTY_ZONES.map((zone) => {
+      const pct = zonePcts[zone.id as keyof typeof zonePcts] || zone.defaultPct
+      const allocated = Math.round((monthlyIncome * pct) / 100)
+      const zoneCategories = zone.categories
+        .map((catId) => BUILTIN_CATEGORIES[catId])
+        .filter(Boolean)
+      const spent = currentMonthTx
+        .filter((t) => t.type === 'expense' && zone.categories.includes(t.category))
+        .reduce((s, t) => s + t.amount, 0)
+      const remaining = allocated - spent
+      const pctUsed = allocated > 0 ? Math.round((spent / allocated) * 100) : 0
+      const isOver = spent > allocated
+
+      // Distribute allocated evenly among zone categories
+      const perCat = zoneCategories.length > 0 ? Math.round(allocated / zoneCategories.length) : 0
+
+      return {
+        ...zone,
+        pct,
+        allocated,
+        spent,
+        remaining,
+        pctUsed,
+        isOver,
+        zoneCategories,
+        perCat,
+        totalPct,
+      }
+    })
+  }, [monthlyIncome, zonePcts, currentMonthTx])
+
   function applyTemplate(templateId: string) {
     const template = BUDGET_TEMPLATES.find((t) => t.id === templateId)
     if (!template) return
@@ -135,6 +208,20 @@ export function SmartBudgetSheet({ onClose }: { onClose: () => void }) {
     }
   }
 
+  function apply5030() {
+    if (!monthlyIncome || monthlyIncome <= 0) return
+    for (const zone of FIFTY_THIRTY_ZONES) {
+      const pct = zonePcts[zone.id as keyof typeof zonePcts] || zone.defaultPct
+      const zoneBudget = Math.round((monthlyIncome * pct) / 100)
+      const perCat = zone.categories.length > 0 ? Math.round(zoneBudget / zone.categories.length) : 0
+      for (const catId of zone.categories) {
+        // Round to nearest 50k for cleaner numbers
+        const rounded = Math.ceil(perCat / 50000) * 50000
+        setBudget(catId, rounded)
+      }
+    }
+  }
+
   return (
     <div className="flex flex-col gap-4 max-h-[65vh] overflow-y-auto">
       {/* Tabs */}
@@ -143,6 +230,7 @@ export function SmartBudgetSheet({ onClose }: { onClose: () => void }) {
           { id: 'templates' as const, label: 'Template', emoji: '📋' },
           { id: 'auto' as const, label: 'Auto Budget', emoji: '🤖' },
           { id: 'rollover' as const, label: 'Rollover', emoji: '🔄' },
+          { id: '5030' as const, label: '50/30/20', emoji: '🎯' },
         ].map((tab) => (
           <button
             key={tab.id}
@@ -275,6 +363,247 @@ export function SmartBudgetSheet({ onClose }: { onClose: () => void }) {
             </p>
           </div>
         </div>
+      )}
+
+      {/* 50/30/20 Tab */}
+      {activeTab === '5030' && (
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.25 }}
+          className="flex flex-col gap-3"
+        >
+          {/* Header */}
+          <div className="clay-card p-3">
+            <div className="flex items-center gap-2 mb-2">
+              <Target className="size-4 text-primary" />
+              <p className="text-sm font-semibold">Aturan 50/30/20</p>
+            </div>
+            <p className="text-xs text-muted-foreground mb-1">
+              Atur pengeluaranmu berdasarkan aturan 50/30/20: Kebutuhan, Keinginan, dan Tabungan.
+            </p>
+            {!monthlyIncome || monthlyIncome <= 0 ? (
+              <p className="text-xs text-orange-500 mt-2">
+                ⚠️ Atur pendapatan bulanan dulu di halaman Utama agar fitur ini berfungsi.
+              </p>
+            ) : null}
+          </div>
+
+          {/* Percentage Sliders */}
+          <div className="clay-card p-3">
+            <p className="text-xs font-semibold mb-3">Kustom Persentase</p>
+            <div className="flex flex-col gap-3">
+              {FIFTY_THIRTY_ZONES.map((zone) => {
+                const pct = zonePcts[zone.id as keyof typeof zonePcts]
+                return (
+                  <div key={zone.id} className="flex items-center gap-2">
+                    <span className="text-xs w-20">{zone.emoji} {zone.label}</span>
+                    <div className="relative flex-1">
+                      <input
+                        type="range"
+                        min={0}
+                        max={100}
+                        value={pct}
+                        onChange={(e) => {
+                          setZonePcts((prev) => ({ ...prev, [zone.id]: Number(e.target.value) }))
+                        }}
+                        className="w-full h-2 rounded-full appearance-none cursor-pointer"
+                        style={{
+                          background: `linear-gradient(to right, ${zone.color} 0%, ${zone.color} ${pct}%, #e5e7eb ${pct}%, #e5e7eb 100%)`,
+                        }}
+                      />
+                    </div>
+                    <span className="text-xs font-semibold w-10 text-right" style={{ color: zone.color }}>
+                      {pct}%
+                    </span>
+                    {monthlyIncome > 0 && (
+                      <span className="text-[10px] text-muted-foreground w-16 text-right">
+                        {formatIDR(Math.round(monthlyIncome * pct / 100))}
+                      </span>
+                    )}
+                  </div>
+                )
+              })}
+              <div className="flex items-center justify-between mt-1">
+                <span className={cn(
+                  'text-[10px]',
+                  (zonePcts.needs + zonePcts.wants + zonePcts.savings) === 100
+                    ? 'text-green-500'
+                    : 'text-orange-500'
+                )}>
+                  Total: {zonePcts.needs + zonePcts.wants + zonePcts.savings}%
+                  {(zonePcts.needs + zonePcts.wants + zonePcts.savings) !== 100 && ' (harus 100%)'}
+                </span>
+                <button
+                  onClick={() => setZonePcts({ needs: 50, wants: 30, savings: 20 })}
+                  className="text-[10px] text-primary underline"
+                >
+                  Reset 50/30/20
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Visual Bar Breakdown */}
+          {monthlyIncome > 0 && zoneData && (
+            <div className="clay-card p-3">
+              <p className="text-xs font-semibold mb-2">Alokasi Bulanan</p>
+              {/* Stacked bar */}
+              <div className="flex h-5 rounded-full overflow-hidden mb-3">
+                {zoneData.map((zone) => (
+                  <motion.div
+                    key={zone.id}
+                    initial={{ width: 0 }}
+                    animate={{ width: `${zone.pct}%` }}
+                    transition={{ duration: 0.5, ease: 'easeOut' }}
+                    className="flex items-center justify-center"
+                    style={{ backgroundColor: zone.color }}
+                  >
+                    {zone.pct >= 15 && (
+                      <span className="text-[9px] text-white font-medium">{zone.pct}%</span>
+                    )}
+                  </motion.div>
+                ))}
+              </div>
+
+              {/* Zone summary cards */}
+              <div className="flex gap-2">
+                {zoneData.map((zone) => (
+                  <motion.div
+                    key={zone.id}
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ duration: 0.3, delay: 0.1 }}
+                    className="flex-1 rounded-xl p-2 text-center"
+                    style={{ backgroundColor: `${zone.color}15` }}
+                  >
+                    <span className="text-lg">{zone.emoji}</span>
+                    <p className="text-[10px] font-semibold mt-0.5" style={{ color: zone.color }}>
+                      {zone.label}
+                    </p>
+                    <p className="text-[10px] text-muted-foreground">{formatIDR(zone.allocated)}</p>
+                    <div className="mt-1.5 h-1.5 rounded-full bg-muted overflow-hidden">
+                      <motion.div
+                        initial={{ width: 0 }}
+                        animate={{ width: `${Math.min(zone.pctUsed, 100)}%` }}
+                        transition={{ duration: 0.6, ease: 'easeOut' }}
+                        className="h-full rounded-full"
+                        style={{ backgroundColor: zone.isOver ? '#EF4444' : zone.color }}
+                      />
+                    </div>
+                    <p className="text-[9px] mt-0.5" style={{ color: zone.isOver ? '#EF4444' : zone.color }}>
+                      {zone.pctUsed}% terpakai
+                    </p>
+                    {zone.isOver && (
+                      <div className="flex items-center justify-center gap-0.5 mt-0.5">
+                        <ShieldAlert className="size-2.5 text-red-500" />
+                        <span className="text-[9px] text-red-500 font-medium">Over!</span>
+                      </div>
+                    )}
+                  </motion.div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Per-category breakdown */}
+          {zoneData && monthlyIncome > 0 && (
+            <div className="flex flex-col gap-2.5">
+              {zoneData.map((zone) => (
+                <motion.div
+                  key={zone.id}
+                  initial={{ opacity: 0, y: 6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3, delay: 0.15 }}
+                  className="clay-card p-3"
+                >
+                  <div className="flex items-center gap-2 mb-2">
+                    <span>{zone.emoji}</span>
+                    <p className="text-xs font-semibold flex-1">{zone.label} ({zone.pct}%)</p>
+                    <div className="text-right">
+                      <p className="text-[10px] text-muted-foreground">
+                        {formatIDR(zone.spent)} / {formatIDR(zone.allocated)}
+                      </p>
+                      {zone.isOver ? (
+                        <p className="text-[10px] text-red-500 font-medium">
+                          Over {formatIDR(Math.abs(zone.remaining))}
+                        </p>
+                      ) : (
+                        <p className="text-[10px] text-green-500 font-medium">
+                          Sisa {formatIDR(zone.remaining)}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Zone progress bar */}
+                  <div className="h-2 rounded-full bg-muted overflow-hidden mb-2.5">
+                    <motion.div
+                      initial={{ width: 0 }}
+                      animate={{ width: `${Math.min(zone.pctUsed, 100)}%` }}
+                      transition={{ duration: 0.6 }}
+                      className="h-full rounded-full"
+                      style={{ backgroundColor: zone.isOver ? '#EF4444' : zone.color }}
+                    />
+                  </div>
+
+                  {/* Per-category rows */}
+                  <div className="flex flex-col gap-1.5">
+                    {zone.zoneCategories.map((cat) => {
+                      const catSpent = currentMonthTx
+                        .filter((t) => t.type === 'expense' && t.category === cat.id)
+                        .reduce((s, t) => s + t.amount, 0)
+                      const catBudget = budgets[cat.id] || zone.perCat
+                      const catPct = catBudget > 0 ? Math.round((catSpent / catBudget) * 100) : 0
+                      const catOver = catSpent > catBudget
+                      return (
+                        <div key={cat.id} className="flex items-center gap-2">
+                          <span className="text-xs">
+                            {cat.icon && <cat.icon className="size-3" style={{ color: cat.color }} />}
+                          </span>
+                          <span className="flex-1 text-[11px]">{cat.label}</span>
+                          <span className="text-[10px] text-muted-foreground">
+                            {formatIDR(catSpent)} / {formatIDR(catBudget)}
+                          </span>
+                          <div className="w-14 h-1.5 rounded-full bg-muted overflow-hidden">
+                            <div
+                              className="h-full rounded-full transition-all duration-500"
+                              style={{
+                                width: `${Math.min(catPct, 100)}%`,
+                                backgroundColor: catOver ? '#EF4444' : cat.color,
+                              }}
+                            />
+                          </div>
+                          {catOver && (
+                            <AlertTriangle className="size-3 text-red-500 shrink-0" />
+                          )}
+                        </div>
+                      )
+                    })}
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          )}
+
+          {/* Apply button */}
+          <Button
+            onClick={apply5030}
+            disabled={!monthlyIncome || monthlyIncome <= 0 || (zonePcts.needs + zonePcts.wants + zonePcts.savings) !== 100}
+            className="gap-2"
+          >
+            <Target className="size-4" />
+            Terapkan {zonePcts.needs}/{zonePcts.wants}/{zonePcts.savings}
+          </Button>
+
+          {/* Tips */}
+          <div className="rounded-xl bg-muted/50 p-3">
+            <p className="text-xs text-muted-foreground">
+              💡 <strong>Tips 50/30/20:</strong> Aturan ini adalah panduan fleksibel. Sesuaikan persentase
+              sesuai kondisi keuanganmu. Yang penting adalah punya pola pengeluaran yang sadar dan terukur.
+            </p>
+          </div>
+        </motion.div>
       )}
 
       <Button variant="secondary" onClick={onClose}>Tutup</Button>

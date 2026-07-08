@@ -62,9 +62,10 @@ import { NotificationsSheet } from '@/components/sheets/notifications-sheet'
 import { VoiceSheet } from '@/components/sheets/voice-sheet'
 import { VoucherSheetWrapper } from '@/components/sheets/voucher-sheet'
 import { CardsSheet } from '@/components/sheets/cards-sheet'
+import { ImportSheet } from '@/components/sheets/import-sheet'
 
 type Tab = 'home' | 'transactions' | 'trends' | 'budget'
-type Sheet = 'add' | 'scan' | 'advisor' | 'settings' | 'goals' | 'wallets' | 'transfer' | 'recurring' | 'export' | 'categories' | 'pin' | 'benchmark' | 'smart-budget' | 'split-bill' | 'notifications' | 'voice' | 'voucher' | 'cards' | null
+type Sheet = 'add' | 'scan' | 'advisor' | 'settings' | 'goals' | 'wallets' | 'transfer' | 'recurring' | 'export' | 'categories' | 'pin' | 'benchmark' | 'smart-budget' | 'split-bill' | 'notifications' | 'voice' | 'voucher' | 'cards' | 'import' | null
 
 // ─── PIN Lock Screen ───
 function PinLock() {
@@ -436,6 +437,7 @@ function AppShell() {
           { icon: ArrowLeftRight, label: 'Transfer', sheet: 'transfer' as Sheet, feature: null },
           { icon: Repeat, label: 'Berulang', sheet: 'recurring' as Sheet, feature: 'recurring' },
           { icon: Download, label: 'Export', sheet: 'export' as Sheet, feature: 'export_csv' },
+          { icon: Upload, label: 'Import', sheet: 'import' as Sheet, feature: null },
           { icon: Upload, label: 'Backup', sheet: 'export' as Sheet, feature: 'export_csv' },
           { icon: BarChart3, label: 'Benchmark', sheet: 'benchmark' as Sheet, feature: 'reports_charts' },
           { icon: FileText, label: 'Kategori', sheet: 'categories' as Sheet, feature: 'custom_categories' },
@@ -588,6 +590,7 @@ function AppShell() {
       <VoiceSheet open={sheet === 'voice'} onClose={() => setSheet(null)} />
       <VoucherSheetWrapper open={sheet === 'voucher'} onClose={() => setSheet(null)} />
       <CardsSheet open={sheet === 'cards'} onClose={() => setSheet(null)} />
+      <ImportSheet open={sheet === 'import'} onClose={() => setSheet(null)} />
 
       {/* Upgrade Modal */}
       {showUpgradeModal && (

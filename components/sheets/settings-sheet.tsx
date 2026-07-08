@@ -140,6 +140,16 @@ function SettingsSheetContent({ onClose, onOpenSheet }: { onClose: () => void; o
         </Button>
       </div>
 
+      {/* Import Bank Statement */}
+      <Button
+        variant="outline"
+        className="w-full gap-2"
+        onClick={() => { haptic.light(); onClose(); onOpenSheet?.('import') }}
+      >
+        <span>📥</span>
+        Import Mutasi Bank
+      </Button>
+
       {/* Reset Data */}
       <div className="border-t border-destructive/20 pt-4">
         {!showResetConfirm ? (
