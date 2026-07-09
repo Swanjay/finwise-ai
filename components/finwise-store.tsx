@@ -26,6 +26,13 @@ import {
 import { logTransactionAudit, logBudgetAudit } from '@/lib/audit'
 import { applyTheme, getStoredThemeId } from '@/lib/themes'
 import { loadPlan, savePlan, type PlanTier } from '@/lib/plans'
+// Household member type
+export interface HouseholdMember {
+  id: string
+  name: string
+  role: 'suami' | 'istri' | 'anak' | 'lainnya'
+  color: string
+}
 
 // Storage keys
 const KEYS = {
@@ -48,6 +55,7 @@ const KEYS = {
   compactMode: 'fw.compact.v1',
   setupDone: 'fw.setupDone.v1',
   cards: 'fw.cards.v1',
+  household: 'fw.household.v1',
 }
 
 function loadJSON<T>(key: string, fallback: T): T {
@@ -169,6 +177,11 @@ interface FinwiseStore {
   // Plan / Subscription
   plan: PlanTier
   upgradePlan: (plan: PlanTier) => void
+
+  // Household Members
+  householdMembers: HouseholdMember[]
+  addHouseholdMember: (member: HouseholdMember) => void
+  removeHouseholdMember: (id: string) => void
 }
 
 const Ctx = createContext<FinwiseStore | null>(null)
@@ -196,6 +209,7 @@ export function FinwiseProvider({ children }: { children: ReactNode }) {
   const [tags, setTags] = useState<string[]>([])
   const [loaded, setLoaded] = useState(false)
   const [plan, setPlan] = useState<PlanTier>('basic')
+  const [householdMembers, setHouseholdMembers] = useState<HouseholdMember[]>([])
   const cloudSyncedRef = useRef(false)
   const syncTimerRef = useRef<NodeJS.Timeout | null>(null)
   const changeCountRef = useRef(0)
@@ -227,6 +241,7 @@ export function FinwiseProvider({ children }: { children: ReactNode }) {
     setInitialBalance(loadJSON(KEYS.initialBalance, 0))
     setHideBalance(loadJSON(KEYS.hideBalance, false))
     setTags(loadJSON(KEYS.tags, []))
+    setHouseholdMembers(loadJSON(KEYS.household, []))
     setIsLocked(loadJSON(KEYS.pin, null) ? true : false)
     setPlan(loadPlan())
     setLoaded(true)
@@ -395,6 +410,7 @@ export function FinwiseProvider({ children }: { children: ReactNode }) {
   useEffect(() => { if (loaded) saveJSON(KEYS.tags, tags) }, [tags, loaded])
   useEffect(() => { if (loaded) saveJSON(KEYS.fontSize, fontSize) }, [fontSize, loaded])
   useEffect(() => { if (loaded) saveJSON(KEYS.compactMode, compactMode) }, [compactMode, loaded])
+  useEffect(() => { if (loaded) saveJSON(KEYS.household, householdMembers) }, [householdMembers, loaded])
   useEffect(() => { if (loaded) { document.documentElement.classList.toggle('dark', theme === 'dark'); document.documentElement.classList.toggle('light', theme === 'light'); applyTheme(getStoredThemeId()) } }, [theme, loaded])
 
   // ─── DEBOUNCE SYNC TO SUPABASE (uses refs for latest data) ───
@@ -611,6 +627,14 @@ export function FinwiseProvider({ children }: { children: ReactNode }) {
   }, [])
   const deleteTag = useCallback((tag: string) => setTags((prev) => prev.filter((t) => t !== tag)), [])
 
+  // Household Members
+  const addHouseholdMember = useCallback((member: HouseholdMember) => {
+    setHouseholdMembers((prev) => [...prev, member])
+  }, [])
+  const removeHouseholdMember = useCallback((id: string) => {
+    setHouseholdMembers((prev) => prev.filter((m) => m.id !== id))
+  }, [])
+
   // Reset
   const resetAll = useCallback(() => {
     Object.values(KEYS).forEach(key => { try { localStorage.removeItem(key) } catch { /* ignore */ } })
@@ -645,6 +669,7 @@ export function FinwiseProvider({ children }: { children: ReactNode }) {
         syncNow: syncToCloudNow,
         plan,
         upgradePlan: (p: PlanTier) => { savePlan(p); setPlan(p) },
+        householdMembers, addHouseholdMember, removeHouseholdMember,
       }}
     >
       {children}

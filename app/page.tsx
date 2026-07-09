@@ -11,7 +11,7 @@ import {
   Upload,
   ArrowLeftRight,
   Users, CreditCard, Mic, Heart, User, Ticket,
-  Eye, EyeOff, LogOut,
+  Eye, EyeOff, LogOut, UserCircle,
 } from 'lucide-react'
 import { useSession, signOut } from 'next-auth/react'
 import { FinwiseProvider, useFinwise } from '@/components/finwise-store'
@@ -63,8 +63,9 @@ import { VoiceSheet } from '@/components/sheets/voice-sheet'
 import { VoucherSheetWrapper } from '@/components/sheets/voucher-sheet'
 import { CardsSheet } from '@/components/sheets/cards-sheet'
 import { ImportSheet } from '@/components/sheets/import-sheet'
+import { ProfileTab } from '@/components/finwise/profile-tab'
 
-type Tab = 'home' | 'transactions' | 'trends' | 'budget'
+type Tab = 'home' | 'transactions' | 'trends' | 'profile'
 type Sheet = 'add' | 'scan' | 'advisor' | 'settings' | 'goals' | 'wallets' | 'transfer' | 'recurring' | 'export' | 'categories' | 'pin' | 'benchmark' | 'smart-budget' | 'split-bill' | 'notifications' | 'voice' | 'voucher' | 'cards' | 'import' | null
 
 // ─── PIN Lock Screen ───
@@ -197,46 +198,6 @@ function MonthNavigator({ monthKey, onChange }: { monthKey: string; onChange: (k
 import dynamic from 'next/dynamic'
 import { ErrorBoundary } from '@/components/error-boundary'
 const OnboardingWizard = dynamic(() => import('@/components/finwise/onboarding-wizard').then(m => m.OnboardingWizard), { ssr: false, loading: () => <div className="min-h-screen bg-background" /> })
-// ─── Budget Tab ───
-function BudgetTab({ transactions }: { transactions: Transaction[] }) {
-  const { monthlyIncome, budgets, setBudget } = useFinwise()
-  const [editing, setEditing] = useState(false)
-  const spentMap = new Map<string, number>()
-  for (const t of transactions) {
-    if (t.type === 'expense') spentMap.set(t.category, (spentMap.get(t.category) ?? 0) + t.amount)
-  }
-
-  return (
-    <div className="flex flex-col gap-4">
-      <Card className="border-primary/30 bg-gradient-to-br from-card to-surface-2">
-        <CardContent className="p-5">
-          <p className="text-sm text-muted-foreground">Pemasukan bulanan</p>
-          <p className="mt-1 font-heading text-2xl font-bold tabular-nums">{formatIDR(monthlyIncome)}</p>
-        </CardContent>
-      </Card>
-      <div className="flex items-center justify-between">
-        <h2 className="font-heading text-base font-semibold">Limit per Kategori</h2>
-        <Button size="sm" variant={editing ? 'default' : 'outline'} onClick={() => setEditing(!editing)}>{editing ? 'Selesai' : 'Edit'}</Button>
-      </div>
-      {editing ? (
-        <Card><CardContent className="p-4 flex flex-col gap-3">
-          {EXPENSE_CATEGORIES.map((c) => {
-            const Icon = c.icon
-            return (
-              <div key={c.id} className="flex items-center gap-3">
-                <Icon className="size-4 text-muted-foreground shrink-0" />
-                <span className="flex-1 text-sm">{c.label}</span>
-                <Input inputMode="numeric" placeholder="0" defaultValue={formatIDRInput(String(budgets[c.id] || ''))} onBlur={(e) => setBudget(c.id, parseIDRInput(e.target.value))} className="w-28 h-8 text-xs tabular-nums text-right" />
-              </div>
-            )
-          })}
-        </CardContent></Card>
-      ) : (
-        <Card><CardContent><BudgetProgress spentByCat={spentMap} /></CardContent></Card>
-      )}
-    </div>
-  )
-}
 
 // ─── Onboarding Tips ───
 function OnboardingTips({ onDismiss }: { onDismiss: () => void }) {
@@ -365,7 +326,7 @@ function AppShell() {
     { id: 'home', label: 'Home', icon: Home },
     { id: 'transactions', label: 'Transaksi', icon: ListChecks },
     { id: 'trends', label: 'Rencana', icon: BarChart3 },
-    { id: 'budget', label: 'Kesehatan', icon: Wallet },
+    { id: 'profile', label: 'Profil', icon: UserCircle },
   ]
 
   return (
@@ -380,7 +341,7 @@ function AppShell() {
               {tab === 'home' && 'Home'}
               {tab === 'transactions' && 'Transaksi'}
               {tab === 'trends' && 'Rencana'}
-              {tab === 'budget' && 'Kesehatan'}
+              {tab === 'profile' && 'Profil'}
             </h2>
           </div>
         </div>
@@ -477,7 +438,7 @@ function AppShell() {
         {tab === 'home' && <DashboardView transactions={monthTx} month={getMonthLabel(monthKey)} onOpenGoals={() => setSheet('goals')} onOpenWallets={() => setSheet('wallets')} onOpenAdd={() => setSheet('add')} onOpenReports={() => router.push('/reports')} />}
         {tab === 'transactions' && <TransactionsView />}
         {tab === 'trends' && <TrendsView />}
-        {tab === 'budget' && <BudgetTab transactions={monthTx} />}
+        {tab === 'profile' && <ProfileTab onOpenSheet={(s) => setSheet(s as Sheet)} />}
 
         {/* Pricing Table Footer */}
         {tab === 'home' && <PricingTableFooter currentPlan={plan} onUpgrade={() => setSheet('voucher')} />}
