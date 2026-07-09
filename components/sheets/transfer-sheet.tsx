@@ -23,31 +23,37 @@ function TransferSheetContent({ onClose }: { onClose: () => void }) {
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!valid) return
-    const val = parseIDRInput(amount)
-    const fromName = wallets.find(w => w.id === fromId)?.name || 'Dompet'
-    const toName = wallets.find(w => w.id === toId)?.name || 'Dompet'
-    const transferId = 'tr_' + Math.random().toString(36).substring(2, 11)
-    // Create expense from source wallet
-    addTransaction({
-      type: 'expense',
-      category: 'transfer',
-      amount: val,
-      description: note || `Transfer ke ${toName}`,
-      date: new Date().toISOString().slice(0, 10),
-      walletId: fromId,
-      transferId,
-    })
-    // Create income to destination wallet
-    addTransaction({
-      type: 'income',
-      category: 'transfer',
-      amount: val,
-      description: note || `Transfer dari ${fromName}`,
-      date: new Date().toISOString().slice(0, 10),
-      walletId: toId,
-      transferId,
-    })
-    onClose()
+    
+    try {
+      const val = parseIDRInput(amount)
+      const fromName = wallets.find(w => w.id === fromId)?.name || 'Dompet'
+      const toName = wallets.find(w => w.id === toId)?.name || 'Dompet'
+      const transferId = 'tr_' + Math.random().toString(36).substring(2, 11)
+      // Create expense from source wallet
+      addTransaction({
+        type: 'expense',
+        category: 'transfer',
+        amount: val,
+        description: note || `Transfer ke ${toName}`,
+        date: new Date().toISOString().slice(0, 10),
+        walletId: fromId,
+        transferId,
+      })
+      // Create income to destination wallet
+      addTransaction({
+        type: 'income',
+        category: 'transfer',
+        amount: val,
+        description: note || `Transfer dari ${fromName}`,
+        date: new Date().toISOString().slice(0, 10),
+        walletId: toId,
+        transferId,
+      })
+      onClose()
+    } catch (error) {
+      console.error('[transfer] Submit failed:', error)
+      alert('Gagal transfer antar dompet. Coba lagi.')
+    }
   }
 
   return (

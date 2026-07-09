@@ -75,26 +75,31 @@ function CardsSheetContent({ onClose }: { onClose: () => void }) {
     e.preventDefault()
     if (!name || !lastFour || !expiry || !bank) return
 
-    const cardData: Card = {
-      id: editingCard?.id || generateId(),
-      name,
-      type,
-      lastFour: lastFour.slice(-4),
-      expiry,
-      bank,
-      color: selectedGradient.gradient,
-      limit: type === 'credit' ? parseIDRInput(limitStr) : undefined,
-      billingDay: type === 'credit' ? Number(billingDay) || undefined : undefined,
-      linkedWalletId: linkedWalletId || undefined,
-    }
+    try {
+      const cardData: Card = {
+        id: editingCard?.id || generateId(),
+        name,
+        type,
+        lastFour: lastFour.slice(-4),
+        expiry,
+        bank,
+        color: selectedGradient.gradient,
+        limit: type === 'credit' ? parseIDRInput(limitStr) : undefined,
+        billingDay: type === 'credit' ? Number(billingDay) || undefined : undefined,
+        linkedWalletId: linkedWalletId || undefined,
+      }
 
-    if (editingCard) {
-      updateCard(editingCard.id, cardData)
-    } else {
-      addCard(cardData)
+      if (editingCard) {
+        updateCard(editingCard.id, cardData)
+      } else {
+        addCard(cardData)
+      }
+      setView('list')
+      resetForm()
+    } catch (error) {
+      console.error('[cards] Submit failed:', error)
+      alert('Gagal menyimpan kartu. Coba lagi.')
     }
-    setView('list')
-    resetForm()
   }
 
   function handleDelete(cardId: string) {

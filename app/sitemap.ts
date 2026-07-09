@@ -1,40 +1,33 @@
-import type { MetadataRoute } from 'next'
-
-const BASE = process.env.NEXT_PUBLIC_APP_URL || 'https://finwise.my.id'
+import { MetadataRoute } from 'next'
 
 export default function sitemap(): MetadataRoute.Sitemap {
+  const baseUrl = 'https://finwise.my.id'
   const now = new Date()
 
   return [
     {
-      url: BASE,
+      url: baseUrl,
       lastModified: now,
-      changeFrequency: 'weekly',
+      changeFrequency: 'daily',
       priority: 1,
     },
     {
-      url: `${BASE}/about`,
+      url: `${baseUrl}/login`,
       lastModified: now,
       changeFrequency: 'monthly',
       priority: 0.8,
     },
     {
-      url: `${BASE}/login`,
+      url: `${baseUrl}/pricing`,
+      lastModified: now,
+      changeFrequency: 'weekly',
+      priority: 0.9,
+    },
+    {
+      url: `${baseUrl}/households`,
       lastModified: now,
       changeFrequency: 'monthly',
-      priority: 0.6,
-    },
-    {
-      url: `${BASE}/privacy`,
-      lastModified: now,
-      changeFrequency: 'yearly',
-      priority: 0.3,
-    },
-    {
-      url: `${BASE}/terms`,
-      lastModified: now,
-      changeFrequency: 'yearly',
-      priority: 0.3,
+      priority: 0.7,
     },
   ]
 }

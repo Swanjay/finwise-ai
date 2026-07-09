@@ -19,8 +19,14 @@ function GoalsSheetContent({ onClose }: { onClose: () => void }) {
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!name || parseIDRInput(target) <= 0) return
-    addGoal({ id: generateId(), name, targetAmount: parseIDRInput(target), currentAmount: 0, deadline: deadline || '2026-12-31', icon: '🎯', color: COLOR_PRESETS[goals.length % COLOR_PRESETS.length] })
-    setName(''); setTarget(''); setDeadline(''); setShowForm(false)
+    
+    try {
+      addGoal({ id: generateId(), name, targetAmount: parseIDRInput(target), currentAmount: 0, deadline: deadline || '2026-12-31', icon: '🎯', color: COLOR_PRESETS[goals.length % COLOR_PRESETS.length] })
+      setName(''); setTarget(''); setDeadline(''); setShowForm(false)
+    } catch (error) {
+      console.error('[goals] Submit failed:', error)
+      alert('Gagal menyimpan target. Coba lagi.')
+    }
   }
 
   return (

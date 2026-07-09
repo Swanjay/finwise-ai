@@ -47,17 +47,23 @@ function RecurringSheetContent({ onClose }: { onClose: () => void }) {
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (parseIDRInput(amount) <= 0) return
-    addRecurring({
-      id: generateId(),
-      type,
-      category: type === 'income' ? 'income' : category,
-      amount: parseIDRInput(amount),
-      description: description || 'Transaksi berulang',
-      frequency,
-      active: true,
-      dueDate: dueDate ? Number(dueDate) : undefined,
-    })
-    setAmount(''); setDescription(''); setDueDate(''); setShowForm(false)
+    
+    try {
+      addRecurring({
+        id: generateId(),
+        type,
+        category: type === 'income' ? 'income' : category,
+        amount: parseIDRInput(amount),
+        description: description || 'Transaksi berulang',
+        frequency,
+        active: true,
+        dueDate: dueDate ? Number(dueDate) : undefined,
+      })
+      setAmount(''); setDescription(''); setDueDate(''); setShowForm(false)
+    } catch (error) {
+      console.error('[recurring] Submit failed:', error)
+      alert('Gagal menyimpan transaksi berulang. Coba lagi.')
+    }
   }
 
   function handleQuickDue(day: number) {

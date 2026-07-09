@@ -20,9 +20,15 @@ function CategoriesSheetContent({ onClose }: { onClose: () => void }) {
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!label) return
-    const id = label.toLowerCase().replace(/\s+/g, '-') + '-' + Date.now()
-    addCustomCategory({ id, label, icon: ReceiptText, color, type })
-    setLabel(''); setShowForm(false)
+    
+    try {
+      const id = label.toLowerCase().replace(/\s+/g, '-') + '-' + Date.now()
+      addCustomCategory({ id, label, icon: ReceiptText, color, type })
+      setLabel(''); setShowForm(false)
+    } catch (error) {
+      console.error('[categories] Submit failed:', error)
+      alert('Gagal menyimpan kategori. Coba lagi.')
+    }
   }
 
   const customCats = Object.values(allCategories).filter((c) => c.isCustom)
