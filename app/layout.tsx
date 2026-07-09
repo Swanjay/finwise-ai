@@ -1,6 +1,7 @@
 import { Analytics } from '@vercel/analytics/next'
 import type { Metadata, Viewport } from 'next'
 import { Inter, Geist_Mono } from 'next/font/google'
+import { headers } from 'next/headers'
 import Script from 'next/script'
 import './globals.css'
 import { Providers } from './providers'
@@ -104,24 +105,9 @@ const themeScript = `
     var r = document.documentElement;
     r.style.setProperty('--background', p.bg);
     r.style.setProperty('--card', p.card);
-    r.style.setProperty('--popover', p.card);
     r.style.setProperty('--surface-2', p.surface2);
     r.style.setProperty('--primary', p.primary);
-    r.style.setProperty('--accent', p.pl);
-    r.style.setProperty('--muted', p.surface2);
-    r.style.setProperty('--muted-foreground', p.mutedFg);
-    r.style.setProperty('--border', p.border);
-    r.style.setProperty('--input', p.border);
-    r.style.setProperty('--ring', p.primary);
-    r.style.setProperty('--sidebar', p.card);
-    r.style.setProperty('--sidebar-primary', p.primary);
-    r.style.setProperty('--sidebar-accent', p.surface2);
-    r.style.setProperty('--sidebar-border', p.border);
-    r.style.setProperty('--sidebar-ring', p.primary);
-    r.style.setProperty('--greeting-bg', p.greeting);
-    r.style.setProperty('--color-clay-purple', p.pl);
-    r.style.setProperty('--color-clay-purple-deep', p.primary);
-    r.style.setProperty('--clay-card-dark', p.card);
+    r.style.setProperty('--primary-light', p.pl);
     r.style.setProperty('--clay-greeting-dark', p.greeting);
     r.style.setProperty('--clay-nav-dark', p.card);
     r.style.setProperty('--card-border', p.border);
@@ -135,11 +121,15 @@ const themeScript = `
 })();
 `
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode
 }>) {
+  // Read nonce from middleware-set header (Next.js 15: headers() is async)
+  const headersList = await headers()
+  const nonce = headersList.get('x-nonce') || undefined
+
   return (
     <html
       lang="id"
@@ -150,6 +140,7 @@ export default function RootLayout({
         <Script
           id="theme-init"
           strategy="beforeInteractive"
+          nonce={nonce}
           dangerouslySetInnerHTML={{ __html: themeScript }}
         />
       </head>

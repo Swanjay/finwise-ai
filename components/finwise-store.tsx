@@ -26,6 +26,7 @@ import {
 import { logTransactionAudit, logBudgetAudit } from '@/lib/audit'
 import { applyTheme, getStoredThemeId } from '@/lib/themes'
 import { loadPlan, savePlan, type PlanTier } from '@/lib/plans'
+import { secureGet, secureSet } from '@/lib/secure-storage'
 // Household member type
 export interface HouseholdMember {
   id: string
@@ -220,31 +221,38 @@ export function FinwiseProvider({ children }: { children: ReactNode }) {
     dataRef.current = { transactions, wallets, goals, budgets, recurring, customCategories, monthlyIncome, initialBalance, theme, accentColor, fontSize, compactMode, setupDone, hideBalance }
   })
 
-  // ─── LOAD: localStorage first, then Supabase if logged in ───
+  // ─── LOAD: secureStorage first, then Supabase if logged in ───
   useEffect(() => {
-    // Always load from localStorage first (instant)
-    setTransactions(loadJSON(KEYS.tx, []))
-    setCustomCategories(loadJSON(KEYS.categories, {}))
-    setBudgets(loadJSON(KEYS.budgets, {}))
-    setMonthlyIncomeState(loadJSON(KEYS.income, 0))
-    setWallets(loadJSON(KEYS.wallets, DEFAULT_WALLETS))
-    setGoals(loadJSON(KEYS.goals, []))
-    setRecurring(loadJSON(KEYS.recurring, []))
-    setCards(loadJSON(KEYS.cards, []))
-    setPinState(loadJSON(KEYS.pin, null))
-    setTheme(loadJSON(KEYS.theme, 'light'))
-    setAccentColorState(loadJSON(KEYS.accent, 'wise'))
-    setFontSizeState(loadJSON(KEYS.fontSize, 'base'))
-    setCompactModeState(loadJSON(KEYS.compactMode, false))
-    setSetupDone(localStorage.getItem('fw.setupDone.v1') === 'true')
-    setTipsDismissed(loadJSON(KEYS.tipsDismissed, false))
-    setInitialBalance(loadJSON(KEYS.initialBalance, 0))
-    setHideBalance(loadJSON(KEYS.hideBalance, false))
-    setTags(loadJSON(KEYS.tags, []))
-    setHouseholdMembers(loadJSON(KEYS.household, []))
-    setIsLocked(loadJSON(KEYS.pin, null) ? true : false)
-    setPlan(loadPlan())
-    setLoaded(true)
+    async function hydrate() {
+      // Always load from secureStorage first
+      setTransactions(await secureGet(KEYS.tx) ?? [])
+      setCustomCategories(await secureGet(KEYS.categories) ?? {})
+      setBudgets(await secureGet(KEYS.budgets) ?? {})
+      setMonthlyIncomeState(await secureGet(KEYS.income) ?? 0)
+      setWallets(await secureGet(KEYS.wallets) ?? DEFAULT_WALLETS)
+      setGoals(await secureGet(KEYS.goals) ?? [])
+      setRecurring(await secureGet(KEYS.recurring) ?? [])
+      setCards(await secureGet(KEYS.cards) ?? [])
+      
+      const storedPin = await secureGet(KEYS.pin) as string | null
+      setPinState(storedPin)
+      setIsLocked(storedPin ? true : false)
+
+      setTheme(await secureGet(KEYS.theme) ?? 'light')
+      setAccentColorState(await secureGet(KEYS.accent) ?? 'wise')
+      setFontSizeState(await secureGet(KEYS.fontSize) ?? 'base')
+      setCompactModeState(await secureGet(KEYS.compactMode) ?? false)
+      setSetupDone(localStorage.getItem('fw.setupDone.v1') === 'true')
+      setTipsDismissed(await secureGet(KEYS.tipsDismissed) ?? false)
+      setInitialBalance(await secureGet(KEYS.initialBalance) ?? 0)
+      setHideBalance(await secureGet(KEYS.hideBalance) ?? false)
+      setTags(await secureGet(KEYS.tags) ?? [])
+      setHouseholdMembers(await secureGet(KEYS.household) ?? [])
+      
+      setPlan(loadPlan())
+      setLoaded(true)
+    }
+    hydrate()
   }, [])
 
   // ─── SYNC TO CLOUD: reads from refs (always latest data) ───
@@ -393,25 +401,25 @@ export function FinwiseProvider({ children }: { children: ReactNode }) {
     fetchCloud()
   }, [authStatus, session])
 
-  // ─── SAVE: localStorage always ───
-  useEffect(() => { if (loaded) saveJSON(KEYS.tx, transactions) }, [transactions, loaded])
-  useEffect(() => { if (loaded) saveJSON(KEYS.categories, customCategories) }, [customCategories, loaded])
-  useEffect(() => { if (loaded) saveJSON(KEYS.budgets, budgets) }, [budgets, loaded])
-  useEffect(() => { if (loaded) saveJSON(KEYS.income, monthlyIncome) }, [monthlyIncome, loaded])
-  useEffect(() => { if (loaded) saveJSON(KEYS.wallets, wallets) }, [wallets, loaded])
-  useEffect(() => { if (loaded) saveJSON(KEYS.goals, goals) }, [goals, loaded])
-  useEffect(() => { if (loaded) saveJSON(KEYS.recurring, recurring) }, [recurring, loaded])
-  useEffect(() => { if (loaded) saveJSON(KEYS.cards, cards) }, [cards, loaded])
-  useEffect(() => { if (loaded) saveJSON(KEYS.pin, pin) }, [pin, loaded])
-  useEffect(() => { if (loaded) saveJSON(KEYS.theme, theme) }, [theme, loaded])
-  useEffect(() => { if (loaded) saveJSON(KEYS.accent, accentColor) }, [accentColor, loaded])
-  useEffect(() => { if (loaded) saveJSON(KEYS.initialBalance, initialBalance) }, [initialBalance, loaded])
-  useEffect(() => { if (loaded) saveJSON(KEYS.hideBalance, hideBalance) }, [hideBalance, loaded])
-  useEffect(() => { if (loaded) saveJSON(KEYS.tags, tags) }, [tags, loaded])
-  useEffect(() => { if (loaded) saveJSON(KEYS.fontSize, fontSize) }, [fontSize, loaded])
-  useEffect(() => { if (loaded) saveJSON(KEYS.compactMode, compactMode) }, [compactMode, loaded])
-  useEffect(() => { if (loaded) saveJSON(KEYS.household, householdMembers) }, [householdMembers, loaded])
-  useEffect(() => { if (loaded) { document.documentElement.classList.toggle('dark', theme === 'dark'); document.documentElement.classList.toggle('light', theme === 'light'); applyTheme(getStoredThemeId()) } }, [theme, loaded])
+  // ─── SAVE: secureStorage always ───
+  useEffect(() => { if (loaded) secureSet(KEYS.tx, transactions) }, [transactions, loaded])
+  useEffect(() => { if (loaded) secureSet(KEYS.categories, customCategories) }, [customCategories, loaded])
+  useEffect(() => { if (loaded) secureSet(KEYS.budgets, budgets) }, [budgets, loaded])
+  useEffect(() => { if (loaded) secureSet(KEYS.income, monthlyIncome) }, [monthlyIncome, loaded])
+  useEffect(() => { if (loaded) secureSet(KEYS.wallets, wallets) }, [wallets, loaded])
+  useEffect(() => { if (loaded) secureSet(KEYS.goals, goals) }, [goals, loaded])
+  useEffect(() => { if (loaded) secureSet(KEYS.recurring, recurring) }, [recurring, loaded])
+  useEffect(() => { if (loaded) secureSet(KEYS.cards, cards) }, [cards, loaded])
+  useEffect(() => { if (loaded) secureSet(KEYS.pin, pin) }, [pin, loaded])
+  useEffect(() => { if (loaded) secureSet(KEYS.theme, theme) }, [theme, loaded])
+  useEffect(() => { if (loaded) secureSet(KEYS.accent, accentColor) }, [accentColor, loaded])
+  useEffect(() => { if (loaded) secureSet(KEYS.fontSize, fontSize) }, [fontSize, loaded])
+  useEffect(() => { if (loaded) secureSet(KEYS.compactMode, compactMode) }, [compactMode, loaded])
+  useEffect(() => { if (loaded) secureSet(KEYS.tipsDismissed, tipsDismissed) }, [tipsDismissed, loaded])
+  useEffect(() => { if (loaded) secureSet(KEYS.initialBalance, initialBalance) }, [initialBalance, loaded])
+  useEffect(() => { if (loaded) secureSet(KEYS.hideBalance, hideBalance) }, [hideBalance, loaded])
+  useEffect(() => { if (loaded) secureSet(KEYS.tags, tags) }, [tags, loaded])
+  useEffect(() => { if (loaded) secureSet(KEYS.household, householdMembers) }, [householdMembers, loaded])
 
   // ─── DEBOUNCE SYNC TO SUPABASE (uses refs for latest data) ───
   const scheduleSync = useCallback(() => {
