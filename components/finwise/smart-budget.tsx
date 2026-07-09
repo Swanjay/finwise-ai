@@ -87,9 +87,21 @@ const FIFTY_THIRTY_ZONES: {
 ]
 
 export function SmartBudgetSheet({ onClose }: { onClose: () => void }) {
-  const { transactions, budgets, setBudget, monthlyIncome } = useFinwise()
+  const { transactions, budgets, setBudget, monthlyIncome, wallets } = useFinwise()
   const [activeTab, setActiveTab] = useState<'templates' | 'auto' | 'rollover' | '5030'>('templates')
   const [zonePcts, setZonePcts] = useState({ needs: 50, wants: 30, savings: 20 })
+  
+  // 50/30/20 Base Amount config
+  const [baseSource, setBaseSource] = useState<'income' | 'balance' | 'custom'>('income')
+  const [customBase, setCustomBase] = useState<string>('')
+  
+  const totalWalletBalance = useMemo(() => wallets.reduce((sum, w) => sum + (w.balance || 0), 0), [wallets])
+  
+  const baseAmount = useMemo(() => {
+    if (baseSource === 'balance') return totalWalletBalance
+    if (baseSource === 'custom') return Number(customBase.replace(/\D/g, '')) || 0
+    return monthlyIncome || 0
+  }, [baseSource, customBase, monthlyIncome, totalWalletBalance])
   
   const currentMonth = getMonthKey(new Date())
   const prevMonth = (() => {
@@ -160,12 +172,12 @@ export function SmartBudgetSheet({ onClose }: { onClose: () => void }) {
 
   // 50/30/20 zone data
   const zoneData = useMemo(() => {
-    if (!monthlyIncome || monthlyIncome <= 0) return null
+    if (!baseAmount || baseAmount <= 0) return null
     const totalPct = zonePcts.needs + zonePcts.wants + zonePcts.savings
 
     return FIFTY_THIRTY_ZONES.map((zone) => {
       const pct = zonePcts[zone.id as keyof typeof zonePcts] || zone.defaultPct
-      const allocated = Math.round((monthlyIncome * pct) / 100)
+      const allocated = Math.round((baseAmount * pct) / 100)
       const zoneCategories = zone.categories
         .map((catId) => BUILTIN_CATEGORIES[catId])
         .filter(Boolean)
@@ -192,7 +204,7 @@ export function SmartBudgetSheet({ onClose }: { onClose: () => void }) {
         totalPct,
       }
     })
-  }, [monthlyIncome, zonePcts, currentMonthTx])
+  }, [baseAmount, zonePcts, currentMonthTx])
 
   function applyTemplate(templateId: string) {
     const template = BUDGET_TEMPLATES.find((t) => t.id === templateId)
@@ -209,15 +221,13 @@ export function SmartBudgetSheet({ onClose }: { onClose: () => void }) {
   }
 
   function apply5030() {
-    if (!monthlyIncome || monthlyIncome <= 0) return
+    if (!baseAmount || baseAmount <= 0) return
     for (const zone of FIFTY_THIRTY_ZONES) {
       const pct = zonePcts[zone.id as keyof typeof zonePcts] || zone.defaultPct
-      const zoneBudget = Math.round((monthlyIncome * pct) / 100)
+      const zoneBudget = Math.round((baseAmount * pct) / 100)
       const perCat = zone.categories.length > 0 ? Math.round(zoneBudget / zone.categories.length) : 0
       for (const catId of zone.categories) {
-        // Round to nearest 50k for cleaner numbers
-        const rounded = Math.ceil(perCat / 50000) * 50000
-        setBudget(catId, rounded)
+        setBudget(catId, perCat)
       }
     }
   }
@@ -379,12 +389,60 @@ export function SmartBudgetSheet({ onClose }: { onClose: () => void }) {
               <Target className="size-4 text-primary" />
               <p className="text-sm font-semibold">Aturan 50/30/20</p>
             </div>
-            <p className="text-xs text-muted-foreground mb-1">
+            <p className="text-xs text-muted-foreground mb-3">
               Atur pengeluaranmu berdasarkan aturan 50/30/20: Kebutuhan, Keinginan, dan Tabungan.
             </p>
-            {!monthlyIncome || monthlyIncome <= 0 ? (
+            
+            {/* Base Amount Source Picker */}
+            <div className="flex flex-col gap-2">
+              <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Hitung Dari</p>
+              <div className="flex gap-1.5">
+                {[
+                  { id: 'income' as const, label: 'Pendapatan', emoji: '💰', value: monthlyIncome },
+                  { id: 'balance' as const, label: 'Total Saldo', emoji: '🏦', value: totalWalletBalance },
+                  { id: 'custom' as const, label: 'Kustom', emoji: '✏️', value: null },
+                ].map((src) => (
+                  <button
+                    key={src.id}
+                    onClick={() => setBaseSource(src.id)}
+                    className={cn(
+                      'flex-1 rounded-lg px-2 py-1.5 text-center transition text-[10px]',
+                      baseSource === src.id
+                        ? 'bg-primary text-primary-foreground font-semibold'
+                        : 'bg-secondary text-muted-foreground'
+                    )}
+                  >
+                    <span className="block text-sm">{src.emoji}</span>
+                    <span className="block mt-0.5">{src.label}</span>
+                    {src.value != null && src.value > 0 && (
+                      <span className="block mt-0.5 text-[9px] opacity-80">{formatIDR(src.value)}</span>
+                    )}
+                  </button>
+                ))}
+              </div>
+              
+              {baseSource === 'custom' && (
+                <Input
+                  type="text"
+                  inputMode="numeric"
+                  placeholder="Masukkan nominal..."
+                  value={customBase}
+                  onChange={(e) => setCustomBase(e.target.value)}
+                  className="h-8 text-xs"
+                />
+              )}
+              
+              {baseAmount > 0 && (
+                <div className="flex items-center justify-between mt-1 p-2 rounded-lg bg-primary/5">
+                  <span className="text-[10px] text-muted-foreground">Dasar perhitungan</span>
+                  <span className="text-sm font-bold text-primary">{formatIDR(baseAmount)}</span>
+                </div>
+              )}
+            </div>
+            
+            {!baseAmount || baseAmount <= 0 ? (
               <p className="text-xs text-orange-500 mt-2">
-                ⚠️ Atur pendapatan bulanan dulu di halaman Utama agar fitur ini berfungsi.
+                ⚠️ Pilih sumber dana atau isi nominal untuk menghitung budget.
               </p>
             ) : null}
           </div>
@@ -416,9 +474,9 @@ export function SmartBudgetSheet({ onClose }: { onClose: () => void }) {
                     <span className="text-xs font-semibold w-10 text-right" style={{ color: zone.color }}>
                       {pct}%
                     </span>
-                    {monthlyIncome > 0 && (
+                    {baseAmount > 0 && (
                       <span className="text-[10px] text-muted-foreground w-16 text-right">
-                        {formatIDR(Math.round(monthlyIncome * pct / 100))}
+                        {formatIDR(Math.round(baseAmount * pct / 100))}
                       </span>
                     )}
                   </div>
@@ -445,7 +503,7 @@ export function SmartBudgetSheet({ onClose }: { onClose: () => void }) {
           </div>
 
           {/* Visual Bar Breakdown */}
-          {monthlyIncome > 0 && zoneData && (
+          {baseAmount > 0 && zoneData && (
             <div className="clay-card p-3">
               <p className="text-xs font-semibold mb-2">Alokasi Bulanan</p>
               {/* Stacked bar */}
@@ -507,7 +565,7 @@ export function SmartBudgetSheet({ onClose }: { onClose: () => void }) {
           )}
 
           {/* Per-category breakdown */}
-          {zoneData && monthlyIncome > 0 && (
+          {zoneData && baseAmount > 0 && (
             <div className="flex flex-col gap-2.5">
               {zoneData.map((zone) => (
                 <motion.div
@@ -553,9 +611,9 @@ export function SmartBudgetSheet({ onClose }: { onClose: () => void }) {
                       const catSpent = currentMonthTx
                         .filter((t) => t.type === 'expense' && t.category === cat.id)
                         .reduce((s, t) => s + t.amount, 0)
-                      const catBudget = budgets[cat.id] || zone.perCat
-                      const catPct = catBudget > 0 ? Math.round((catSpent / catBudget) * 100) : 0
-                      const catOver = catSpent > catBudget
+                      const targetBudget = zone.perCat
+                      const catPct = targetBudget > 0 ? Math.round((catSpent / targetBudget) * 100) : 0
+                      const catOver = catSpent > targetBudget
                       return (
                         <div key={cat.id} className="flex items-center gap-2">
                           <span className="text-xs">
@@ -563,7 +621,7 @@ export function SmartBudgetSheet({ onClose }: { onClose: () => void }) {
                           </span>
                           <span className="flex-1 text-[11px]">{cat.label}</span>
                           <span className="text-[10px] text-muted-foreground">
-                            {formatIDR(catSpent)} / {formatIDR(catBudget)}
+                            {formatIDR(catSpent)} / {formatIDR(targetBudget)}
                           </span>
                           <div className="w-14 h-1.5 rounded-full bg-muted overflow-hidden">
                             <div
@@ -589,7 +647,7 @@ export function SmartBudgetSheet({ onClose }: { onClose: () => void }) {
           {/* Apply button */}
           <Button
             onClick={apply5030}
-            disabled={!monthlyIncome || monthlyIncome <= 0 || (zonePcts.needs + zonePcts.wants + zonePcts.savings) !== 100}
+            disabled={!baseAmount || baseAmount <= 0 || (zonePcts.needs + zonePcts.wants + zonePcts.savings) !== 100}
             className="gap-2"
           >
             <Target className="size-4" />
