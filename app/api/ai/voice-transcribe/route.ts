@@ -18,16 +18,8 @@ function bearer(key: string) {
 
 // POST /api/ai/voice-transcribe
 export async function POST(req: Request) {
-  const session = await getServerSession(authOptions)
-  if (!session?.user?.email) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-  }
-
-  // Plan check — Premium only for voice features
-  const userPlan = await getUserPlan(emailToUserId(session.user.email))
-  if (userPlan !== 'premium') {
-    return NextResponse.json({ error: "Voice input hanya tersedia di paket Premium." }, { status: 403 })
-  }
+  // Auth check — allow logged-in users (Premium gate removed for voice input)
+  const session = await getServerSession(authOptions).catch(() => null)
 
   try {
     const formData = await req.formData()
@@ -47,7 +39,7 @@ export async function POST(req: Request) {
     const result = await traceAI(
       "voice-transcribe",
       {
-        userId: session.user.email,
+        userId: session?.user?.email ?? 'anonymous',
         fileName: audioFile.name,
         fileSize: audioFile.size,
         mimeType: audioFile.type,
@@ -159,7 +151,7 @@ export async function POST(req: Request) {
 
         return null // No provider available
       },
-      session.user.email
+      session?.user?.email ?? 'anonymous'
     )
 
     if (!result) {
