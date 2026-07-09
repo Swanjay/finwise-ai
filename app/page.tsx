@@ -330,9 +330,39 @@ function AppShell() {
   ]
 
   return (
-    <div className="mx-auto flex min-h-screen w-full max-w-md flex-col bg-background">
+    <div className="mx-auto flex min-h-screen w-full max-w-md flex-col bg-background md:max-w-none">
+      {/* Desktop sidebar nav (hidden on mobile) */}
+      <div className="hidden sm:flex fixed left-0 top-0 bottom-0 z-50 w-56 flex-col border-r border-border/50 bg-card/80 backdrop-blur-xl p-4 gap-1">
+        <div className="flex items-center gap-2.5 mb-6 px-2">
+          <FinWiseLogo size={32} showText={false} />
+          <span className="font-heading text-lg font-bold">FinWise</span>
+        </div>
+        {navItems.map((item) => (
+          <button
+            key={item.id}
+            onClick={() => { setTab(item.id) }}
+            className={cn(
+              'flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all',
+              tab === item.id
+                ? 'bg-primary/10 text-primary font-semibold'
+                : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground'
+            )}
+          >
+            <item.icon className="size-5" />
+            {item.label}
+          </button>
+        ))}
+        <div className="flex-1" />
+        <button
+          onClick={() => setSheet('settings')}
+          className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-muted-foreground hover:bg-muted/50 hover:text-foreground transition"
+        >
+          <Settings className="size-5" />
+          Pengaturan
+        </button>
+      </div>
       {/* Header — Clay Style */}
-      <header className="flex items-center justify-between px-5 pb-3 pt-6">
+      <header className="flex items-center justify-between px-5 pb-3 pt-6 sm:ml-56">
         <div className="flex items-center gap-2.5">
           <FinWiseLogo size={36} showText={false} />
           <div>
@@ -372,7 +402,7 @@ function AppShell() {
         if (isExpired) return null // Plan already downgraded by loadPlan()
         return (
           <div className={cn(
-            'mx-5 mb-2 rounded-lg px-3 py-1.5 text-[10px] font-medium flex items-center justify-between',
+            'mx-5 mb-2 rounded-lg px-3 py-1.5 text-[10px] font-medium flex items-center justify-between sm:ml-[calc(14rem+1.25rem)]',
             isExpiringSoon
               ? 'bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-900/20 dark:text-amber-300 dark:border-amber-800'
               : 'bg-primary/5 text-primary border border-primary/20',
@@ -387,8 +417,8 @@ function AppShell() {
         )
       })()}
 
-      {/* Quick Actions Bar */}
-      <div className="px-5 pb-3 flex gap-2 overflow-x-auto no-scrollbar">
+      {/* Quick Actions Bar (mobile only) */}
+      <div className="px-5 pb-3 flex gap-2 overflow-x-auto no-scrollbar sm:hidden">
         {[
           { icon: Sparkles, label: 'AI Advisor', sheet: 'advisor' as Sheet, feature: 'ai_advisor' },
           { icon: Camera, label: 'Scan', sheet: 'scan' as Sheet, feature: 'ai_scan' },
@@ -433,7 +463,7 @@ function AppShell() {
       </div>
 
       {/* Content */}
-      <main className="flex-1 px-4 pb-32">
+      <main className="flex-1 px-4 pb-32 sm:ml-56 sm:pb-4">
         {!tipsDismissed && tab === 'home' && <OnboardingTips onDismiss={dismissTips} />}
         {tab === 'home' && <DashboardView transactions={monthTx} month={getMonthLabel(monthKey)} onOpenGoals={() => setSheet('goals')} onOpenWallets={() => setSheet('wallets')} onOpenAdd={() => setSheet('add')} onOpenReports={() => router.push('/reports')} />}
         {tab === 'transactions' && <TransactionsView />}
@@ -444,9 +474,9 @@ function AppShell() {
         {tab === 'home' && <PricingTableFooter currentPlan={plan} onUpgrade={() => setSheet('voucher')} />}
       </main>
 
-      {/* Bottom nav — Clay Style */}
-      <nav className="fixed inset-x-0 bottom-4 z-40 mx-auto max-w-[360px] px-4">
-        <div className="clay-bottom-nav grid grid-cols-5 items-center px-3 py-2">
+      {/* Bottom nav — Clay Style (mobile), sidebar (desktop) */}
+      <nav className="fixed inset-x-0 bottom-0 z-40 mx-auto max-w-md px-4 pb-[env(safe-area-inset-bottom)] sm:hidden">
+        <div className="clay-bottom-nav mx-auto max-w-[360px] grid grid-cols-5 items-center px-3 py-2.5">
           {navItems.slice(0, 2).map((item) => (
             <button
               key={item.id}
@@ -491,7 +521,7 @@ function AppShell() {
         </div>
       </nav>
 
-      {/* FAB — Expandable */}
+      {/* FAB — Expandable (mobile only) */}
       <div className="fixed bottom-20 right-5 z-30 flex flex-col-reverse items-center gap-3 sm:hidden">
         {/* Main FAB button — toggles menu */}
         <button
