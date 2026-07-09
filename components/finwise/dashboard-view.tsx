@@ -319,7 +319,7 @@ export function DashboardView({ transactions, month, onOpenGoals, onOpenWallets,
                       )}
                     </div>
                     <p className="text-[10px] text-muted-foreground truncate">{w.name}</p>
-                    <p className="text-sm font-bold tabular-nums">{hideBalance ? '••••' : formatIDRShort(w.balance)}</p>
+                    <p className="text-xs font-bold tabular-nums truncate">{hideBalance ? '••••' : formatIDR(w.balance)}</p>
                   </div>
                 ))}
               </div>
