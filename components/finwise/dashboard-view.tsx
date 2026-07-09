@@ -173,7 +173,7 @@ export function DashboardView({ transactions, month, onOpenGoals, onOpenWallets,
 
         {/* ─── Quick Stats (3 columns) ─── */}
         <motion.div
-          className="grid grid-cols-3 gap-2"
+          className="grid grid-cols-3 md:grid-cols-3 lg:grid-cols-3 gap-2"
           initial="hidden"
           animate="show"
           variants={{
@@ -230,7 +230,7 @@ export function DashboardView({ transactions, month, onOpenGoals, onOpenWallets,
 
         {/* ─── Grid Feed (2 columns) ─── */}
         <motion.div
-          className="grid grid-cols-2 gap-3"
+          className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-3"
           initial="hidden"
           animate="show"
           variants={{
