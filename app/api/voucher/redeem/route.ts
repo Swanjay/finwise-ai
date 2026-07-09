@@ -18,11 +18,14 @@ export async function POST(req: Request) {
   if (rateLimitResponse) return rateLimitResponse
 
   const session = await getServerSession(authOptions)
-  if (!session?.user?.email) {
+  if (!session?.user) {
     return NextResponse.json({ error: "Unauthorized", success: false }, { status: 401 })
   }
 
   const userId = (session.user as Record<string, unknown>).id as string
+  if (!userId) {
+    return NextResponse.json({ error: "Unauthorized", success: false }, { status: 401 })
+  }
 
   const supabase = getSupabase()
   if (!supabase) {
@@ -103,10 +106,12 @@ export async function POST(req: Request) {
     }
 
     // Log usage
+    const isTelegram = !userId.startsWith("email:") && !session.user.email
     await supabase.from("invite_usage").insert({
       code: voucher.code,
       user_id: userId,
-      email: session.user.email,
+      email: session.user.email || null,
+      telegram_id: isTelegram ? userId : null,
       used_at: now,
     })
 
