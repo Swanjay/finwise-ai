@@ -1,16 +1,22 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { getToken } from 'next-auth/jwt'
-import { randomBytes } from 'crypto'
 
-// ─── Nonce-based CSP (eliminates 'unsafe-inline') ───
-function generateNonce(): string {
-  return randomBytes(16).toString('base64')
-}
-
+// ─── Config ───
 const supabaseOrigin = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://nzhzenacejxeyajoaftv.supabase.co'
 const supabaseWs = supabaseOrigin.replace('https://', 'wss://')
 const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://finwise.my.id'
+
+// ─── Nonce-based CSP (compatible with Edge Runtime) ───
+function generateNonce(): string {
+  const bytes = new Uint8Array(16)
+  crypto.getRandomValues(bytes)
+  let binary = ''
+  for (let i = 0; i < bytes.length; i++) {
+    binary += String.fromCharCode(bytes[i])
+  }
+  return btoa(binary)
+}
 
 function buildCSP(nonce: string): string {
   return [
@@ -28,71 +34,8 @@ function buildCSP(nonce: string): string {
   ].join('; ')
 }
 
-export async function middleware(req: NextRequest) {
-  const { pathname } = req.nextUrl
-
-  // ─── Security Headers (all responses) ───
-  const nonce = generateNonce()
-  const csp = buildCSP(nonce)
-
-  // Public pages
-  const publicPageRoutes = ['/', '/about', '/privacy', '/terms']
-  if (publicPageRoutes.includes(pathname)) {
-    const res = NextResponse.next()
-    applySecurityHeaders(res, nonce, csp, pathname)
-    return res
-  }
-
-  // Public routes — no auth needed
-  const publicPaths = [
-    '/login', '/admin', '/api/admin/codes-simple', '/api/admin/monitoring',
-    '/api/auth', '/api/auth-telegram',
-    '/auth/error', '/api/telegram-login', '/api/email-login', '/api/invite-codes/validate',
-    '/api/voucher',
-    '/_next', '/logo.svg', '/favicon.ico', '/mascot-', '/finwise-cat-',
-    '/logo-', '/manifest.json', '/sw.js', '/workbox-',
-    '/sitemap.xml', '/robots.txt', '/about', '/privacy', '/terms',
-    '/pricing', '/finwise.apk',
-  ]
-  const isPublic = publicPaths.some(p => pathname.startsWith(p))
-  if (isPublic) {
-    const res = NextResponse.next()
-    applySecurityHeaders(res, nonce, csp, pathname)
-    return res
-  }
-
-  // API routes get 401 JSON instead of redirect
-  if (pathname.startsWith('/api/')) {
-    const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET })
-    if (!token) {
-      const res = NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-      applySecurityHeaders(res, nonce, csp, pathname)
-      return res
-    }
-    const res = NextResponse.next()
-    applySecurityHeaders(res, nonce, csp, pathname)
-    return res
-  }
-
-  // Page routes — check auth token
-  const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET })
-
-  if (!token) {
-    const loginUrl = new URL('/login', req.url)
-    loginUrl.searchParams.set('callbackUrl', pathname)
-    const res = NextResponse.redirect(loginUrl)
-    applySecurityHeaders(res, nonce, csp, pathname)
-    return res
-  }
-
-  // Authenticated — allow access
-  const res = NextResponse.next()
-  applySecurityHeaders(res, nonce, csp, pathname)
-  return res
-}
-
+// ─── Security Headers (defined BEFORE middleware for Edge Runtime) ───
 function applySecurityHeaders(res: NextResponse, nonce: string, csp: string, pathname: string) {
-  // ─── Core Security Headers ───
   res.headers.set('Content-Security-Policy', csp)
   res.headers.set('X-Content-Type-Options', 'nosniff')
   res.headers.set('X-Frame-Options', 'DENY')
@@ -102,17 +45,17 @@ function applySecurityHeaders(res: NextResponse, nonce: string, csp: string, pat
   res.headers.set('Cross-Origin-Opener-Policy', 'same-origin')
   res.headers.set('Cross-Origin-Resource-Policy', 'same-origin')
 
-  // ─── Camera Permission: global=NONE, scan page ONLY ───
+  // Camera Permission: global=NONE, scan page ONLY
   if (pathname === '/scan' || pathname.startsWith('/scan/')) {
     res.headers.set('Permissions-Policy', 'camera=(self), microphone=(self), geolocation=(), payment=()')
   } else {
     res.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=(), payment=()')
   }
 
-  // ─── Nonce passthrough for <script> tags ───
+  // Nonce passthrough for <script> tags
   res.headers.set('X-Nonce', nonce)
 
-  // ─── Strip internal Vercel headers (info leak) ───
+  // Strip internal Vercel headers (info leak)
   res.headers.delete('x-vercel-id')
   res.headers.delete('x-vercel-cache')
   res.headers.delete('x-matched-path')
@@ -126,6 +69,68 @@ function applySecurityHeaders(res: NextResponse, nonce: string, csp: string, pat
   res.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization')
   res.headers.set('Access-Control-Max-Age', '86400')
   res.headers.set('Access-Control-Allow-Credentials', 'true')
+}
+
+// ─── Public paths ───
+const PUBLIC_ROUTES = ['/', '/about', '/privacy', '/terms']
+const PUBLIC_PREFIXES = [
+  '/login', '/admin', '/api/admin/codes-simple', '/api/admin/monitoring',
+  '/api/auth', '/api/auth-telegram',
+  '/auth/error', '/api/telegram-login', '/api/email-login', '/api/invite-codes/validate',
+  '/api/voucher',
+  '/_next', '/logo.svg', '/favicon.ico', '/mascot-', '/finwise-cat-',
+  '/logo-', '/manifest.json', '/sw.js', '/workbox-',
+  '/sitemap.xml', '/robots.txt', '/about', '/privacy', '/terms',
+  '/pricing', '/finwise.apk',
+]
+
+// ─── Middleware ───
+export async function middleware(req: NextRequest) {
+  const { pathname } = req.nextUrl
+  const nonce = generateNonce()
+  const csp = buildCSP(nonce)
+
+  // Public pages
+  if (PUBLIC_ROUTES.includes(pathname)) {
+    const res = NextResponse.next()
+    applySecurityHeaders(res, nonce, csp, pathname)
+    return res
+  }
+
+  // Public routes
+  const isPublic = PUBLIC_PREFIXES.some(p => pathname.startsWith(p))
+  if (isPublic) {
+    const res = NextResponse.next()
+    applySecurityHeaders(res, nonce, csp, pathname)
+    return res
+  }
+
+  // API routes
+  if (pathname.startsWith('/api/')) {
+    const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET })
+    if (!token) {
+      const res = NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      applySecurityHeaders(res, nonce, csp, pathname)
+      return res
+    }
+    const res = NextResponse.next()
+    applySecurityHeaders(res, nonce, csp, pathname)
+    return res
+  }
+
+  // Page routes — auth check
+  const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET })
+  if (!token) {
+    const loginUrl = new URL('/login', req.url)
+    loginUrl.searchParams.set('callbackUrl', pathname)
+    const res = NextResponse.redirect(loginUrl)
+    applySecurityHeaders(res, nonce, csp, pathname)
+    return res
+  }
+
+  const res = NextResponse.next()
+  applySecurityHeaders(res, nonce, csp, pathname)
+  return res
 }
 
 export const config = {
