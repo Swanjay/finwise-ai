@@ -25,19 +25,19 @@ function VoicePageInner() {
     amount: number
     category: string
     note: string
+    walletId: string
   }) {
     setSaving(true)
     setMessage("")
 
     try {
-      const defaultWallet = wallets[0]?.id || "cash"
       addTransaction({
         type: parsed.type,
         category: parsed.category,
         amount: parsed.amount,
         description: parsed.note,
         date: new Date().toISOString().slice(0, 10),
-        walletId: defaultWallet,
+        walletId: parsed.walletId,
       })
       setMessage("✅ Transaksi berhasil disimpan!")
       setTimeout(() => setMessage(""), 3000)
@@ -88,7 +88,7 @@ function VoicePageInner() {
         )}
 
         {/* Voice Input Component */}
-        <VoiceInput onResult={handleVoiceResult} />
+        <VoiceInput wallets={wallets} onResult={handleVoiceResult} />
       </div>
     </div>
   )

@@ -3,7 +3,7 @@
 import { useState, useRef, useCallback } from 'react'
 import { Mic, MicOff, Loader2, Check, X, Pencil, Keyboard, Sparkles } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { autoCategory, formatIDRInput, type TxType, type CategoryId } from '@/lib/finwise'
+import { autoCategory, formatIDRInput, type TxType, type CategoryId, type Wallet } from '@/lib/finwise'
 
 // ─── Types ───
 export interface ParsedVoiceTransaction {
@@ -12,10 +12,12 @@ export interface ParsedVoiceTransaction {
   amount: number
   note: string
   rawText: string
+  walletId: string
 }
 
 interface VoiceInputProps {
   onResult: (parsed: ParsedVoiceTransaction) => void
+  wallets: Wallet[]
 }
 
 // ─── Indonesian number parsing ───
@@ -111,12 +113,13 @@ function cleanDescription(text: string): string {
   return c.replace(/\s+/g, ' ').trim() || text.trim()
 }
 
-function parseVoiceText(text: string): ParsedVoiceTransaction {
+function parseVoiceText(text: string, wallets: Wallet[]): ParsedVoiceTransaction {
   const type = detectType(text)
   const { amount, remaining } = extractAmount(text)
   const description = cleanDescription(remaining || text)
   const category = autoCategory(description)
-  return { type, category, amount, note: description || text.trim(), rawText: text }
+  const walletId = detectWallet(text, wallets) || wallets[0]?.id || 'cash'
+  return { type, category, amount, note: description || text.trim(), rawText: text, walletId }
 }
 
 // ─── Category labels ───
@@ -127,17 +130,39 @@ const CATEGORY_LABELS: Record<string, string> = {
   salary: '💵 Gaji', transfer: '🔄 Transfer', other: '📦 Lainnya',
 }
 
+// ─── Wallet detection ───
+function detectWallet(text: string, wallets: Wallet[]): string | null {
+  const lower = text.toLowerCase()
+  for (const w of wallets) {
+    const name = w.name.toLowerCase()
+    // exact word match or partial
+    if (lower.includes(name)) return w.id
+    // also match common abbreviations
+    if (name === 'bank central asia' && lower.includes('bca')) return w.id
+    if (name === 'bank mandiri' && lower.includes('mandiri')) return w.id
+    if (name === 'bank rakyat indonesia' && lower.includes('bri')) return w.id
+    if (name === 'bank negara indonesia' && lower.includes('bni')) return w.id
+    if (name === 'gopay' && (lower.includes('gopay') || lower.includes('go pay'))) return w.id
+    if (name === 'ovo' && lower.includes('ovo')) return w.id
+    if (name === 'dana' && lower.includes('dana')) return w.id
+    if (name === 'shopeepay' && (lower.includes('shopeepay') || lower.includes('shopee pay'))) return w.id
+    if (name === 'tunai' && (lower.includes('tunai') || lower.includes('cash'))) return w.id
+  }
+  return null
+}
+
 // ─── Main Component ───
-export default function VoiceInput({ onResult }: VoiceInputProps) {
+export default function VoiceInput({ onResult, wallets }: VoiceInputProps) {
   const [mode, setMode] = useState<'text' | 'voice'>('text')
   const [inputText, setInputText] = useState('')
   const [state, setState] = useState<'idle' | 'recording' | 'processing' | 'confirm'>('idle')
   const [transcript, setTranscript] = useState('')
   const [parsed, setParsed] = useState<ParsedVoiceTransaction | null>(null)
   const [isEditing, setIsEditing] = useState(false)
-  const [editValues, setEditValues] = useState<{ type: TxType; category: CategoryId; amount: string; note: string } | null>(null)
+  const [editValues, setEditValues] = useState<{ type: TxType; category: CategoryId; amount: string; note: string; walletId: string } | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [recordingTime, setRecordingTime] = useState(0)
+  const [selectedWalletId, setSelectedWalletId] = useState<string>(wallets[0]?.id || 'cash')
 
   const recorderRef = useRef<MediaRecorder | null>(null)
   const chunksRef = useRef<Blob[]>([])
@@ -147,14 +172,16 @@ export default function VoiceInput({ onResult }: VoiceInputProps) {
   const handleTextParse = useCallback(() => {
     if (!inputText.trim()) return
     setError(null)
-    const result = parseVoiceText(inputText.trim())
+    const result = parseVoiceText(inputText.trim(), wallets)
     setTranscript(inputText.trim())
     setParsed(result)
+    setSelectedWalletId(result.walletId)
     setEditValues({
       type: result.type,
       category: result.category,
       amount: result.amount > 0 ? result.amount.toString() : '',
       note: result.note,
+      walletId: result.walletId,
     })
     // If no amount detected, auto-open edit mode
     setIsEditing(result.amount <= 0)
@@ -209,9 +236,10 @@ export default function VoiceInput({ onResult }: VoiceInputProps) {
         return
       }
       setTranscript(data.text)
-      const result = parseVoiceText(data.text)
+      const result = parseVoiceText(data.text, wallets)
       setParsed(result)
-      setEditValues({ type: result.type, category: result.category, amount: result.amount > 0 ? result.amount.toString() : '', note: result.note })
+      setSelectedWalletId(result.walletId)
+      setEditValues({ type: result.type, category: result.category, amount: result.amount > 0 ? result.amount.toString() : '', note: result.note, walletId: result.walletId })
       setIsEditing(result.amount <= 0)
       setState('confirm')
     } catch (err: any) {
@@ -219,19 +247,19 @@ export default function VoiceInput({ onResult }: VoiceInputProps) {
       setState('idle')
       setMode('text')
     }
-  }, [])
+  }, [wallets])
 
   const handleConfirm = useCallback(() => {
     if (!parsed) return
     if (isEditing && editValues) {
       const amount = parseInt(editValues.amount.replace(/\D/g, ''), 10) || 0
       if (amount <= 0) { setError('Nominal harus lebih dari 0'); return }
-      onResult({ type: editValues.type, category: editValues.category, amount, note: editValues.note || parsed.note, rawText: parsed.rawText })
+      onResult({ type: editValues.type, category: editValues.category, amount, note: editValues.note || parsed.note, rawText: parsed.rawText, walletId: selectedWalletId })
     } else {
       if (parsed.amount <= 0) { setError('Nominal tidak terdeteksi. Silakan edit.'); setIsEditing(true); return }
-      onResult(parsed)
+      onResult({ ...parsed, walletId: selectedWalletId })
     }
-  }, [parsed, isEditing, editValues, onResult])
+  }, [parsed, isEditing, editValues, onResult, selectedWalletId])
 
   const handleRetry = useCallback(() => {
     setInputText(''); setTranscript(''); setParsed(null); setError(null); setIsEditing(false)
@@ -413,6 +441,16 @@ export default function VoiceInput({ onResult }: VoiceInputProps) {
                       placeholder="Deskripsi transaksi"
                       className="w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm" />
                   </div>
+                  <div>
+                    <label className="text-xs text-muted-foreground mb-1 block">Dari Dompet</label>
+                    <select value={selectedWalletId}
+                      onChange={e => setSelectedWalletId(e.target.value)}
+                      className="w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm">
+                      {wallets.map(w => (
+                        <option key={w.id} value={w.id}>{w.icon} {w.name}</option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
               ) : (
                 <div className="flex flex-col gap-2">
@@ -427,6 +465,16 @@ export default function VoiceInput({ onResult }: VoiceInputProps) {
                     {parsed.type === 'income' ? '+' : '-'}Rp {parsed.amount.toLocaleString('id-ID')}
                   </p>
                   <p className="text-sm text-muted-foreground">{parsed.note}</p>
+                  <div className="flex items-center gap-1.5 mt-1">
+                    <span className="text-xs text-muted-foreground">💳</span>
+                    <select value={selectedWalletId}
+                      onChange={e => setSelectedWalletId(e.target.value)}
+                      className="rounded-lg border border-border bg-background px-2 py-1 text-xs text-muted-foreground cursor-pointer">
+                      {wallets.map(w => (
+                        <option key={w.id} value={w.id}>{w.icon} {w.name}</option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
               )}
             </div>
