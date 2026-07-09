@@ -189,12 +189,12 @@
   body {
     @apply bg-background text-foreground transition-colors;
     font-family: 'Inter', 'Poppins', system-ui, sans-serif;
-    font-size: var(--app-font-size, 16px);
     transition-duration: 0.3s;
     transition-property: background-color, color, border-color;
   }
   html {
     @apply font-sans;
+    font-size: var(--app-font-size, 16px);
   }
   .tabular-nums {
     font-variant-numeric: tabular-nums;
@@ -209,10 +209,14 @@ html, html * {
 }
 
 /* ─── Compact mode ─── */
-.compact .compact-pad { padding: 0.25rem !important; }
-.compact .compact-gap { gap: 0.25rem !important; }
-.compact .compact-mb { margin-bottom: 0.25rem !important; }
-.compact .compact-text { font-size: 0.85em; }
+/* Override Tailwind v4 spacing scale (base 0.25rem → 0.175rem = 70%) */
+html.compact {
+  --spacing: 0.175rem;
+}
+/* Keep text readable even in compact mode — slightly bump body font */
+html.compact body {
+  font-size: 0.925em;
+}
 
 /* ─── Clay Card ─── */
 .clay-card {
