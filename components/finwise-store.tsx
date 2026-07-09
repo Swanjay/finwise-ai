@@ -70,7 +70,7 @@ function saveJSON(key: string, value: unknown) {
   try { localStorage.setItem(key, JSON.stringify(value)) } catch { /* ignore */ }
 }
 
-async function hashPin(pin: string): Promise<string> {
+export async function hashPin(pin: string): Promise<string> {
   const encoder = new TextEncoder()
   const salt = encoder.encode("finwise-pin-v1-" + pin.length)
   const keyMaterial = await crypto.subtle.importKey("raw", encoder.encode(pin), "PBKDF2", false, ["deriveBits"])

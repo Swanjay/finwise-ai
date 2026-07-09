@@ -14,7 +14,7 @@ import {
   Eye, EyeOff, LogOut, UserCircle,
 } from 'lucide-react'
 import { useSession, signOut } from 'next-auth/react'
-import { FinwiseProvider, useFinwise } from '@/components/finwise-store'
+import { FinwiseProvider, useFinwise, hashPin } from '@/components/finwise-store'
 import { DashboardView } from '@/components/finwise/dashboard-view'
 import { TransactionsView } from '@/components/finwise/transactions-view'
 import { TrendsView } from '@/components/finwise/trends-view'
@@ -81,9 +81,7 @@ function PinLock() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    const encoder = new TextEncoder()
-    const hashBuffer = await crypto.subtle.digest('SHA-256', encoder.encode(input))
-    const hashed = Array.from(new Uint8Array(hashBuffer)).map((b) => b.toString(16).padStart(2, '0')).join('')
+    const hashed = await hashPin(input)
     if (hashed === pin) { 
       unlock()
       setFailedAttempts(0)
