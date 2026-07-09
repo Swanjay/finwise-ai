@@ -20,7 +20,7 @@ export async function middleware(req: NextRequest) {
     '/_next', '/logo.svg', '/favicon.ico', '/mascot-', '/finwise-cat-',
     '/logo-', '/manifest.json', '/sw.js', '/workbox-',
     '/sitemap.xml', '/robots.txt', '/about', '/privacy', '/terms',
-    '/pricing',
+    '/pricing', '/finwise.apk',
   ]
   const isPublic = publicPaths.some(p => pathname.startsWith(p))
   if (isPublic) return NextResponse.next()
@@ -50,6 +50,6 @@ export async function middleware(req: NextRequest) {
 
 export const config = {
   matcher: [
-    '/((?!_next/static|_next/image|favicon.ico|logo.svg|mascot-|finwise-cat-|login|api/auth|api/telegram-login|api/email-login|manifest\\.json|sw\\.js|workbox-|sitemap\\.xml|robots\\.txt|about|privacy|terms|.*\\.png$|.*\\.jpg$|.*\\.svg$|.*\\.ico$|.*\\.webp$).*)',
+    '/((?!_next/static|_next/image|favicon.ico|logo.svg|mascot-|finwise-cat-|login|api/auth|api/telegram-login|api/email-login|manifest\\.json|sw\\.js|workbox-|sitemap\\.xml|robots\\.txt|about|privacy|terms|.*\\.png$|.*\\.jpg$|.*\\.svg$|.*\\.ico$|.*\\.webp$|.*\\.apk$).*)',
   ],
 }
