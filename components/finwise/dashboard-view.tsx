@@ -313,7 +313,7 @@ export function DashboardView({ transactions, month, onOpenGoals, onOpenWallets,
                     {i > 0 && <div className="hidden" />}
                     <div className="text-base mb-1">
                       {detectLogo(w.name) ? (
-                        <img src={detectLogo(w.name)} alt="" className="w-6 h-6 mx-auto object-contain dark:rounded-md dark:bg-white/20 dark:p-0.5" />
+                        <img src={detectLogo(w.name)} alt="" className="w-6 h-6 mx-auto object-contain dark:rounded-md dark:bg-white/20 dark:p-0.5" loading="lazy" />
                       ) : (
                         w.icon
                       )}

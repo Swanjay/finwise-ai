@@ -117,7 +117,7 @@ function WalletsSheetContent({ onClose }: { onClose: () => void }) {
               <div className="flex items-center gap-3 min-w-0 flex-1">
                 <div className="flex items-center justify-center size-10 rounded-xl text-lg shrink-0" style={{ backgroundColor: `${w.color}20`, color: w.color }}>
                   {w.logo || detectLogo(w.name) ? (
-                    <img src={w.logo || detectLogo(w.name)} alt="" className="w-7 h-7 object-contain dark:rounded-md dark:bg-white/20 dark:p-0.5" />
+                    <img src={w.logo || detectLogo(w.name)} alt="" className="w-7 h-7 object-contain dark:rounded-md dark:bg-white/20 dark:p-0.5" loading="lazy" />
                   ) : (
                     w.icon
                   )}

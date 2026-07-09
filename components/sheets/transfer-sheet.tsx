@@ -77,7 +77,7 @@ function TransferSheetContent({ onClose }: { onClose: () => void }) {
                     : 'border-border text-muted-foreground hover:bg-secondary',
                 )}
               >
-                <span className="text-lg">{w.logo || detectLogo(w.name) ? <img src={w.logo || detectLogo(w.name)} alt="" className="w-6 h-6 object-contain dark:rounded-md dark:bg-white/20 dark:p-0.5" /> : w.icon}</span>
+                <span className="text-lg">{w.logo || detectLogo(w.name) ? <img src={w.logo || detectLogo(w.name)} alt="" className="w-6 h-6 object-contain dark:rounded-md dark:bg-white/20 dark:p-0.5" loading="lazy" /> : w.icon}</span>
                 <span className="truncate">{w.name}</span>
                 <span className="text-[10px] text-muted-foreground">{formatIDR(bal)}</span>
               </button>
@@ -111,7 +111,7 @@ function TransferSheetContent({ onClose }: { onClose: () => void }) {
                     : 'border-border text-muted-foreground hover:bg-secondary',
                 )}
               >
-                <span className="text-lg">{w.logo || detectLogo(w.name) ? <img src={w.logo || detectLogo(w.name)} alt="" className="w-6 h-6 object-contain dark:rounded-md dark:bg-white/20 dark:p-0.5" /> : w.icon}</span>
+                <span className="text-lg">{w.logo || detectLogo(w.name) ? <img src={w.logo || detectLogo(w.name)} alt="" className="w-6 h-6 object-contain dark:rounded-md dark:bg-white/20 dark:p-0.5" loading="lazy" /> : w.icon}</span>
                 <span className="truncate">{w.name}</span>
                 <span className="text-[10px] text-muted-foreground">{formatIDR(bal)}</span>
               </button>
