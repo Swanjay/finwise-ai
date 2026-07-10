@@ -299,7 +299,9 @@ function AppShell() {
   const [fabOpen, setFabOpen] = useState(false)
   const [showUpgradeModal, setShowUpgradeModal] = useState<string | null>(null)
 
-  // ─── History stack so device Back button navigates tabs/sheets instead of closing the PWA ───
+  // ─── History Back trap (History API + popstate ONLY — proven for Android standalone PWA) ───
+  // NOTE: Do NOT mix with the Navigation API. Using history.pushState while listening to
+  // window.navigation causes a desync on Android Chrome (canIntercept=false) → Back closes the PWA.
   const tabRef = useRef<Tab>('home')
   const tabStack = useRef<Tab[]>(['home'])
   const sheetRef = useRef<Sheet | null>(null)
@@ -312,25 +314,17 @@ function AppShell() {
     setTab(id)
   }, [])
 
-  // Shared in-app back logic (uses refs so it never goes stale)
   const doBack = useCallback(() => {
-    if (sheetRef.current) {
-      setSheet(null)
-      return
-    }
+    if (sheetRef.current) { setSheet(null); return }
     tabStack.current.pop()
     const prev = tabStack.current[tabStack.current.length - 1] ?? 'home'
     tabRef.current = prev
     setTab(prev)
   }, [setSheet, setTab])
 
-  // Seed 2 history entries so Back always fires an event instead of closing the PWA.
-  // Android truncates history when the PWA is backgrounded, so we re-seed on every return.
+  // Push dummy same-document entries so Back ALWAYS fires popstate (never closes the PWA)
   const seedHistory = useCallback(() => {
-    try {
-      window.history.pushState(null, '')
-      window.history.pushState(null, '')
-    } catch { /* ignore */ }
+    try { for (let i = 0; i < 2; i++) window.history.pushState(null, '') } catch { /* ignore */ }
   }, [])
 
   useEffect(() => {
@@ -338,25 +332,9 @@ function AppShell() {
     const t1 = setTimeout(seedHistory, 300)
     const t2 = setTimeout(seedHistory, 1200)
 
-    // Primary: Navigation API (modern Chrome) — intercept back, never let it leave
-    const nav = (window as unknown as { navigation?: { addEventListener: Function; removeEventListener: Function } }).navigation
-    if (nav?.addEventListener) {
-      const onNavigate = (e: { navigationType: string; canIntercept: boolean; hashChange?: boolean; downloadRequest?: boolean; intercept: (o: { handler: () => void }) => void }) => {
-        if (e.navigationType !== 'traverse') return
-        if (e.canIntercept === false) return
-        if (e.hashChange || e.downloadRequest) return
-        e.intercept({ handler: () => { doBack() } })
-      }
-      nav.addEventListener('navigate', onNavigate)
-      return () => {
-        nav.removeEventListener('navigate', onNavigate)
-        clearTimeout(t1); clearTimeout(t2)
-      }
-    }
-
-    // Fallback: popstate trap — re-arm synchronously BEFORE handling the back
     const onPopState = () => {
-      try { window.history.pushState(null, '') } catch { /* ignore */ }
+      // Re-arm BEFORE handling so history never hits length 1 (which lets OS exit)
+      seedHistory()
       doBack()
     }
     window.addEventListener('popstate', onPopState)
