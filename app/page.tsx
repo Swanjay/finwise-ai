@@ -308,52 +308,67 @@ function AppShell() {
   const switchTab = useCallback((id: Tab) => {
     tabStack.current.push(id)
     tabRef.current = id
-    window.history.pushState({ finwiseTab: id }, '')
+    try { window.history.pushState(null, '') } catch { /* ignore */ }
     setTab(id)
   }, [])
 
-  // Re-seed history whenever the app becomes visible (Android truncates history when backgrounded)
+  // Shared in-app back logic (uses refs so it never goes stale)
+  const doBack = useCallback(() => {
+    if (sheetRef.current) {
+      setSheet(null)
+      return
+    }
+    tabStack.current.pop()
+    const prev = tabStack.current[tabStack.current.length - 1] ?? 'home'
+    tabRef.current = prev
+    setTab(prev)
+  }, [setSheet, setTab])
+
+  // Seed 2 history entries so Back always fires an event instead of closing the PWA.
+  // Android truncates history when the PWA is backgrounded, so we re-seed on every return.
   const seedHistory = useCallback(() => {
     try {
-      // Push entries so Back is always intercepted, never exits the PWA
-      window.history.pushState({ finwiseTab: tabRef.current }, '')
-      window.history.pushState({ finwiseTab: tabRef.current }, '')
-    } catch {
-      /* ignore */
-    }
+      window.history.pushState(null, '')
+      window.history.pushState(null, '')
+    } catch { /* ignore */ }
   }, [])
 
   useEffect(() => {
-    const onPopState = () => {
-      // If a sheet is open, Back closes it first (re-seed so we stay in-app)
-      if (sheetRef.current) {
-        setSheet(null)
-        window.history.pushState({ finwiseTab: tabRef.current }, '')
-        return
+    seedHistory()
+    const t1 = setTimeout(seedHistory, 300)
+    const t2 = setTimeout(seedHistory, 1200)
+
+    // Primary: Navigation API (modern Chrome) — intercept back, never let it leave
+    const nav = (window as unknown as { navigation?: { addEventListener: Function; removeEventListener: Function } }).navigation
+    if (nav?.addEventListener) {
+      const onNavigate = (e: { navigationType: string; canIntercept: boolean; hashChange?: boolean; downloadRequest?: boolean; intercept: (o: { handler: () => void }) => void }) => {
+        if (e.navigationType !== 'traverse') return
+        if (e.canIntercept === false) return
+        if (e.hashChange || e.downloadRequest) return
+        e.intercept({ handler: () => { doBack() } })
       }
-      // Otherwise go to previous tab in our stack
-      tabStack.current.pop()
-      const prev = tabStack.current[tabStack.current.length - 1] ?? 'home'
-      tabRef.current = prev
-      // Re-seed so Back is always intercepted (app never exits on Back)
-      window.history.pushState({ finwiseTab: prev }, '')
-      setTab(prev)
+      nav.addEventListener('navigate', onNavigate)
+      return () => {
+        nav.removeEventListener('navigate', onNavigate)
+        clearTimeout(t1); clearTimeout(t2)
+      }
+    }
+
+    // Fallback: popstate trap — re-arm synchronously BEFORE handling the back
+    const onPopState = () => {
+      try { window.history.pushState(null, '') } catch { /* ignore */ }
+      doBack()
     }
     window.addEventListener('popstate', onPopState)
     window.addEventListener('visibilitychange', seedHistory)
     window.addEventListener('pageshow', seedHistory)
-    // Initial seed (slight delay so it survives Android PWA launch reset)
-    seedHistory()
-    const t = setTimeout(seedHistory, 300)
-    const t2 = setTimeout(seedHistory, 1200)
     return () => {
       window.removeEventListener('popstate', onPopState)
       window.removeEventListener('visibilitychange', seedHistory)
       window.removeEventListener('pageshow', seedHistory)
-      clearTimeout(t)
-      clearTimeout(t2)
+      clearTimeout(t1); clearTimeout(t2)
     }
-  }, [seedHistory])
+  }, [doBack, seedHistory])
 
   // Simulate loading on mount
   useEffect(() => {
