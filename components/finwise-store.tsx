@@ -225,11 +225,24 @@ export function FinwiseProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     async function hydrate() {
       // Always load from secureStorage first
-      setTransactions(await secureGet(KEYS.tx) ?? [])
+      const loadedTx = ((await secureGet(KEYS.tx)) ?? []) as Transaction[]
+      setTransactions(loadedTx)
       setCustomCategories(await secureGet(KEYS.categories) ?? {})
       setBudgets(await secureGet(KEYS.budgets) ?? {})
       setMonthlyIncomeState(await secureGet(KEYS.income) ?? 0)
-      setWallets(await secureGet(KEYS.wallets) ?? DEFAULT_WALLETS)
+      const loadedWallets = ((await secureGet(KEYS.wallets)) ?? DEFAULT_WALLETS) as Wallet[]
+      // Auto-tidy: drop wallets (except 'cash') with 0 balance AND no transactions
+      const cleanedWallets = loadedWallets.filter((w) => {
+        if (w.id === 'cash') return true
+        const txTotal = loadedTx.reduce(
+          (s, tx) => (tx.walletId === w.id ? s + (tx.type === 'income' ? tx.amount : -tx.amount) : s),
+          0
+        )
+        const bal = (w.balance || 0) + txTotal
+        const hasTx = loadedTx.some((tx) => tx.walletId === w.id)
+        return !(bal === 0 && !hasTx)
+      })
+      setWallets(cleanedWallets)
       setGoals(await secureGet(KEYS.goals) ?? [])
       setRecurring(await secureGet(KEYS.recurring) ?? [])
       setCards(await secureGet(KEYS.cards) ?? [])
