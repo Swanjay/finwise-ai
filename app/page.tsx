@@ -24,6 +24,8 @@ import { SmartNotifications } from '@/components/finwise/smart-notifications'
 import { useGamification, BadgeUnlockToast } from '@/components/finwise/gamification'
 import { PricingTableFooter } from '@/components/finwise/pricing-table-footer'
 import { haptic } from '@/lib/haptics'
+import { App } from '@capacitor/app'
+import { Capacitor, type PluginListenerHandle } from '@capacitor/core'
 import FinWiseLogo from '@/components/finwise-logo'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -347,6 +349,32 @@ function AppShell() {
       clearTimeout(t1); clearTimeout(t2)
     }
   }, [doBack, seedHistory])
+
+  // ─── Native hardware Back (Capacitor APK / WebView) ───
+  // In a Capacitor WebView the physical Back button does NOT fire `popstate`.
+  // It fires the native `backButton` event. With no listener, Capacitor calls
+  // super.onBackPressed() and the app closes. We route it to the SAME doBack()
+  // logic. On web/PWA this listener is skipped (popstate handles Back there).
+  useEffect(() => {
+    if (!Capacitor.isNativePlatform()) return
+    let cancelled = false
+    let handle: PluginListenerHandle | undefined
+    App.addListener('backButton', () => {
+      if (cancelled) return
+      // An open sheet closes first — never exit while one is up
+      if (sheetRef.current) { setSheet(null); return }
+      // At the root (home, no deeper tab on the stack) → really close the app
+      if (tabRef.current === 'home' && tabStack.current.length <= 1) {
+        App.exitApp()
+        return
+      }
+      doBack()
+    }).then((h) => { if (!cancelled) handle = h })
+    return () => {
+      cancelled = true
+      handle?.remove()
+    }
+  }, [doBack])
 
   // Simulate loading on mount
   useEffect(() => {
