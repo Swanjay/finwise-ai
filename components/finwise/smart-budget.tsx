@@ -86,7 +86,7 @@ const FIFTY_THIRTY_ZONES: {
   },
 ]
 
-export function SmartBudgetSheet({ onClose }: { onClose: () => void }) {
+export function SmartBudgetSheet({ onClose, embedded = false }: { onClose: () => void; embedded?: boolean }) {
   const { transactions, budgets, setBudget, monthlyIncome, wallets } = useFinwise()
   const [activeTab, setActiveTab] = useState<'templates' | 'auto' | 'rollover' | '5030'>('templates')
   const [zonePcts, setZonePcts] = useState({ needs: 50, wants: 30, savings: 20 })
@@ -233,7 +233,7 @@ export function SmartBudgetSheet({ onClose }: { onClose: () => void }) {
   }
 
   return (
-    <div className="flex flex-col gap-4 max-h-[65vh] overflow-y-auto">
+    <div className={embedded ? 'flex flex-col gap-4' : 'flex flex-col gap-4 max-h-[65vh] overflow-y-auto'}>
       {/* Tabs */}
       <div className="flex gap-2">
         {[
@@ -664,7 +664,7 @@ export function SmartBudgetSheet({ onClose }: { onClose: () => void }) {
         </motion.div>
       )}
 
-      <Button variant="secondary" onClick={onClose}>Tutup</Button>
+      {!embedded && <Button variant="secondary" onClick={onClose}>Tutup</Button>}
     </div>
   )
 }

@@ -35,6 +35,7 @@ import {
 import { FinwiseProvider, useFinwise } from '@/components/finwise-store'
 import { SpendingDonut } from '@/components/finwise/spending-donut'
 import { TransactionRow } from '@/components/finwise/transaction-row'
+import { exportReportPDF } from '@/lib/export-pdf'
 import {
   formatIDR,
   formatIDRShort,
@@ -195,6 +196,23 @@ function ReportsContent() {
     setSelectedCategory('all')
     setAmountPreset('all')
     setSortBy('newest')
+  }
+
+  const [exporting, setExporting] = useState(false)
+  const handleExport = async () => {
+    setExporting(true)
+    try {
+      exportReportPDF({
+        transactions: filtered,
+        periodLabel: periodLabels[period],
+        income,
+        expense,
+        surplus,
+        byCat,
+      })
+    } finally {
+      setExporting(false)
+    }
   }
 
   const { income, expense, surplus } = summarize(filtered)
@@ -406,8 +424,8 @@ function ReportsContent() {
                 <RotateCcw className="size-3" /> Reset
               </button>
             )}
-            <Button size="sm" variant="outline" className="gap-1.5">
-              <Download className="size-3.5" /> Export
+            <Button size="sm" variant="outline" className="gap-1.5" onClick={handleExport} disabled={exporting}>
+              <Download className="size-3.5" /> {exporting ? 'Exporting…' : 'Export'}
             </Button>
           </div>
         </div>
@@ -652,19 +670,19 @@ function ReportsContent() {
         )}
       </div>
 
-      {/* Export placeholder */}
+      {/* Export real */}
       <Card className="border-dashed">
         <CardContent className="flex flex-col items-center gap-3 p-6 text-center">
-          <Download className="size-8 text-muted-foreground" />
+          <Download className="size-8 text-primary" />
           <div>
             <p className="font-medium">Export Laporan PDF</p>
             <p className="mt-1 text-sm text-muted-foreground">
               Unduh laporan keuangan {periodLabels[period].toLowerCase()} dalam format PDF.
             </p>
           </div>
-          <Button variant="outline" className="gap-1.5">
+          <Button onClick={handleExport} disabled={exporting} className="gap-1.5">
             <Download className="size-4" />
-            Download PDF
+            {exporting ? 'Membuat PDF…' : 'Download PDF'}
           </Button>
         </CardContent>
       </Card>
