@@ -88,8 +88,9 @@ const FIFTY_THIRTY_ZONES: {
 
 export function SmartBudgetSheet({ onClose, embedded = false }: { onClose: () => void; embedded?: boolean }) {
   const { transactions, budgets, setBudget, monthlyIncome, wallets } = useFinwise()
-  const [activeTab, setActiveTab] = useState<'templates' | 'auto' | 'rollover' | '5030'>('templates')
+  const [activeTab, setActiveTab] = useState<'templates' | 'auto' | 'rollover' | '5030' | 'manual'>('templates')
   const [zonePcts, setZonePcts] = useState({ needs: 50, wants: 30, savings: 20 })
+  const [manualDrafts, setManualDrafts] = useState<Record<string, string>>({})
   
   // 50/30/20 Base Amount config
   const [baseSource, setBaseSource] = useState<'income' | 'balance' | 'custom'>('income')
@@ -241,6 +242,7 @@ export function SmartBudgetSheet({ onClose, embedded = false }: { onClose: () =>
           { id: 'auto' as const, label: 'Auto Budget', emoji: '🤖' },
           { id: 'rollover' as const, label: 'Rollover', emoji: '🔄' },
           { id: '5030' as const, label: '50/30/20', emoji: '🎯' },
+          { id: 'manual' as const, label: 'Manual', emoji: '✏️' },
         ].map((tab) => (
           <button
             key={tab.id}
@@ -662,6 +664,61 @@ export function SmartBudgetSheet({ onClose, embedded = false }: { onClose: () =>
             </p>
           </div>
         </motion.div>
+      )}
+
+      {/* Manual Tab */}
+      {activeTab === 'manual' && (
+        <div className="flex flex-col gap-3">
+          <p className="text-sm text-muted-foreground">
+            Atur budget manual per kategori. Kosongkan atau 0 untuk menghapus.
+          </p>
+          <div className="flex flex-col gap-2">
+            {EXPENSE_CATEGORIES.map((cat) => {
+              const Icon = cat.icon
+              const current = budgets[cat.id] || 0
+              const draft = manualDrafts[cat.id] ?? (current > 0 ? String(current) : '')
+              return (
+                <div key={cat.id} className="clay-card flex items-center gap-2 p-3">
+                  {Icon && <Icon className="size-4 shrink-0" style={{ color: cat.color }} />}
+                  <span className="flex-1 text-xs font-medium">{cat.label}</span>
+                  <Input
+                    type="text"
+                    inputMode="numeric"
+                    placeholder="0"
+                    value={draft}
+                    onChange={(e) => setManualDrafts((d) => ({ ...d, [cat.id]: e.target.value }))}
+                    className="h-8 w-28 text-right text-xs tabular-nums"
+                  />
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-8 px-2.5"
+                    onClick={() => {
+                      const val = Number((draft || '').replace(/\D/g, '')) || 0
+                      setBudget(cat.id, val)
+                      setManualDrafts((d) => ({ ...d, [cat.id]: val > 0 ? String(val) : '' }))
+                    }}
+                  >
+                    Simpan
+                  </Button>
+                  {current > 0 && (
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-8 px-2 text-destructive"
+                      onClick={() => {
+                        setBudget(cat.id, 0)
+                        setManualDrafts((d) => ({ ...d, [cat.id]: '' }))
+                      }}
+                    >
+                      Hapus
+                    </Button>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+        </div>
       )}
 
       {!embedded && <Button variant="secondary" onClick={onClose}>Tutup</Button>}
