@@ -16,7 +16,7 @@ import {
 import { useSession, signOut } from 'next-auth/react'
 import { FinwiseProvider, useFinwise, hashPin } from '@/components/finwise-store'
 import { DashboardView } from '@/components/finwise/dashboard-view'
-import { TransactionsView } from '@/components/finwise/transactions-view'
+import { BudgetView } from '@/components/finwise/budget-view'
 import { TrendsView } from '@/components/finwise/trends-view'
 import { SplashScreen } from '@/components/splash-screen'
 import { LoadingScreen } from '@/components/finwise/mascot'
@@ -65,7 +65,7 @@ import { CardsSheet } from '@/components/sheets/cards-sheet'
 import { ImportSheet } from '@/components/sheets/import-sheet'
 import { ProfileTab } from '@/components/finwise/profile-tab'
 
-type Tab = 'home' | 'transactions' | 'trends' | 'profile'
+type Tab = 'home' | 'budget' | 'trends' | 'profile'
 type Sheet = 'add' | 'scan' | 'advisor' | 'settings' | 'goals' | 'wallets' | 'transfer' | 'recurring' | 'export' | 'categories' | 'pin' | 'benchmark' | 'smart-budget' | 'split-bill' | 'notifications' | 'voice' | 'voucher' | 'cards' | 'import' | null
 
 // ─── PIN Lock Screen ───
@@ -322,7 +322,7 @@ function AppShell() {
 
   const navItems: { id: Tab; label: string; icon: typeof Home }[] = [
     { id: 'home', label: 'Home', icon: Home },
-    { id: 'transactions', label: 'Transaksi', icon: ListChecks },
+    { id: 'budget', label: 'Budget', icon: Target },
     { id: 'trends', label: 'Rencana', icon: BarChart3 },
     { id: 'profile', label: 'Profil', icon: UserCircle },
   ]
@@ -367,7 +367,7 @@ function AppShell() {
             <p className="text-xs text-muted-foreground font-medium">Selamat datang 👋</p>
             <h2 className="font-heading text-base font-bold text-foreground leading-tight">
               {tab === 'home' && 'Home'}
-              {tab === 'transactions' && 'Transaksi'}
+              {tab === 'budget' && 'Budget'}
               {tab === 'trends' && 'Rencana'}
               {tab === 'profile' && 'Profil'}
             </h2>
@@ -464,7 +464,7 @@ function AppShell() {
       <main className="flex-1 px-4 pb-32 sm:ml-56 sm:pb-4">
         {!tipsDismissed && tab === 'home' && <OnboardingTips onDismiss={dismissTips} />}
         {tab === 'home' && <DashboardView transactions={monthTx} month={getMonthLabel(monthKey)} onOpenGoals={() => setSheet('goals')} onOpenWallets={() => setSheet('wallets')} onOpenAdd={() => setSheet('add')} onOpenReports={() => router.push('/reports')} />}
-        {tab === 'transactions' && <TransactionsView />}
+        {tab === 'budget' && <BudgetView />}
         {tab === 'trends' && <TrendsView />}
         {tab === 'profile' && <ProfileTab onOpenSheet={(s) => setSheet(s as Sheet)} />}
 

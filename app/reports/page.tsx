@@ -17,6 +17,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { FinwiseProvider, useFinwise } from '@/components/finwise-store'
 import { SpendingDonut } from '@/components/finwise/spending-donut'
+import { TransactionRow } from '@/components/finwise/transaction-row'
 import {
   formatIDR,
   formatIDRShort,
@@ -31,6 +32,7 @@ type Period = 'minggu' | 'bulan' | 'tahun'
 function ReportsContent() {
   const { transactions, allCategories } = useFinwise()
   const [period, setPeriod] = useState<Period>('bulan')
+  const [txFilter, setTxFilter] = useState<'all' | 'income' | 'expense'>('all')
 
   const periodLabels: Record<Period, string> = {
     minggu: 'Minggu Ini',
@@ -53,6 +55,14 @@ function ReportsContent() {
       return d.getFullYear() === now.getFullYear()
     })
   }, [transactions, period])
+
+  // Transactions for the list (respect period + type filter)
+  const txList = useMemo(() => {
+    return filtered
+      .filter((t) => txFilter === 'all' || t.type === txFilter)
+      .slice()
+      .sort((a, b) => b.date.localeCompare(a.date))
+  }, [filtered, txFilter])
 
   const { income, expense, surplus } = summarize(filtered)
   const byCat = spendingByCategory(filtered, allCategories)
@@ -241,6 +251,53 @@ function ReportsContent() {
           </ul>
         </CardContent>
       </Card>
+
+      {/* ─── Transactions List (merged from old Transaksi tab) ─── */}
+      <div className="flex flex-col gap-3">
+        <div className="flex items-center justify-between">
+          <h3 className="flex items-center gap-2 text-sm font-bold">
+            <FileText className="size-4 text-primary" /> Transaksi
+          </h3>
+          <Button size="sm" variant="outline" className="gap-1.5">
+            <Download className="size-3.5" /> Export
+          </Button>
+        </div>
+
+        {/* Type filter chips */}
+        <div className="flex gap-1.5">
+          {([
+            { id: 'all', label: 'Semua' },
+            { id: 'income', label: 'Pemasukan' },
+            { id: 'expense', label: 'Pengeluaran' },
+          ] as const).map((f) => (
+            <button
+              key={f.id}
+              type="button"
+              onClick={() => setTxFilter(f.id)}
+              className={cn(
+                'rounded-full px-3 py-1.5 text-xs font-medium transition',
+                txFilter === f.id
+                  ? 'bg-primary text-primary-foreground'
+                  : 'bg-secondary text-muted-foreground hover:text-foreground',
+              )}
+            >
+              {f.label}
+            </button>
+          ))}
+        </div>
+
+        {txList.length === 0 ? (
+          <div className="rounded-2xl border border-dashed p-6 text-center">
+            <p className="text-sm text-muted-foreground">Belum ada transaksi di periode ini.</p>
+          </div>
+        ) : (
+          <div className="-mx-2 flex flex-col">
+            {txList.map((tx) => (
+              <TransactionRow key={tx.id} tx={tx} />
+            ))}
+          </div>
+        )}
+      </div>
 
       {/* Export placeholder */}
       <Card className="border-dashed">
