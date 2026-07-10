@@ -235,6 +235,47 @@ export function SmartBudgetSheet({ onClose, embedded = false }: { onClose: () =>
 
   return (
     <div className={embedded ? 'flex flex-col gap-4' : 'flex flex-col gap-4 max-h-[65vh] overflow-y-auto'}>
+      {/* Budget Total Summary */}
+      {(() => {
+        const totalBudget = EXPENSE_CATEGORIES.reduce((s, c) => s + (budgets[c.id] || 0), 0)
+        const income = monthlyIncome || 0
+        const pct = income > 0 ? Math.round((totalBudget / income) * 100) : 0
+        const over = totalBudget > income && income > 0
+        const healthy = pct > 0 && pct <= 100
+        return (
+          <div className={cn(
+            'rounded-2xl p-4 text-white shadow-lg',
+            over ? 'bg-gradient-to-br from-rose-500 to-red-600'
+                 : healthy ? 'bg-gradient-to-br from-primary to-emerald-600'
+                 : 'bg-gradient-to-br from-slate-500 to-slate-600',
+          )}>
+            <p className="text-xs font-semibold opacity-90">Total Budget Bulan Ini</p>
+            <p className="mt-1 font-heading text-2xl font-extrabold tabular-nums">{formatIDR(totalBudget)}</p>
+            <div className="mt-2 flex items-center justify-between text-[11px] opacity-90">
+              <span>Pemasukan {income > 0 ? formatIDR(income) : '—'}</span>
+              <span className="font-semibold">
+                {totalBudget === 0 ? 'Belum diatur'
+                  : over ? `Over ${pct - 100}%`
+                  : `${pct}% dari pemasukan`}
+              </span>
+            </div>
+            <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-white/25">
+              <div
+                className="h-full rounded-full bg-white transition-all"
+                style={{ width: `${Math.min(pct, 100)}%` }}
+              />
+            </div>
+            {totalBudget > 0 && (
+              <p className="mt-2 text-[10px] opacity-90">
+                {over ? '⚠️ Budget melebihi pemasukan — kurangi beberapa kategori.'
+                     : healthy ? '✅ Budget sehat, dalam batas pemasukan.'
+                     : 'Atur budget untuk mulai melacak.'}
+              </p>
+            )}
+          </div>
+        )
+      })()}
+
       {/* Tabs */}
       <div className="flex gap-2">
         {[
