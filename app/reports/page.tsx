@@ -35,6 +35,8 @@ import {
 import { FinwiseProvider, useFinwise } from '@/components/finwise-store'
 import { SpendingDonut } from '@/components/finwise/spending-donut'
 import { TransactionRow } from '@/components/finwise/transaction-row'
+import { EditTransactionForm } from '@/components/finwise/edit-transaction-form'
+import { BottomSheet } from '@/components/finwise/bottom-sheet'
 import { exportReportPDF } from '@/lib/export-pdf'
 import {
   formatIDR,
@@ -50,7 +52,8 @@ import { cn } from '@/lib/utils'
 type Period = 'minggu' | 'bulan' | 'tahun'
 
 function ReportsContent() {
-  const { transactions, allCategories } = useFinwise()
+  const { transactions, allCategories, deleteTransaction } = useFinwise()
+  const [editingTx, setEditingTx] = useState<Transaction | null>(null)
   const [period, setPeriod] = useState<Period>('bulan')
   const [txFilter, setTxFilter] = useState<'all' | 'income' | 'expense'>('all')
 
@@ -664,7 +667,12 @@ function ReportsContent() {
         ) : (
           <div className="-mx-2 flex flex-col">
             {txList.map((tx) => (
-              <TransactionRow key={tx.id} tx={tx} />
+              <TransactionRow
+                key={tx.id}
+                tx={tx}
+                onEdit={setEditingTx}
+                onDelete={deleteTransaction}
+              />
             ))}
           </div>
         )}
@@ -686,6 +694,13 @@ function ReportsContent() {
           </Button>
         </CardContent>
       </Card>
+
+      {/* Edit transaction sheet */}
+      <BottomSheet open={!!editingTx} onClose={() => setEditingTx(null)} title="Edit Transaksi">
+        {editingTx && (
+          <EditTransactionForm transaction={editingTx} onDone={() => setEditingTx(null)} />
+        )}
+      </BottomSheet>
     </div>
   )
 }
