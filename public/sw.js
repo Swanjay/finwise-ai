@@ -1,4 +1,4 @@
-// Service Worker for FinWise — v4
+// Service Worker for FinWise — v5
 // Network-first for EVERYTHING. No cache-first static assets.
 // This prevents stale JS bundles causing hydration failures.
 

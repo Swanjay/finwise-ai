@@ -312,11 +312,18 @@ function AppShell() {
     setTab(id)
   }, [])
 
-  useEffect(() => {
-    // Seed entries so the first Back is always intercepted (never exits the app)
-    window.history.pushState({ finwiseTab: 'home' }, '')
-    window.history.pushState({ finwiseTab: 'home' }, '')
+  // Re-seed history whenever the app becomes visible (Android truncates history when backgrounded)
+  const seedHistory = useCallback(() => {
+    try {
+      // Push entries so Back is always intercepted, never exits the PWA
+      window.history.pushState({ finwiseTab: tabRef.current }, '')
+      window.history.pushState({ finwiseTab: tabRef.current }, '')
+    } catch {
+      /* ignore */
+    }
+  }, [])
 
+  useEffect(() => {
     const onPopState = () => {
       // If a sheet is open, Back closes it first (re-seed so we stay in-app)
       if (sheetRef.current) {
@@ -333,8 +340,20 @@ function AppShell() {
       setTab(prev)
     }
     window.addEventListener('popstate', onPopState)
-    return () => window.removeEventListener('popstate', onPopState)
-  }, [])
+    window.addEventListener('visibilitychange', seedHistory)
+    window.addEventListener('pageshow', seedHistory)
+    // Initial seed (slight delay so it survives Android PWA launch reset)
+    seedHistory()
+    const t = setTimeout(seedHistory, 300)
+    const t2 = setTimeout(seedHistory, 1200)
+    return () => {
+      window.removeEventListener('popstate', onPopState)
+      window.removeEventListener('visibilitychange', seedHistory)
+      window.removeEventListener('pageshow', seedHistory)
+      clearTimeout(t)
+      clearTimeout(t2)
+    }
+  }, [seedHistory])
 
   // Simulate loading on mount
   useEffect(() => {
