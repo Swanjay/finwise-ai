@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo, useEffect, useCallback } from 'react'
+import { useState, useMemo, useEffect, useCallback, useRef } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
@@ -299,6 +299,45 @@ function AppShell() {
   const [fabOpen, setFabOpen] = useState(false)
   const [showUpgradeModal, setShowUpgradeModal] = useState<string | null>(null)
 
+  // ─── History sync so device Back button navigates tabs/sheets instead of closing the PWA ───
+  // Wrap setTab to push a history entry on every tab change (except initial)
+  const isFirstTabPush = useRef(true)
+  const switchTab = useCallback((id: Tab) => {
+    if (!isFirstTabPush.current) {
+      window.history.pushState({ finwiseTab: id }, '')
+    }
+    isFirstTabPush.current = false
+    setTab(id)
+  }, [])
+
+  useEffect(() => {
+    // Seed one entry so the first Back doesn't exit the app
+    window.history.replaceState({ finwiseTab: tab }, '')
+
+    const onPopState = () => {
+      // If a sheet is open, Back should close it first
+      if (sheet) {
+        setSheet(null)
+        // Re-push the entry we just popped so app doesn't exit on next Back
+        window.history.pushState({ finwiseTab: tab }, '')
+        return
+      }
+      // Otherwise go to previous tab (or stay on home without exiting)
+      const prev = document.referrer
+      const state = window.history.state as { finwiseTab?: Tab } | null
+      if (state?.finwiseTab && state.finwiseTab !== tab) {
+        setTab(state.finwiseTab)
+      } else {
+        // No in-app history left → go home instead of exiting
+        setTab('home')
+        window.history.pushState({ finwiseTab: 'home' }, '')
+      }
+      void prev
+    }
+    window.addEventListener('popstate', onPopState)
+    return () => window.removeEventListener('popstate', onPopState)
+  }, [sheet, tab])
+
   // Simulate loading on mount
   useEffect(() => {
     const timer = setTimeout(() => setIsLoading(false), 1500)
@@ -338,7 +377,7 @@ function AppShell() {
         {navItems.map((item) => (
           <button
             key={item.id}
-            onClick={() => { setTab(item.id) }}
+            onClick={() => { switchTab(item.id) }}
             className={cn(
               'flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all',
               tab === item.id
@@ -478,7 +517,7 @@ function AppShell() {
           {navItems.slice(0, 2).map((item) => (
             <button
               key={item.id}
-              onClick={() => { haptic.light(); setTab(item.id) }}
+              onClick={() => { haptic.light(); switchTab(item.id) }}
               className={cn(
                 'flex flex-col items-center gap-0.5 rounded-2xl py-1.5 px-2 text-[10px] font-semibold transition',
                 tab === item.id
@@ -505,7 +544,7 @@ function AppShell() {
           {navItems.slice(2).map((item) => (
             <button
               key={item.id}
-              onClick={() => { haptic.light(); setTab(item.id) }}
+              onClick={() => { haptic.light(); switchTab(item.id) }}
               className={cn(
                 'flex flex-col items-center gap-0.5 rounded-2xl py-1.5 px-2 text-[10px] font-semibold transition',
                 tab === item.id
