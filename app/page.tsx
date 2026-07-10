@@ -299,44 +299,42 @@ function AppShell() {
   const [fabOpen, setFabOpen] = useState(false)
   const [showUpgradeModal, setShowUpgradeModal] = useState<string | null>(null)
 
-  // ─── History sync so device Back button navigates tabs/sheets instead of closing the PWA ───
-  // Wrap setTab to push a history entry on every tab change (except initial)
-  const isFirstTabPush = useRef(true)
+  // ─── History stack so device Back button navigates tabs/sheets instead of closing the PWA ───
+  const tabRef = useRef<Tab>('home')
+  const tabStack = useRef<Tab[]>(['home'])
+  const sheetRef = useRef<Sheet | null>(null)
+  useEffect(() => { sheetRef.current = sheet }, [sheet])
+
   const switchTab = useCallback((id: Tab) => {
-    if (!isFirstTabPush.current) {
-      window.history.pushState({ finwiseTab: id }, '')
-    }
-    isFirstTabPush.current = false
+    tabStack.current.push(id)
+    tabRef.current = id
+    window.history.pushState({ finwiseTab: id }, '')
     setTab(id)
   }, [])
 
   useEffect(() => {
-    // Seed one entry so the first Back doesn't exit the app
-    window.history.replaceState({ finwiseTab: tab }, '')
+    // Seed entries so the first Back is always intercepted (never exits the app)
+    window.history.pushState({ finwiseTab: 'home' }, '')
+    window.history.pushState({ finwiseTab: 'home' }, '')
 
     const onPopState = () => {
-      // If a sheet is open, Back should close it first
-      if (sheet) {
+      // If a sheet is open, Back closes it first (re-seed so we stay in-app)
+      if (sheetRef.current) {
         setSheet(null)
-        // Re-push the entry we just popped so app doesn't exit on next Back
-        window.history.pushState({ finwiseTab: tab }, '')
+        window.history.pushState({ finwiseTab: tabRef.current }, '')
         return
       }
-      // Otherwise go to previous tab (or stay on home without exiting)
-      const prev = document.referrer
-      const state = window.history.state as { finwiseTab?: Tab } | null
-      if (state?.finwiseTab && state.finwiseTab !== tab) {
-        setTab(state.finwiseTab)
-      } else {
-        // No in-app history left → go home instead of exiting
-        setTab('home')
-        window.history.pushState({ finwiseTab: 'home' }, '')
-      }
-      void prev
+      // Otherwise go to previous tab in our stack
+      tabStack.current.pop()
+      const prev = tabStack.current[tabStack.current.length - 1] ?? 'home'
+      tabRef.current = prev
+      // Re-seed so Back is always intercepted (app never exits on Back)
+      window.history.pushState({ finwiseTab: prev }, '')
+      setTab(prev)
     }
     window.addEventListener('popstate', onPopState)
     return () => window.removeEventListener('popstate', onPopState)
-  }, [sheet, tab])
+  }, [])
 
   // Simulate loading on mount
   useEffect(() => {
