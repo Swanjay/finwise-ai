@@ -238,7 +238,7 @@ export function FinwiseProvider({ children }: { children: ReactNode }) {
       setPinState(storedPin)
       setIsLocked(storedPin ? true : false)
 
-      const storedTheme = await secureGet(KEYS.theme) ?? 'light'
+      const storedTheme = (await secureGet(KEYS.theme)) as 'dark' | 'light' | null ?? 'light'
       setTheme(storedTheme)
       try { localStorage.setItem('fw.theme.v1', storedTheme) } catch {}
       setAccentColorState(await secureGet(KEYS.accent) ?? 'wise')
