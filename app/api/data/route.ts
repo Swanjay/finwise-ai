@@ -209,3 +209,28 @@ export async function POST(req: Request) {
 
   return NextResponse.json({ ok: true, userId: uid, results })
 }
+
+// DELETE /api/data — Wipe ALL user data from cloud (used by "Hapus Semua Data")
+export async function DELETE() {
+  const session = await getServerSession(authOptions)
+  if (!session?.user?.email) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+
+  const supabase = getSupabase()
+  const uid = emailToUserId(session.user.email)
+
+  const [t, w, g, b, r, s] = await Promise.all([
+    supabase.from("transactions").delete().eq("user_id", uid),
+    supabase.from("wallets").delete().eq("user_id", uid),
+    supabase.from("goals").delete().eq("user_id", uid),
+    supabase.from("budgets").delete().eq("user_id", uid),
+    supabase.from("recurring").delete().eq("user_id", uid),
+    supabase.from("settings").delete().eq("user_id", uid),
+  ])
+
+  const errors = [t.error, w.error, g.error, b.error, r.error, s.error].filter(Boolean)
+  if (errors.length) {
+    return NextResponse.json({ ok: false, errors: errors.map(e => e!.message) }, { status: 500 })
+  }
+
+  return NextResponse.json({ ok: true, userId: uid })
+}

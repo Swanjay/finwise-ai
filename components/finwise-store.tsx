@@ -657,13 +657,22 @@ export function FinwiseProvider({ children }: { children: ReactNode }) {
   }, [])
 
   // Reset
-  const resetAll = useCallback(() => {
+  const resetAll = useCallback(async () => {
     Object.values(KEYS).forEach(key => { try { localStorage.removeItem(key) } catch { /* ignore */ } })
     setTransactions([]); setCustomCategories({}); setBudgets({}); setMonthlyIncomeState(0)
     setWallets(DEFAULT_WALLETS); setGoals([]); setRecurring([]); setCards([]); setPinState(null)
     setIsLocked(false); setTheme('light'); setAccentColorState('wise'); setFontSizeState('base')
     setCompactModeState(false); setSetupDone(false); setTipsDismissed(false); setTags([])
-  }, [])
+
+    // Also wipe cloud data if logged in — otherwise it re-merges back on next login
+    if (authStatus === 'authenticated' && session?.user?.email) {
+      try {
+        await fetch('/api/data', { method: 'DELETE' })
+      } catch (err) {
+        console.warn('[store] Cloud reset failed (local already cleared):', err)
+      }
+    }
+  }, [authStatus, session])
 
   return (
     <Ctx.Provider
