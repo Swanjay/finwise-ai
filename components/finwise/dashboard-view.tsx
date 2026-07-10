@@ -9,6 +9,7 @@ import { SpendingDonut } from './spending-donut'
 import { BudgetProgress } from './budget-progress'
 import { TransactionRow } from './transaction-row'
 import { EmptyState } from './mascot'
+import { QuickAddTransaction } from './quick-add-transaction'
 import { LevelBadge, useGamification } from './gamification'
 import Image from 'next/image'
 import { CashflowChart } from './cashflow-chart'
@@ -525,6 +526,8 @@ export function DashboardView({ transactions, month, onOpenGoals, onOpenWallets,
           <h3 className="font-heading text-sm font-bold text-foreground mb-3">
             Transaksi Terakhir
           </h3>
+          {/* Inline quick-add — no sheet needed for fast logging */}
+          <QuickAddTransaction />
           {recent.length === 0 ? (
             <EmptyState
               title="Belum ada transaksi"
