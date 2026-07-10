@@ -11,10 +11,27 @@ import {
   Sparkles,
   TrendingUp,
   Wallet,
+  Search,
+  X,
+  ArrowUpDown,
+  CalendarDays,
+  DollarSign,
+  Filter,
+  Tag,
+  SlidersHorizontal,
+  RotateCcw,
 } from 'lucide-react'
 import Link from 'next/link'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { FinwiseProvider, useFinwise } from '@/components/finwise-store'
 import { SpendingDonut } from '@/components/finwise/spending-donut'
 import { TransactionRow } from '@/components/finwise/transaction-row'
@@ -24,6 +41,8 @@ import {
   summarize,
   spendingByCategory,
   CATEGORIES,
+  type Transaction,
+  type TxType,
 } from '@/lib/finwise'
 import { cn } from '@/lib/utils'
 
@@ -56,13 +75,127 @@ function ReportsContent() {
     })
   }, [transactions, period])
 
-  // Transactions for the list (respect period + type filter)
+  // ─── Transaction filters (full) ───
+  const [query, setQuery] = useState('')
+  const [selectedTag, setSelectedTag] = useState<string | null>(null)
+  const [dateRange, setDateRange] = useState<'all' | 'this_week' | 'this_month' | 'last_month' | 'custom'>('all')
+  const [customFrom, setCustomFrom] = useState('')
+  const [customTo, setCustomTo] = useState('')
+  const [selectedCategory, setSelectedCategory] = useState<string>('all')
+  const [amountPreset, setAmountPreset] = useState<'all' | 'under_100k' | '100k_500k' | 'over_500k'>('all')
+  const [sortBy, setSortBy] = useState<'newest' | 'oldest' | 'highest' | 'lowest'>('newest')
+  const [showAdvanced, setShowAdvanced] = useState(false)
+
+  // Used tags
+  const usedTags = useMemo(() => {
+    const s = new Set<string>()
+    filtered.forEach((t) => t.tags?.forEach((tag) => s.add(tag)))
+    return Array.from(s).sort()
+  }, [filtered])
+
+  // Categories actually used (by frequency)
+  const usedCategories = useMemo(() => {
+    const m = new Map<string, number>()
+    filtered.forEach((t) => m.set(t.category, (m.get(t.category) ?? 0) + 1))
+    return Array.from(m.entries()).sort((a, b) => b[1] - a[1]).map(([id]) => id)
+  }, [filtered])
+
+  // Fuzzy match
+  const fuzzyMatch = (q: string, text: string) => {
+    const qq = q.toLowerCase().trim()
+    const tt = text.toLowerCase()
+    if (tt.includes(qq)) return true
+    let qi = 0
+    for (let ti = 0; ti < tt.length && qi < qq.length; ti++) if (tt[ti] === qq[qi]) qi++
+    return qi === qq.length
+  }
+
+  const getDateBounds = () => {
+    const today = new Date().toISOString().slice(0, 10)
+    if (dateRange === 'this_week') {
+      const d = new Date()
+      const day = d.getDay()
+      const diff = day === 0 ? 6 : day - 1
+      d.setDate(d.getDate() - diff)
+      return { from: d.toISOString().slice(0, 10), to: today }
+    }
+    if (dateRange === 'this_month') {
+      const d = new Date()
+      return { from: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-01`, to: today }
+    }
+    if (dateRange === 'last_month') {
+      const d = new Date()
+      d.setMonth(d.getMonth() - 1, 1)
+      const from = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-01`
+      const last = new Date(d.getFullYear(), d.getMonth() + 1, 0).toISOString().slice(0, 10)
+      return { from, to: last }
+    }
+    if (dateRange === 'custom') return { from: customFrom || null, to: customTo || null }
+    return { from: null, to: null }
+  }
+
+  const amountBounds = () => {
+    switch (amountPreset) {
+      case 'under_100k': return { min: null as number | null, max: 100_000 }
+      case '100k_500k': return { min: 100_000, max: 500_000 }
+      case 'over_500k': return { min: 500_000, max: null as number | null }
+      default: return { min: null as number | null, max: null as number | null }
+    }
+  }
+
+  const { from: dateFrom, to: dateTo } = getDateBounds()
+  const { min: amtMin, max: amtMax } = amountBounds()
+
+  const activeFilterCount = useMemo(() => {
+    let c = 0
+    if (txFilter !== 'all') c++
+    if (dateRange !== 'all') c++
+    if (selectedCategory !== 'all') c++
+    if (amountPreset !== 'all') c++
+    if (sortBy !== 'newest') c++
+    if (selectedTag) c++
+    return c
+  }, [txFilter, dateRange, selectedCategory, amountPreset, sortBy, selectedTag])
+
   const txList = useMemo(() => {
-    return filtered
-      .filter((t) => txFilter === 'all' || t.type === txFilter)
-      .slice()
-      .sort((a, b) => b.date.localeCompare(a.date))
-  }, [filtered, txFilter])
+    const result = filtered.filter((t: Transaction) => {
+      if (txFilter !== 'all' && t.type !== txFilter) return false
+      if (selectedTag && (!t.tags || !t.tags.includes(selectedTag))) return false
+      if (query) {
+        const catLabel = CATEGORIES[t.category]?.label ?? ''
+        const ok = fuzzyMatch(query, t.description) || fuzzyMatch(query, catLabel) ||
+          (t.tags && t.tags.some((tag) => fuzzyMatch(query, tag)))
+        if (!ok) return false
+      }
+      if (selectedCategory !== 'all' && t.category !== selectedCategory) return false
+      if (dateFrom && t.date.slice(0, 10) < dateFrom) return false
+      if (dateTo && t.date.slice(0, 10) > dateTo) return false
+      if (amtMin !== null && t.amount < amtMin) return false
+      if (amtMax !== null && t.amount > amtMax) return false
+      return true
+    })
+    result.sort((a, b) => {
+      switch (sortBy) {
+        case 'newest': return b.date.localeCompare(a.date)
+        case 'oldest': return a.date.localeCompare(b.date)
+        case 'highest': return b.amount - a.amount
+        case 'lowest': return a.amount - b.amount
+      }
+    })
+    return result
+  }, [filtered, txFilter, selectedTag, query, selectedCategory, dateFrom, dateTo, amtMin, amtMax, sortBy])
+
+  const clearAllFilters = () => {
+    setTxFilter('all')
+    setQuery('')
+    setSelectedTag(null)
+    setDateRange('all')
+    setCustomFrom('')
+    setCustomTo('')
+    setSelectedCategory('all')
+    setAmountPreset('all')
+    setSortBy('newest')
+  }
 
   const { income, expense, surplus } = summarize(filtered)
   const byCat = spendingByCategory(filtered, allCategories)
@@ -257,38 +390,258 @@ function ReportsContent() {
         <div className="flex items-center justify-between">
           <h3 className="flex items-center gap-2 text-sm font-bold">
             <FileText className="size-4 text-primary" /> Transaksi
+            {txList.length !== filtered.length && (
+              <span className="text-[10px] font-semibold text-muted-foreground">
+                {txList.length}/{filtered.length}
+              </span>
+            )}
           </h3>
-          <Button size="sm" variant="outline" className="gap-1.5">
-            <Download className="size-3.5" /> Export
-          </Button>
+          <div className="flex items-center gap-1.5">
+            {activeFilterCount > 0 && (
+              <button
+                type="button"
+                onClick={clearAllFilters}
+                className="flex items-center gap-1 rounded-full bg-destructive/10 px-2 py-1 text-[10px] font-semibold text-destructive transition hover:bg-destructive/20"
+              >
+                <RotateCcw className="size-3" /> Reset
+              </button>
+            )}
+            <Button size="sm" variant="outline" className="gap-1.5">
+              <Download className="size-3.5" /> Export
+            </Button>
+          </div>
         </div>
 
-        {/* Type filter chips */}
-        <div className="flex gap-1.5">
-          {([
-            { id: 'all', label: 'Semua' },
-            { id: 'income', label: 'Pemasukan' },
-            { id: 'expense', label: 'Pengeluaran' },
-          ] as const).map((f) => (
+        {/* Search */}
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            placeholder="Cari deskripsi, kategori, atau tag…"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            className="pl-9 pr-9 bg-card"
+          />
+          {query && (
             <button
-              key={f.id}
               type="button"
-              onClick={() => setTxFilter(f.id)}
+              onClick={() => setQuery('')}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+            >
+              <X className="size-4" />
+            </button>
+          )}
+        </div>
+
+        {/* Type filter chips + Advanced toggle + Sort */}
+        <div className="flex items-center gap-2">
+          <div className="flex gap-1.5">
+            {([
+              { id: 'all', label: 'Semua' },
+              { id: 'income', label: 'Pemasukan' },
+              { id: 'expense', label: 'Pengeluaran' },
+            ] as const).map((f) => (
+              <button
+                key={f.id}
+                type="button"
+                onClick={() => setTxFilter(f.id)}
+                className={cn(
+                  'rounded-full px-3 py-1.5 text-xs font-medium transition',
+                  txFilter === f.id
+                    ? 'bg-primary text-primary-foreground'
+                    : 'bg-secondary text-muted-foreground hover:text-foreground',
+                )}
+              >
+                {f.label}
+              </button>
+            ))}
+          </div>
+          <div className="ml-auto flex items-center gap-1.5">
+            <button
+              type="button"
+              onClick={() => setShowAdvanced((v) => !v)}
               className={cn(
-                'rounded-full px-3 py-1.5 text-xs font-medium transition',
-                txFilter === f.id
-                  ? 'bg-primary text-primary-foreground'
+                'flex items-center gap-1 rounded-full px-2.5 py-1.5 text-xs font-medium transition',
+                showAdvanced || activeFilterCount > 0
+                  ? 'bg-primary/15 text-primary'
                   : 'bg-secondary text-muted-foreground hover:text-foreground',
               )}
             >
-              {f.label}
+              <SlidersHorizontal className="size-3.5" />
+              Filter
+              {activeFilterCount > 0 && (
+                <span className="ml-0.5 rounded-full bg-primary px-1.5 text-[10px] text-primary-foreground">
+                  {activeFilterCount}
+                </span>
+              )}
             </button>
-          ))}
+            <Select value={sortBy} onValueChange={(v) => setSortBy(v as typeof sortBy)}>
+              <SelectTrigger size="sm" className="gap-1.5">
+                <ArrowUpDown className="size-3.5" />
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="newest">Terbaru</SelectItem>
+                <SelectItem value="oldest">Terlama</SelectItem>
+                <SelectItem value="highest">Nominal Terbesar</SelectItem>
+                <SelectItem value="lowest">Nominal Terkecil</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
+
+        {/* Advanced filters (collapsible) */}
+        {showAdvanced && (
+          <div className="flex flex-col gap-3 rounded-2xl bg-secondary/40 p-3 animate-in fade-in slide-in-from-top-2 duration-200">
+            {/* Date range */}
+            <div className="flex flex-col gap-1.5">
+              <div className="flex items-center gap-1.5">
+                <CalendarDays className="size-3.5 text-muted-foreground" />
+                <span className="text-[11px] font-medium text-muted-foreground">Waktu</span>
+              </div>
+              <div className="flex gap-1.5 overflow-x-auto scrollbar-hide pb-0.5">
+                {([
+                  { id: 'all', label: 'Semua' },
+                  { id: 'this_week', label: 'Minggu Ini' },
+                  { id: 'this_month', label: 'Bulan Ini' },
+                  { id: 'last_month', label: 'Bulan Lalu' },
+                  { id: 'custom', label: 'Kustom' },
+                ] as const).map((opt) => (
+                  <button
+                    key={opt.id}
+                    type="button"
+                    onClick={() => setDateRange(opt.id)}
+                    className={cn(
+                      'shrink-0 rounded-full px-3 py-1.5 text-xs font-medium transition',
+                      dateRange === opt.id
+                        ? 'bg-primary text-primary-foreground'
+                        : 'bg-card text-muted-foreground hover:text-foreground',
+                    )}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+              {dateRange === 'custom' && (
+                <div className="flex gap-2 pt-1">
+                  <div className="flex-1">
+                    <label className="text-[10px] text-muted-foreground">Dari</label>
+                    <Input type="date" value={customFrom} onChange={(e) => setCustomFrom(e.target.value)} className="h-8 text-xs" />
+                  </div>
+                  <div className="flex-1">
+                    <label className="text-[10px] text-muted-foreground">Sampai</label>
+                    <Input type="date" value={customTo} onChange={(e) => setCustomTo(e.target.value)} className="h-8 text-xs" />
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Category */}
+            <div className="flex flex-col gap-1.5">
+              <div className="flex items-center gap-1.5">
+                <Filter className="size-3.5 text-muted-foreground" />
+                <span className="text-[11px] font-medium text-muted-foreground">Kategori</span>
+              </div>
+              <div className="flex gap-1.5 overflow-x-auto scrollbar-hide pb-0.5">
+                <button
+                  type="button"
+                  onClick={() => setSelectedCategory('all')}
+                  className={cn(
+                    'shrink-0 rounded-full px-3 py-1.5 text-xs font-medium transition',
+                    selectedCategory === 'all'
+                      ? 'bg-primary text-primary-foreground'
+                      : 'bg-card text-muted-foreground hover:text-foreground',
+                  )}
+                >
+                  Semua
+                </button>
+                {usedCategories.map((catId) => {
+                  const cat = allCategories[catId] ?? CATEGORIES[catId]
+                  const label = cat?.label ?? catId
+                  return (
+                    <button
+                      key={catId}
+                      type="button"
+                      onClick={() => setSelectedCategory(selectedCategory === catId ? 'all' : catId)}
+                      className={cn(
+                        'shrink-0 rounded-full px-3 py-1.5 text-xs font-medium transition',
+                        selectedCategory === catId
+                          ? 'bg-primary text-primary-foreground'
+                          : 'bg-card text-muted-foreground hover:text-foreground',
+                      )}
+                    >
+                      {label}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+
+            {/* Amount */}
+            <div className="flex flex-col gap-1.5">
+              <div className="flex items-center gap-1.5">
+                <DollarSign className="size-3.5 text-muted-foreground" />
+                <span className="text-[11px] font-medium text-muted-foreground">Nominal</span>
+              </div>
+              <div className="flex gap-1.5 overflow-x-auto scrollbar-hide pb-0.5">
+                {([
+                  { id: 'all', label: 'Semua' },
+                  { id: 'under_100k', label: '< 100rb' },
+                  { id: '100k_500k', label: '100rb–500rb' },
+                  { id: 'over_500k', label: '> 500rb' },
+                ] as const).map((opt) => (
+                  <button
+                    key={opt.id}
+                    type="button"
+                    onClick={() => setAmountPreset(opt.id)}
+                    className={cn(
+                      'shrink-0 rounded-full px-3 py-1.5 text-xs font-medium transition',
+                      amountPreset === opt.id
+                        ? 'bg-primary text-primary-foreground'
+                        : 'bg-card text-muted-foreground hover:text-foreground',
+                    )}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Tags */}
+            {usedTags.length > 0 && (
+              <div className="flex flex-col gap-1.5">
+                <div className="flex items-center gap-1.5">
+                  <Tag className="size-3.5 text-muted-foreground" />
+                  <span className="text-[11px] font-medium text-muted-foreground">Tag</span>
+                </div>
+                <div className="flex gap-1.5 flex-wrap">
+                  {usedTags.map((tag) => (
+                    <button
+                      key={tag}
+                      type="button"
+                      onClick={() => setSelectedTag(selectedTag === tag ? null : tag)}
+                      className={cn(
+                        'rounded-full px-2.5 py-0.5 text-xs font-medium transition',
+                        selectedTag === tag
+                          ? 'bg-primary text-primary-foreground'
+                          : 'bg-card text-muted-foreground hover:text-foreground',
+                      )}
+                    >
+                      #{tag}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
 
         {txList.length === 0 ? (
           <div className="rounded-2xl border border-dashed p-6 text-center">
-            <p className="text-sm text-muted-foreground">Belum ada transaksi di periode ini.</p>
+            <p className="text-sm text-muted-foreground">
+              {filtered.length === 0
+                ? 'Belum ada transaksi di periode ini.'
+                : 'Tidak ada transaksi cocok dengan filter.'}
+            </p>
           </div>
         ) : (
           <div className="-mx-2 flex flex-col">
