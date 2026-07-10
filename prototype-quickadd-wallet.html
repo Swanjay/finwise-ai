@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>FinWise — QuickAdd + Dompet Auto-Pick (Prototype)</title>
+<style>
+  :root {
+    --primary: #2ead4b;
+    --rose: #e11d48;
+    --emerald: #059669;
+    --bg: #f7f8f5;
+    --card: #ffffff;
+    --border: #e7e9e3;
+    --muted: #8b8f86;
+    --fg: #1c1f1a;
+  }
+  * { box-sizing: border-box; font-family: -apple-system, 'Segoe UI', system-ui, sans-serif; }
+  body { margin: 0; background: var(--bg); display: flex; justify-content: center; padding: 24px 12px; }
+  .phone { width: 390px; background: var(--bg); }
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: 20px; padding: 16px; box-shadow: 0 4px 18px rgba(0,0,0,0.04); }
+  .recent-title { font-size: 15px; font-weight: 800; margin: 0 0 12px; color: var(--fg); }
+
+  .qa { border: 1px solid var(--border); background: #f3f4f0; border-radius: 16px; padding: 12px; margin-bottom: 14px; }
+  .toggle { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; background: #fff; border-radius: 12px; padding: 4px; margin-bottom: 10px; }
+  .toggle button { border: none; padding: 7px; font-size: 12px; font-weight: 700; border-radius: 9px; cursor: pointer; background: transparent; color: var(--muted); }
+  .toggle button.active-ex { background: var(--rose); color: #fff; }
+  .toggle button.active-in { background: var(--emerald); color: #fff; }
+
+  .row { display: flex; gap: 8px; margin-bottom: 10px; }
+  .amt { flex: 1; display: flex; align-items: center; gap: 4px; border: 1px solid var(--border); background: #fff; border-radius: 12px; padding: 9px 12px; }
+  .amt span { color: var(--muted); font-size: 13px; }
+  .amt input { border: none; outline: none; width: 100%; font-size: 16px; font-weight: 800; color: var(--fg); }
+
+  /* Wallet row */
+  .wl-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); margin-bottom: 6px; }
+  .wallets { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 4px; margin-bottom: 10px; }
+  .wallet { display: flex; flex-direction: column; align-items: center; gap: 2px; border: 1px solid var(--border); background: #fff; border-radius: 12px; padding: 7px 9px; min-width: 56px; cursor: pointer; transition: all .15s; }
+  .wallet .w-ic { font-size: 18px; }
+  .wallet .w-name { font-size: 9px; font-weight: 600; color: var(--muted); }
+  .wallet.active { border-color: var(--primary); background: #e8f7ed; }
+  .wallet.active .w-name { color: var(--primary); }
+
+  .chips { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 2px; }
+  .chip { display: flex; align-items: center; gap: 3px; border: 1px solid var(--border); background: #fff; border-radius: 999px; padding: 5px 9px; font-size: 10px; font-weight: 600; color: var(--muted); white-space: nowrap; }
+  .chip.active { border-color: var(--rose); background: #fde8ee; color: var(--rose); }
+  .hint { font-size: 10px; color: var(--emerald); margin-top: 6px; min-height: 12px; font-weight: 600; }
+
+  .save { width: 40px; height: 40px; border-radius: 12px; border: none; background: var(--rose); color: #fff; font-size: 20px; cursor: pointer; flex-shrink: 0; }
+  .save.income { background: var(--emerald); }
+
+  /* Recent list */
+  .tx { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid #f0f1ed; }
+  .tx:last-child { border-bottom: none; }
+  .tx-ic { width: 36px; height: 36px; border-radius: 10px; background: #fde8ee; display: flex; align-items: center; justify-content: center; font-size: 16px; }
+  .tx-mid { flex: 1; }
+  .tx-name { font-size: 13px; font-weight: 600; color: var(--fg); }
+  .tx-sub { font-size: 11px; color: var(--muted); }
+  .tx-amt { font-size: 13px; font-weight: 800; color: var(--rose); }
+  .tx-amt.income { color: var(--emerald); }
+</style>
+</head>
+<body>
+<div class="phone">
+  <div class="card">
+    <h3 class="recent-title">Transaksi Terakhir</h3>
+
+    <div class="qa">
+      <div class="toggle">
+        <button id="btn-ex" class="active-ex" onclick="setType('expense')">💸 Keluar</button>
+        <button id="btn-in" onclick="setType('income')">💰 Masuk</button>
+      </div>
+
+      <div class="row">
+        <div class="amt"><span>Rp</span><input id="amt" value="25.000" oninput="formatAmt()" /></div>
+        <button id="save" class="save" onclick="save()">+</button>
+      </div>
+
+      <div class="wl-label">📦 Ambil dari Dompet (auto-pick kategori)</div>
+      <div class="wallets" id="wallets"></div>
+
+      <div class="chips" id="chips"></div>
+      <div class="hint" id="hint"></div>
+    </div>
+
+    <div class="tx">
+      <div class="tx-ic">🍔</div>
+      <div class="tx-mid"><div class="tx-name">Warteg Bahari</div><div class="tx-sub">Makan · 10 Jul</div></div>
+      <div class="tx-amt">-Rp25.000</div>
+    </div>
+    <div class="tx">
+      <div class="tx-ic">🚗</div>
+      <div class="tx-mid"><div class="tx-name">Gojek</div><div class="tx-sub">Transport · 09 Jul</div></div>
+      <div class="tx-amt">-Rp12.000</div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const CATS = [
+    { id: 'food', label: 'Makan', icon: '🍔' },
+    { id: 'transport', label: 'Transport', icon: '🚗' },
+    { id: 'shopping', label: 'Belanja', icon: '🛒' },
+    { id: 'entertainment', label: 'Hiburan', icon: '🎬' },
+    { id: 'bills', label: 'Tagihan', icon: '💡' },
+    { id: 'health', label: 'Kesehatan', icon: '💊' },
+    { id: 'education', label: 'Pendidikan', icon: '📚' },
+    { id: 'transfer', label: 'Transfer', icon: '🔁' },
+    { id: 'other', label: 'Lainnya', icon: '📦' },
+  ]
+
+  // Mirror of WALLET_CATEGORY_HINTS from finwise.ts
+  const WALLETS = [
+    { id: 'cash',        name: 'Cash',     icon: '💵', cat: 'food' },
+    { id: 'gopay',       name: 'GoPay',    icon: '🟢', cat: 'transport' },
+    { id: 'ovo',         name: 'OVO',      icon: '🟣', cat: 'transport' },
+    { id: 'dana',        name: 'DANA',     icon: '🔵', cat: 'shopping' },
+    { id: 'shopeepay',   name: 'ShopeePay',icon: '🟠', cat: 'shopping' },
+    { id: 'bca',         name: 'BCA',      icon: '🏦', cat: 'transfer' },
+    { id: 'mandiri',     name: 'Mandiri',  icon: '🏦', cat: 'transfer' },
+    { id: 'bri',         name: 'BRI',      icon: '🏦', cat: 'transfer' },
+  ]
+
+  let type = 'expense'
+  let activeWallet = 'cash'
+  let activeCat = 'food'
+
+  const walletsEl = document.getElementById('wallets')
+  const chipsEl = document.getElementById('chips')
+  const hintEl = document.getElementById('hint')
+
+  function renderWallets() {
+    walletsEl.innerHTML = ''
+    WALLETS.forEach(w => {
+      const el = document.createElement('div')
+      el.className = 'wallet' + (w.id === activeWallet ? ' active' : '')
+      el.innerHTML = `<div class="w-ic">${w.icon}</div><div class="w-name">${w.name}</div>`
+      el.onclick = () => {
+        activeWallet = w.id
+        if (type === 'expense') { activeCat = w.cat; hintEl.textContent = `↳ Auto: ${CATS.find(c=>c.id===w.cat).label}` }
+        renderWallets(); renderChips()
+      }
+      walletsEl.appendChild(el)
+    })
+  }
+
+  function renderChips() {
+    chipsEl.innerHTML = ''
+    const list = type === 'expense' ? CATS : []
+    list.forEach(c => {
+      const el = document.createElement('div')
+      el.className = 'chip' + (c.id === activeCat ? ' active' : '')
+      el.innerHTML = `${c.icon} ${c.label}`
+      el.onclick = () => { activeCat = c.id; hintEl.textContent = ''; renderChips() }
+      chipsEl.appendChild(el)
+    })
+  }
+
+  function setType(t) {
+    type = t
+    document.getElementById('btn-ex').className = t === 'expense' ? 'active-ex' : ''
+    document.getElementById('btn-in').className = t === 'income' ? 'active-in' : ''
+    document.getElementById('save').className = 'save' + (t === 'income' ? ' income' : '')
+    if (t === 'expense') { activeCat = WALLETS.find(w=>w.id===activeWallet).cat; hintEl.textContent = `↳ Auto: ${CATS.find(c=>c.id===activeCat).label}` }
+    else { hintEl.textContent = '' }
+    renderChips()
+  }
+
+  function formatAmt() {
+    const inp = document.getElementById('amt')
+    const num = inp.value.replace(/\D/g, '')
+    inp.value = num ? new Intl.NumberFormat('id-ID').format(parseInt(num)) : ''
+  }
+
+  function save() {
+    const amt = document.getElementById('amt').value.replace(/\D/g, '')
+    if (!amt) return
+    alert(`Simpan:\nTipe: ${type==='expense'?'Keluar':'Masuk'}\nDompet: ${WALLETS.find(w=>w.id===activeWallet).name}\nKategori: ${type==='expense'?CATS.find(c=>c.id===activeCat).label:'Pemasukan'}\nJumlah: Rp${parseInt(amt).toLocaleString('id-ID')}`)
+  }
+
+  // init
+  renderWallets(); renderChips()
+  hintEl.textContent = `↳ Auto: ${CATS.find(c=>c.id===activeCat).label}`
+</script>
+</body>
+</html>

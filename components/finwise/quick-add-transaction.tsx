@@ -2,26 +2,35 @@
 
 import { useState } from 'react'
 import { Check, Plus } from 'lucide-react'
-import { EXPENSE_CATEGORIES, formatIDRInput, parseIDRInput, type CategoryId, type TxType } from '@/lib/finwise'
+import { EXPENSE_CATEGORIES, formatIDRInput, parseIDRInput, walletAutoCategory, type CategoryId, type TxType } from '@/lib/finwise'
 import { useFinwise } from '@/components/finwise-store'
 import { haptic } from '@/lib/haptics'
 import { cn } from '@/lib/utils'
 
 /**
  * Compact inline transaction entry for the Home "Recent" card.
- * Lets users log an expense/income in one tap without opening the full sheet.
+ * Text-only wallets + category chips (no icons). Selecting a wallet auto-picks
+ * its category via the same WALLET_CATEGORY_HINTS map the full sheet uses.
  */
 export function QuickAddTransaction() {
   const { addTransaction, wallets } = useFinwise()
   const [type, setType] = useState<TxType>('expense')
   const [amount, setAmount] = useState('')
   const [category, setCategory] = useState<CategoryId>('food')
+  const [walletId, setWalletId] = useState(wallets[0]?.id || 'cash')
   const [justSaved, setJustSaved] = useState(false)
 
   const numeric = parseIDRInput(amount)
   const valid = numeric > 0
   const isExpense = type === 'expense'
-  const walletId = wallets[0]?.id || 'cash'
+
+  function pickWallet(id: string) {
+    setWalletId(id)
+    if (isExpense) {
+      const hint = walletAutoCategory(id, '')
+      if (hint) setCategory(hint)
+    }
+  }
 
   function save() {
     if (!valid) return
@@ -51,7 +60,7 @@ export function QuickAddTransaction() {
             isExpense ? 'bg-rose-600 text-white shadow-sm' : 'text-muted-foreground hover:text-foreground'
           )}
         >
-          💸 Keluar
+          Keluar
         </button>
         <button
           type="button"
@@ -61,7 +70,7 @@ export function QuickAddTransaction() {
             !isExpense ? 'bg-emerald-600 text-white shadow-sm' : 'text-muted-foreground hover:text-foreground'
           )}
         >
-          💰 Masuk
+          Masuk
         </button>
       </div>
 
@@ -96,11 +105,35 @@ export function QuickAddTransaction() {
         </button>
       </div>
 
-      {/* Category chips (expense only) */}
+      {/* Wallet row (text-only, auto-picks category) */}
+      <div className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+        Ambil dari Dompet
+      </div>
+      <div className="flex gap-1.5 overflow-x-auto no-scrollbar mb-2">
+        {wallets.map((w) => {
+          const active = walletId === w.id
+          return (
+            <button
+              key={w.id}
+              type="button"
+              onClick={() => pickWallet(w.id)}
+              className={cn(
+                'shrink-0 rounded-lg border px-2.5 py-1.5 text-[11px] font-semibold transition active:scale-95',
+                active
+                  ? 'border-primary bg-primary/15 text-primary'
+                  : 'border-border text-muted-foreground hover:bg-muted/50'
+              )}
+            >
+              {w.name}
+            </button>
+          )
+        })}
+      </div>
+
+      {/* Category chips (expense only, text-only) */}
       {isExpense && (
         <div className="flex gap-1.5 overflow-x-auto no-scrollbar">
-          {EXPENSE_CATEGORIES.slice(0, 8).map((c) => {
-            const Icon = c.icon
+          {EXPENSE_CATEGORIES.map((c) => {
             const active = category === c.id
             return (
               <button
@@ -108,13 +141,12 @@ export function QuickAddTransaction() {
                 type="button"
                 onClick={() => setCategory(c.id)}
                 className={cn(
-                  'flex shrink-0 items-center gap-1 rounded-full border px-2 py-1 text-[10px] font-medium transition active:scale-95',
+                  'shrink-0 rounded-full border px-2.5 py-1 text-[10px] font-medium transition active:scale-95',
                   active
                     ? 'border-rose-500 bg-rose-500/10 text-rose-400'
                     : 'border-border text-muted-foreground hover:bg-muted/50'
                 )}
               >
-                <Icon className="size-3" />
                 {c.label.split(' ')[0]}
               </button>
             )

@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>FinWise — QuickAdd Prototype (8 chip fixed)</title>
+<style>
+  :root {
+    --primary: #2ead4b;
+    --rose: #e11d48;
+    --emerald: #059669;
+    --bg: #f7f8f5;
+    --card: #ffffff;
+    --border: #e7e9e3;
+    --muted: #8b8f86;
+    --fg: #1c1f1a;
+  }
+  * { box-sizing: border-box; font-family: -apple-system, 'Segoe UI', system-ui, sans-serif; }
+  body { margin: 0; background: var(--bg); display: flex; justify-content: center; padding: 24px 12px; }
+  .phone { width: 390px; background: var(--bg); }
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: 20px; padding: 16px; box-shadow: 0 4px 18px rgba(0,0,0,0.04); }
+  .recent-title { font-size: 15px; font-weight: 800; margin: 0 0 12px; color: var(--fg); }
+
+  /* Quick add */
+  .qa { border: 1px solid var(--border); background: #f3f4f0; border-radius: 16px; padding: 12px; margin-bottom: 14px; }
+  .toggle { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; background: #fff; border-radius: 12px; padding: 4px; margin-bottom: 10px; }
+  .toggle button { border: none; padding: 7px; font-size: 12px; font-weight: 700; border-radius: 9px; cursor: pointer; background: transparent; color: var(--muted); }
+  .toggle button.active-ex { background: var(--rose); color: #fff; }
+  .toggle button.active-in { background: var(--emerald); color: #fff; }
+  .row { display: flex; gap: 8px; margin-bottom: 10px; }
+  .amt { flex: 1; display: flex; align-items: center; gap: 4px; border: 1px solid var(--border); background: #fff; border-radius: 12px; padding: 9px 12px; }
+  .amt span { color: var(--muted); font-size: 13px; }
+  .amt input { border: none; outline: none; width: 100%; font-size: 16px; font-weight: 800; color: var(--fg); }
+  .save { width: 40px; height: 40px; border-radius: 12px; border: none; background: var(--rose); color: #fff; font-size: 20px; cursor: pointer; flex-shrink: 0; }
+  .chips { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 2px; }
+  .chip { display: flex; align-items: center; gap: 3px; border: 1px solid var(--border); background: #fff; border-radius: 999px; padding: 5px 9px; font-size: 10px; font-weight: 600; color: var(--muted); white-space: nowrap; }
+  .chip.active { border-color: var(--rose); background: #fde8ee; color: var(--rose); }
+  .chip svg { width: 12px; height: 12px; }
+
+  /* Recent list preview */
+  .tx { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid #f0f1ed; }
+  .tx:last-child { border-bottom: none; }
+  .tx-ic { width: 36px; height: 36px; border-radius: 10px; background: #fde8ee; display: flex; align-items: center; justify-content: center; font-size: 16px; }
+  .tx-mid { flex: 1; }
+  .tx-name { font-size: 13px; font-weight: 600; color: var(--fg); }
+  .tx-sub { font-size: 11px; color: var(--muted); }
+  .tx-amt { font-size: 13px; font-weight: 800; color: var(--rose); }
+</style>
+</head>
+<body>
+<div class="phone">
+  <div class="card">
+    <h3 class="recent-title">Transaksi Terakhir</h3>
+
+    <!-- Quick add prototype -->
+    <div class="qa">
+      <div class="toggle">
+        <button class="active-ex">💸 Keluar</button>
+        <button>💰 Masuk</button>
+      </div>
+      <div class="row">
+        <div class="amt"><span>Rp</span><input value="25.000" /></div>
+        <button class="save">+</button>
+      </div>
+      <div class="chips">
+        <div class="chip active">🍔 Makan</div>
+        <div class="chip">🚗 Transport</div>
+        <div class="chip">🛒 Belanja</div>
+        <div class="chip">🎬 Hiburan</div>
+        <div class="chip">💡 Tagihan</div>
+        <div class="chip">💊 Kesehatan</div>
+        <div class="chip">📚 Pendidikan</div>
+        <div class="chip">📦 Lainnya</div>
+      </div>
+    </div>
+
+    <!-- Recent list preview -->
+    <div class="tx">
+      <div class="tx-ic">🍔</div>
+      <div class="tx-mid"><div class="tx-name">Warteg Bahari</div><div class="tx-sub">Makan · 10 Jul</div></div>
+      <div class="tx-amt">-Rp25.000</div>
+    </div>
+    <div class="tx">
+      <div class="tx-ic">🚗</div>
+      <div class="tx-mid"><div class="tx-name">Gojek</div><div class="tx-sub">Transport · 09 Jul</div></div>
+      <div class="tx-amt">-Rp12.000</div>
+    </div>
+    <div class="tx">
+      <div class="tx-ic">💰</div>
+      <div class="tx-mid"><div class="tx-name">Gaji</div><div class="tx-sub">Pemasukan · 01 Jul</div></div>
+      <div class="tx-amt" style="color:var(--emerald)">+Rp5.000.000</div>
+    </div>
+  </div>
+</div>
+</body>
+</html>
