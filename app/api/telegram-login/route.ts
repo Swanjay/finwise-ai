@@ -1,16 +1,13 @@
 import { NextResponse } from "next/server"
 import crypto from "crypto"
-import { rateLimitMiddleware, getClientIp } from "@/lib/rate-limit-kv"
+import { rateLimitMiddleware } from "@/lib/supabase-ratelimit"
+import { otpSet, otpGet, otpIncrementAttempts, otpDelete } from "@/lib/supabase-ratelimit"
 import { createTelegramSignature } from "@/auth"
 import { telegramLoginSchema } from "@/lib/validate"
 
 // Required Telegram channel to join before requesting OTP
 const REQUIRED_CHANNEL_ID = process.env.TELEGRAM_CHANNEL_ID!
 const REQUIRED_CHANNEL_URL = process.env.TELEGRAM_CHANNEL_URL || "https://t.me/ainsyir"
-
-// In-memory code store — WARNING: resets on Vercel cold start.
-// TODO: migrate to Supabase or Upstash Redis for production persistence.
-const codes = new Map<string, { code: string; expires: number; attempts: number; user?: Record<string, string> }>()
 
 function generateCode(): string {
   // Cryptographically secure 6-digit code
@@ -44,12 +41,12 @@ export async function POST(req: Request) {
       const { username } = parsed.data
 
       // Clean username
-      const cleanUsername = username.replace("@", "").trim()
+      const cleanUsername = username.replace("@", "").trim().toLowerCase()
       const loginCode = generateCode()
       const expires = Date.now() + 5 * 60 * 1000 // 5 min
 
       // Store code with attempt counter
-      codes.set(cleanUsername.toLowerCase(), { code: loginCode, expires, attempts: 0 })
+      await otpSet(cleanUsername, loginCode, 5 * 60 * 1000)
 
       // Try to send code via bot
       const updatesRes = await fetch(`https://api.telegram.org/bot${botToken}/getUpdates?limit=100`)
@@ -114,22 +111,21 @@ export async function POST(req: Request) {
       const { username, code } = parsed.data
 
       const cleanUsername = username.replace("@", "").trim().toLowerCase()
-      const stored = codes.get(cleanUsername)
+      const stored = await otpGet(cleanUsername)
 
       if (!stored) {
         return NextResponse.json({ error: "Kode tidak ditemukan" }, { status: 400 })
       }
 
       // Check attempts (max 5 tries per code)
-      if (stored.attempts >= 5) {
-        codes.delete(cleanUsername)
+      const attempts = await otpIncrementAttempts(cleanUsername)
+      if (attempts >= 5) {
+        await otpDelete(cleanUsername)
         return NextResponse.json({ error: "Terlalu banyak percobaan. Minta kode baru." }, { status: 429 })
       }
 
-      stored.attempts++
-
-      if (Date.now() > stored.expires) {
-        codes.delete(cleanUsername)
+      if (Date.now() > stored.expires_at) {
+        await otpDelete(cleanUsername)
         return NextResponse.json({ error: "Kode sudah expired" }, { status: 400 })
       }
 
@@ -141,7 +137,7 @@ export async function POST(req: Request) {
       }
 
       // Success! Delete code
-      codes.delete(cleanUsername)
+      await otpDelete(cleanUsername)
 
       // Generate HMAC signature for the user
       const userId = `tg_${cleanUsername}`

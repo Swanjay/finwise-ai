@@ -1,11 +1,8 @@
 import { NextResponse } from "next/server"
 import crypto from "crypto"
-import { rateLimitMiddleware, getClientIp } from "@/lib/rate-limit-kv"
+import { rateLimitMiddleware } from "@/lib/supabase-ratelimit"
+import { otpSet, otpGet, otpIncrementAttempts, otpDelete, otpGetCooldown } from "@/lib/supabase-ratelimit"
 import { createTelegramSignature } from "@/auth"
-
-// In-memory code store — same pattern as Telegram login.
-// TODO: migrate to Supabase or Upstash Redis for production persistence.
-const codes = new Map<string, { code: string; expires: number; attempts: number }>()
 
 function generateCode(): string {
   return crypto.randomInt(100000, 999999).toString()
@@ -47,8 +44,8 @@ export async function POST(req: Request) {
       const key = `email:${normalizedEmail}`
 
       // Check cooldown (30 seconds between requests)
-      const existing = codes.get(key)
-      if (existing && Date.now() - (existing.expires - 300_000) < 30_000) {
+      const inCooldown = await otpGetCooldown(key, 30_000)
+      if (inCooldown) {
         return NextResponse.json(
           { error: "Tunggu 30 detik sebelum minta kode lagi" },
           { status: 429 },
@@ -57,11 +54,7 @@ export async function POST(req: Request) {
 
       // Generate and store code
       const verificationCode = generateCode()
-      codes.set(key, {
-        code: verificationCode,
-        expires: Date.now() + 300_000, // 5 minutes
-        attempts: 0,
-      })
+      await otpSet(key, verificationCode, 5 * 60 * 1000)
 
       // Log code for development only (never log in production)
       if (process.env.NODE_ENV === 'development') {
@@ -101,7 +94,7 @@ export async function POST(req: Request) {
 
       const normalizedEmail = email.trim().toLowerCase()
       const key = `email:${normalizedEmail}`
-      const stored = codes.get(key)
+      const stored = await otpGet(key)
 
       if (!stored) {
         return NextResponse.json(
@@ -110,17 +103,17 @@ export async function POST(req: Request) {
         )
       }
 
-      if (Date.now() > stored.expires) {
-        codes.delete(key)
+      if (Date.now() > stored.expires_at) {
+        await otpDelete(key)
         return NextResponse.json(
           { error: "Kode sudah kadaluarsa. Minta kode baru." },
           { status: 400 },
         )
       }
 
-      stored.attempts++
-      if (stored.attempts > 5) {
-        codes.delete(key)
+      const attempts = await otpIncrementAttempts(key)
+      if (attempts > 5) {
+        await otpDelete(key)
         return NextResponse.json(
           { error: "Terlalu banyak percobaan. Minta kode baru." },
           { status: 429 },
@@ -135,7 +128,7 @@ export async function POST(req: Request) {
       }
 
       // Code is valid — clean up
-      codes.delete(key)
+      await otpDelete(key)
 
       // Create or find user ID based on email (deterministic)
       const userId = `email:${normalizedEmail}`

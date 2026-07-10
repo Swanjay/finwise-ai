@@ -2,7 +2,7 @@ import { NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/auth"
 import { createClient } from "@supabase/supabase-js"
-import { rateLimitMiddleware } from "@/lib/rate-limit-kv"
+import { rateLimitMiddleware } from "@/lib/supabase-ratelimit"
 
 function getSupabase() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL

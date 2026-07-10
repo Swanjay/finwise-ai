@@ -2,7 +2,7 @@ import { NextResponse } from "next/server"
 import crypto from "crypto"
 import { encode } from "next-auth/jwt"
 import { createTelegramSignature } from "@/auth"
-import { rateLimitMiddleware } from "@/lib/rate-limit-kv"
+import { rateLimitMiddleware } from "@/lib/supabase-ratelimit"
 
 // Custom Telegram auth callback that bypasses NextAuth's redirect flow
 // This works around Cloudflare blocking form POST to /api/auth/callback/telegram

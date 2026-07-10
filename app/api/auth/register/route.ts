@@ -2,7 +2,7 @@ import { NextResponse } from "next/server"
 import bcrypt from "bcryptjs"
 import { createClient } from "@supabase/supabase-js"
 import crypto from "crypto"
-import { rateLimitMiddleware } from "@/lib/rate-limit-kv"
+import { rateLimitMiddleware } from "@/lib/supabase-ratelimit"
 
 function getAuthSupabase() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL

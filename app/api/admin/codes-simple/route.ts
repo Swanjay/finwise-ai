@@ -35,7 +35,7 @@ function verifyAdminCookie(req: Request): boolean {
   }
 }
 
-import { rateLimitMiddleware } from "@/lib/rate-limit-kv"
+import { rateLimitMiddleware } from "@/lib/supabase-ratelimit"
 
 // ── POST /api/admin/codes-simple → login ──
 export async function POST(req: Request) {
