@@ -98,6 +98,8 @@ const themeScript = `
 (function(){
   try {
     var id = localStorage.getItem('fw.colorTheme.v1') || 'wise';
+    var mode = localStorage.getItem('fw.theme.v1') || 'light';
+    if (mode === 'dark') document.documentElement.classList.add('dark');
     var dark = document.documentElement.classList.contains('dark');
     var m = ${JSON.stringify(THEME_MAP)};
     var t = m[id] || m.emerald;

@@ -238,7 +238,9 @@ export function FinwiseProvider({ children }: { children: ReactNode }) {
       setPinState(storedPin)
       setIsLocked(storedPin ? true : false)
 
-      setTheme(await secureGet(KEYS.theme) ?? 'light')
+      const storedTheme = await secureGet(KEYS.theme) ?? 'light'
+      setTheme(storedTheme)
+      try { localStorage.setItem('fw.theme.v1', storedTheme) } catch {}
       setAccentColorState(await secureGet(KEYS.accent) ?? 'wise')
       setFontSizeState(await secureGet(KEYS.fontSize) ?? 'base')
       setCompactModeState(await secureGet(KEYS.compactMode) ?? false)
@@ -362,6 +364,8 @@ export function FinwiseProvider({ children }: { children: ReactNode }) {
         if (data.settings?.initialBalance && Number(data.settings.initialBalance) > 0) setInitialBalance(Number(data.settings.initialBalance))
         else if (localInitBal > 0) setInitialBalance(localInitBal)
         if (data.settings?.theme) setTheme(data.settings.theme as 'dark' | 'light')
+        // Also persist to plain key for pre-hydration script
+        try { localStorage.setItem('fw.theme.v1', data.settings?.theme === 'dark' ? 'dark' : 'light') } catch {}
         // Only upgrade setupDone from cloud (never downgrade to false)
         if (data.settings?.setupDone === 'true') setSetupDone(true)
 
@@ -475,7 +479,9 @@ export function FinwiseProvider({ children }: { children: ReactNode }) {
     const sizes: Record<string, string> = { sm: '14px', base: '16px', lg: '18px' }
     root.style.setProperty('--app-font-size', sizes[fontSize] || '16px')
     root.classList.toggle('compact', compactMode)
-  }, [fontSize, compactMode, loaded])
+    root.classList.toggle('dark', theme === 'dark')
+    applyTheme(getStoredThemeId())
+  }, [fontSize, compactMode, loaded, theme])
 
   const setAccentColor = useCallback((color: string) => setAccentColorState(color), [])
   const setFontSize = useCallback((size: 'sm' | 'base' | 'lg') => setFontSizeState(size), [])
@@ -622,7 +628,14 @@ export function FinwiseProvider({ children }: { children: ReactNode }) {
   const unlock = useCallback(() => setIsLocked(false), [])
 
   // Theme
-  const toggleTheme = useCallback(() => setTheme((prev) => prev === 'dark' ? 'light' : 'dark'), [])
+  const toggleTheme = useCallback(() => {
+    setTheme((prev) => {
+      const next = prev === 'dark' ? 'light' : 'dark'
+      // Write plain key for instant pre-hydration read in layout.tsx
+      try { localStorage.setItem('fw.theme.v1', next) } catch {}
+      return next
+    })
+  }, [])
 
   // Tips
   const dismissTips = useCallback(() => { setTipsDismissed(true); saveJSON(KEYS.tipsDismissed, true) }, [])
