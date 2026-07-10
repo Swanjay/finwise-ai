@@ -304,28 +304,6 @@ export function TransactionRow({
               {income ? '+' : '-'}
               {hideBalance ? '••••' : formatIDR(tx.amount)}
             </span>
-
-            {/* Quick action buttons — always visible for easy access */}
-            {onDelete && (
-              <div className="flex items-center gap-0.5 shrink-0">
-                <button
-                  type="button"
-                  onClick={(e) => { e.stopPropagation(); onEdit?.(tx) }}
-                  className="rounded-md p-1.5 text-blue-500 hover:bg-blue-100 active:bg-blue-200 transition"
-                  aria-label={`Edit ${tx.description}`}
-                >
-                  <Pencil className="size-3.5" />
-                </button>
-                <button
-                  type="button"
-                  onClick={(e) => { e.stopPropagation(); haptic.heavy(); setIsDeleting(true) }}
-                  className="rounded-md p-1.5 text-red-500 hover:bg-red-100 active:bg-red-200 transition"
-                  aria-label={`Hapus ${tx.description}`}
-                >
-                  <Trash2 className="size-3.5" />
-                </button>
-              </div>
-            )}
           </div>
         </div>
       ) : (
