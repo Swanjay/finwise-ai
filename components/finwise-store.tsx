@@ -59,6 +59,19 @@ const KEYS = {
   household: 'fw.household.v1',
 }
 
+// Drop wallets (except 'cash') that have zero balance AND no transactions.
+function tidyWallets(wallets: Wallet[], txs: Transaction[]): Wallet[] {
+  return wallets.filter((w) => {
+    if (w.id === 'cash') return true
+    const bal = (w.balance || 0) + txs.reduce(
+      (s, t) => (t.walletId === w.id ? s + (t.type === 'income' ? t.amount : -t.amount) : s),
+      0
+    )
+    const hasTx = txs.some((t) => t.walletId === w.id)
+    return !(bal === 0 && !hasTx)
+  })
+}
+
 function loadJSON<T>(key: string, fallback: T): T {
   if (typeof window === 'undefined') return fallback
   try {
@@ -231,17 +244,7 @@ export function FinwiseProvider({ children }: { children: ReactNode }) {
       setBudgets(await secureGet(KEYS.budgets) ?? {})
       setMonthlyIncomeState(await secureGet(KEYS.income) ?? 0)
       const loadedWallets = ((await secureGet(KEYS.wallets)) ?? DEFAULT_WALLETS) as Wallet[]
-      // Auto-tidy: drop wallets (except 'cash') with 0 balance AND no transactions
-      const cleanedWallets = loadedWallets.filter((w) => {
-        if (w.id === 'cash') return true
-        const txTotal = loadedTx.reduce(
-          (s, tx) => (tx.walletId === w.id ? s + (tx.type === 'income' ? tx.amount : -tx.amount) : s),
-          0
-        )
-        const bal = (w.balance || 0) + txTotal
-        const hasTx = loadedTx.some((tx) => tx.walletId === w.id)
-        return !(bal === 0 && !hasTx)
-      })
+      const cleanedWallets = tidyWallets(loadedWallets, loadedTx)
       setWallets(cleanedWallets)
       setGoals(await secureGet(KEYS.goals) ?? [])
       setRecurring(await secureGet(KEYS.recurring) ?? [])
@@ -359,7 +362,7 @@ export function FinwiseProvider({ children }: { children: ReactNode }) {
         const useTx = mergeById(cloudTx, localTx)
         const useGoals = mergeById(cloudGoals, localGoals)
         const useRecurring = mergeById(cloudRecurring, localRecurring)
-        const useWallets = mergeById(cloudWallets, localWallets)
+        const useWallets = tidyWallets(mergeById(cloudWallets, localWallets), useTx)
         // Budgets: merge objects (local keys not in cloud)
         const useBudgets = { ...(data.budgets || {}), ...localBudgets }
 
@@ -408,6 +411,11 @@ export function FinwiseProvider({ children }: { children: ReactNode }) {
         if (mergedExtra) {
           // Local had extra data — syncing back to cloud
           setTimeout(() => syncToCloudNow('merge-back'), 500)
+        }
+        // If tidyWallets removed empties, persist clean state back to cloud + storage
+        const rawMerged = mergeById(cloudWallets, localWallets)
+        if (rawMerged.length > useWallets.length) {
+          setTimeout(() => syncToCloudNow('tidy-wallets'), 500)
         }
       } catch (err) {
         console.warn('[store] Failed to load cloud data:', err)
